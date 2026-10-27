@@ -1,0 +1,72 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function getUserRole() {
+      return request.auth.token.role; // Custom claims: 'Admin', 'Sensei', 'Staff'
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && (getUserRole() == 'Admin');
+    }
+
+    function isSenseiOrAdmin() {
+      return isAuthenticated() && (getUserRole() == 'Admin' || getUserRole() == 'Sensei');
+    }
+
+    function isStaffOrAbove() {
+      return isAuthenticated() && (getUserRole() == 'Admin' || getUserRole() == 'Sensei' || getUserRole() == 'Staff');
+    }
+
+    // Dojos collection
+    match /dojos/{dojoId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // Batches collection
+    match /batches/{batchId} {
+      allow read: if isAuthenticated();
+      allow write: if isSenseiOrAdmin();
+    }
+
+    // Fee Plans collection
+    match /feePlans/{planId} {
+      allow read: if isAuthenticated();
+      allow write: if isSenseiOrAdmin();
+    }
+
+    // Students collection
+    match /students/{studentId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isStaffOrAbove();
+      allow delete: if isAdmin();
+    }
+
+    // Attendance collection
+    match /attendance/{attendanceId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isStaffOrAbove();
+      allow delete: if isSenseiOrAdmin();
+    }
+
+    // Payments collection
+    match /payments/{paymentId} {
+      allow read: if isStaffOrAbove();
+      allow create: if isStaffOrAbove();
+      allow update, delete: if isAdmin();
+    }
+
+    // Activities log
+    match /activities/{activityId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if isAdmin();
+    }
+  }
+}

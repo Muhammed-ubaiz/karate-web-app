@@ -1,0 +1,46 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-bg: #121214;
+    --color-card: #1a1a1e;
+    --color-surface: #26262e;
+    --color-border: #2e2e38;
+    --color-red: #E50914;
+  }
+
+  body {
+    background-color: #121214;
+    color: #f3f4f6;
+    font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Custom scrollbars for sleek dark feel */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #121214;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #2e2e38;
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #4b5563;
+  }
+}
+
+/* Belt colors badge utility */
+.belt-white { background: #f8fafc; color: #0f172a; border: 1px solid #cbd5e1; }
+.belt-yellow { background: #fef08a; color: #854d0e; border: 1px solid #facc15; }
+.belt-orange { background: #fed7aa; color: #9a3412; border: 1px solid #fb923c; }
+.belt-green { background: #bbf7d0; color: #166534; border: 1px solid #4ade80; }
+.belt-blue { background: #bfdbfe; color: #1e40af; border: 1px solid #60a5fa; }
+.belt-purple { background: #e9d5ff; color: #6b21a8; border: 1px solid #c084fc; }
+.belt-brown { background: #854d0e; color: #fef3c7; border: 1px solid #78350f; }
+.belt-black { background: #000000; color: #ef4444; border: 1px solid #dc2626; }
