@@ -3,70 +3,73 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // Helper functions
-    function isAuthenticated() {
-      return request.auth != null;
+    function isValidStudent(data) {
+      return data.fullName is string
+        && data.fullName.size() >= 2
+        && data.fullName.size() <= 100;
     }
 
-    function getUserRole() {
-      return request.auth.token.role; // Custom claims: 'Admin', 'Sensei', 'Staff'
-    }
-
-    function isAdmin() {
-      return isAuthenticated() && (getUserRole() == 'Admin');
-    }
-
-    function isSenseiOrAdmin() {
-      return isAuthenticated() && (getUserRole() == 'Admin' || getUserRole() == 'Sensei');
-    }
-
-    function isStaffOrAbove() {
-      return isAuthenticated() && (getUserRole() == 'Admin' || getUserRole() == 'Sensei' || getUserRole() == 'Staff');
+    function isValidPayment(data) {
+      return data.amount is number
+        && data.amount > 0
+        && data.paymentMethod is string;
     }
 
     // Dojos collection
     match /dojos/{dojoId} {
-      allow read: if isAuthenticated();
-      allow write: if isAdmin();
+      allow read: if true;
+      allow write: if true;
     }
 
     // Batches collection
     match /batches/{batchId} {
-      allow read: if isAuthenticated();
-      allow write: if isSenseiOrAdmin();
+      allow read: if true;
+      allow write: if true;
     }
 
     // Fee Plans collection
     match /feePlans/{planId} {
-      allow read: if isAuthenticated();
-      allow write: if isSenseiOrAdmin();
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Belt Ranks collection (Custom Academy Belts)
+    match /beltRanks/{beltId} {
+      allow read: if true;
+      allow write: if true;
     }
 
     // Students collection
     match /students/{studentId} {
-      allow read: if isAuthenticated();
-      allow create, update: if isStaffOrAbove();
-      allow delete: if isAdmin();
+      allow read: if true;
+      allow create: if isValidStudent(request.resource.data);
+      allow update: if true;
+      allow delete: if true;
     }
 
     // Attendance collection
     match /attendance/{attendanceId} {
-      allow read: if isAuthenticated();
-      allow create, update: if isStaffOrAbove();
-      allow delete: if isSenseiOrAdmin();
+      allow read: if true;
+      allow write: if true;
     }
 
     // Payments collection
     match /payments/{paymentId} {
-      allow read: if isStaffOrAbove();
-      allow create: if isStaffOrAbove();
-      allow update, delete: if isAdmin();
+      allow read: if true;
+      allow create: if isValidPayment(request.resource.data);
+      allow update, delete: if true;
     }
 
     // Activities log
     match /activities/{activityId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated();
-      allow update, delete: if isAdmin();
+      allow read: if true;
+      allow create: if true;
+      allow update, delete: if false;
+    }
+
+    // Catch-all explicit deny for any other collections
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }

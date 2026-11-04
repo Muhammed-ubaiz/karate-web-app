@@ -1,23 +1,41 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDojo } from '../../context/DojoContext';
 import { X, CalendarDays, Clock, Users, Building, Award } from 'lucide-react';
 
 const DAYS_OF_WEEK = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-export const AddBatchModal = ({ isOpen, onClose }) => {
+export const AddBatchModal = ({ isOpen, onClose, initialDay }) => {
   const { dojos, addBatch } = useDojo();
-  const [formData, setFormData] = useState({
-    name: '',
-    dojoId: dojos[0]?.id || '',
-    scheduleDays: ['Mon', 'Wed', 'Fri'],
-    startTime: '17:00',
-    durationMinutes: 60,
-    maxCapacity: 25,
-    instructor: '',
-    level: 'Beginner'
-  });
 
+  const getInitialFormData = () => {
+    const validInitialDay = initialDay && DAYS_OF_WEEK.includes(initialDay) ? initialDay : null;
+    return {
+      name: '',
+      dojoId: dojos[0]?.id || '',
+      scheduleDays: validInitialDay ? [validInitialDay] : ['Mon', 'Wed', 'Fri'],
+      startTime: '17:00',
+      durationMinutes: 60,
+      maxCapacity: 25,
+      instructor: '',
+      level: 'Beginner'
+    };
+  };
+
+  const [formData, setFormData] = useState(getInitialFormData);
   const [errors, setErrors] = useState({});
+
+  useEffect(() => {
+    if (isOpen) {
+      setFormData(getInitialFormData());
+      setErrors({});
+    }
+  }, [isOpen]);
+
+  const handleClose = () => {
+    setFormData(getInitialFormData());
+    setErrors({});
+    onClose();
+  };
 
   if (!isOpen) return null;
 
@@ -49,11 +67,16 @@ export const AddBatchModal = ({ isOpen, onClose }) => {
       maxCapacity: Number(formData.maxCapacity),
       durationMinutes: Number(formData.durationMinutes)
     });
-    onClose();
+    handleClose();
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+    <div
+      onClick={(e) => {
+        if (e.target === e.currentTarget) handleClose();
+      }}
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-sm animate-fade-in"
+    >
       <div className="w-full sm:max-w-lg bg-dojo-card border-t sm:border border-dojo-border rounded-t-3xl sm:rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="sticky top-0 bg-dojo-card/95 backdrop-blur-md px-5 py-4 border-b border-dojo-border flex items-center justify-between z-10">
@@ -67,8 +90,9 @@ export const AddBatchModal = ({ isOpen, onClose }) => {
             </div>
           </div>
           <button
-            onClick={onClose}
-            className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
+            type="button"
+            onClick={handleClose}
+            className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -213,8 +237,8 @@ export const AddBatchModal = ({ isOpen, onClose }) => {
           <div className="pt-3 border-t border-zinc-800 flex items-center justify-end gap-3">
             <button
               type="button"
-              onClick={onClose}
-              className="px-4 py-2.5 text-xs font-semibold text-zinc-400 hover:text-white transition-colors"
+              onClick={handleClose}
+              className="px-4 py-2.5 text-xs font-semibold text-zinc-400 hover:text-white transition-colors cursor-pointer"
             >
               Cancel
             </button>

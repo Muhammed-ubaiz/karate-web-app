@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useDojo } from '../../context/DojoContext';
-import { BELT_RANKS } from '../../data/mockData';
+import { showSuccessAlert } from '../../utils/sweetAlert';
+import { calculateNextDueDate } from '../../utils/whatsappHelper';
+import { ManageBeltRanksModal } from './ManageBeltRanksModal';
 import {
   X,
   UserPlus,
@@ -15,35 +17,133 @@ import {
   Award,
   Upload,
   Check,
-  CheckCircle2
+  CheckCircle2,
+  Image as ImageIcon,
+  Camera,
+  Sparkles
 } from 'lucide-react';
 
+const PRESET_AVATARS = [
+  { name: 'Girl Karateka', url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80' },
+  { name: 'Young Boy', url: 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=150&auto=format&fit=crop&q=80' },
+  { name: 'Teen Warrior', url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80' },
+  { name: 'Girl Athlete', url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80' },
+  { name: 'Junior Belt', url: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&auto=format&fit=crop&q=80' },
+  { name: 'Youth Sensei', url: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&auto=format&fit=crop&q=80' }
+];
+
 export const StudentRegistrationModal = ({ isOpen, onClose }) => {
-  const { dojos, batches, feePlans, addStudent } = useDojo();
+  const { dojos, batches, feePlans, beltRanks, addStudent, showToast } = useDojo();
+  const fileInputRef = useRef(null);
+  const [showAvatarGallery, setShowAvatarGallery] = useState(false);
+  const [isManageBeltsOpen, setIsManageBeltsOpen] = useState(false);
 
-  const [formData, setFormData] = useState({
-    fullName: '',
-    photoUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-    dob: '2012-06-15',
-    joinDate: new Date().toISOString().split('T')[0],
-    email: '',
-    phone: '',
-    whatsapp: '',
-    sameAsPhone: true,
-    parentName: '',
-    parentPhone: '',
-    dojoId: dojos[0]?.id || '',
-    batchId: batches[0]?.id || '',
-    beltRank: 'White Belt',
-    tuitionPlanId: feePlans[0]?.id || '',
-    hasRegistrationFee: true,
-    medicalNotes: '',
-    experience: 'Beginner / First time karate'
-  });
+  // Helper to generate a completely fresh, clean registration form
+  const getInitialFormData = () => {
+    const defaultDojo = dojos[0]?.id || '';
+    const defaultBatch = batches.find(b => b.dojoId === defaultDojo)?.id || batches[0]?.id || '';
+    const defaultPlanObj = feePlans[0] || {};
+    const defaultPlan = defaultPlanObj.id || '';
+    const defaultBelt = beltRanks[0]?.name || 'White Belt';
+    const today = new Date().toISOString().split('T')[0];
 
+    return {
+      fullName: '',
+      photoUrl: PRESET_AVATARS[0]?.url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+      dob: '2014-06-15',
+      joinDate: today,
+      subscriptionStartDate: today,
+      lastPaidDate: today,
+      nextDueDate: calculateNextDueDate(today, defaultPlanObj),
+      email: '',
+      phone: '',
+      whatsapp: '',
+      sameAsPhone: true,
+      parentName: '',
+      parentPhone: '',
+      dojoId: defaultDojo,
+      batchId: defaultBatch,
+      beltRank: defaultBelt,
+      tuitionPlanId: defaultPlan,
+      hasRegistrationFee: true,
+      includeUniform: true,
+      paidAtRegistration: true,
+      paymentMethod: 'Cash',
+      paymentNotes: '',
+      medicalNotes: '',
+      experience: 'Beginner / First time karate'
+    };
+  };
+
+  const [formData, setFormData] = useState(getInitialFormData);
   const [errors, setErrors] = useState({});
 
+  // Reset all fields whenever the modal opens so past drafts or inputs never linger
+  useEffect(() => {
+    if (isOpen) {
+      setFormData(getInitialFormData());
+      setErrors({});
+      setShowAvatarGallery(false);
+    }
+  }, [isOpen]);
+
+  // Clean reset & close handler
+  const handleClose = () => {
+    setFormData(getInitialFormData());
+    setErrors({});
+    setShowAvatarGallery(false);
+    onClose();
+  };
+
   if (!isOpen) return null;
+
+  // Handle image upload from device gallery
+  const handleImageUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      showToast('Please select a valid image file', 'error');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_SIZE = 300;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_SIZE) {
+            height = Math.round((height * MAX_SIZE) / width);
+            width = MAX_SIZE;
+          }
+        } else {
+          if (height > MAX_SIZE) {
+            width = Math.round((width * MAX_SIZE) / height);
+            height = MAX_SIZE;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+
+        setFormData(prev => ({
+          ...prev,
+          photoUrl: compressedDataUrl
+        }));
+        showToast('Photo uploaded from gallery! 📸', 'success');
+      };
+      img.src = event.target.result;
+    };
+    reader.readAsDataURL(file);
+  };
 
   // Available batches for selected Dojo
   const dojoBatches = batches.filter(b => b.dojoId === formData.dojoId);
@@ -64,6 +164,14 @@ export const StudentRegistrationModal = ({ isOpen, onClose }) => {
     }));
   };
 
+  const selectedPlan = feePlans.find(p => p.id === formData.tuitionPlanId) || feePlans[0];
+  const planTuition = Number(selectedPlan?.tuitionFee || 0);
+  const planAdmission = formData.hasRegistrationFee ? Number(selectedPlan?.registrationFee ?? 100) : 0;
+  const planUniform = formData.includeUniform ? Number(selectedPlan?.uniformFee ?? 0) : 0;
+  const subtotalBeforeVat = planTuition + planAdmission + planUniform;
+  const currentVatAmount = (subtotalBeforeVat * (selectedPlan?.vatRate ?? 5)) / 100;
+  const currentGrandTotal = subtotalBeforeVat + currentVatAmount;
+
   const validate = () => {
     const errs = {};
     if (!formData.fullName.trim()) errs.fullName = 'Full Name is required';
@@ -78,12 +186,24 @@ export const StudentRegistrationModal = ({ isOpen, onClose }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!validate()) return;
-    addStudent(formData);
-    onClose();
+    addStudent({
+      ...formData,
+      initialDueAmount: formData.paidAtRegistration ? 0 : Math.round(currentGrandTotal)
+    });
+    handleClose();
+    showSuccessAlert(
+      'Student Registered! 🥋',
+      `Welcome ${formData.fullName} to the dojo! Starting Rank: ${formData.beltRank}. ${formData.paidAtRegistration ? 'Payment recorded as Paid.' : `Initial invoice: ${Math.round(currentGrandTotal)} Dhs.`}`
+    );
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+    <div
+      onClick={(e) => {
+        if (e.target === e.currentTarget) handleClose();
+      }}
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-sm animate-fade-in"
+    >
       <div className="w-full sm:max-w-2xl bg-dojo-card border-t sm:border border-dojo-border rounded-t-3xl sm:rounded-2xl shadow-2xl max-h-[92vh] flex flex-col overflow-hidden">
         {/* Modal Header */}
         <div className="sticky top-0 bg-dojo-card/95 backdrop-blur-md px-5 py-4 border-b border-dojo-border flex items-center justify-between z-10 shrink-0">
@@ -97,8 +217,10 @@ export const StudentRegistrationModal = ({ isOpen, onClose }) => {
             </div>
           </div>
           <button
-            onClick={onClose}
-            className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
+            type="button"
+            onClick={handleClose}
+            className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer"
+            title="Close and discard form"
           >
             <X className="w-5 h-5" />
           </button>
@@ -113,29 +235,96 @@ export const StudentRegistrationModal = ({ isOpen, onClose }) => {
               <span>1. Basic Personal Information</span>
             </h3>
 
-            <div className="flex flex-col sm:flex-row items-center gap-4 p-3 bg-zinc-900/80 rounded-xl border border-zinc-800">
-              <div className="w-16 h-16 rounded-2xl bg-zinc-800 border-2 border-red-600/40 overflow-hidden relative group shrink-0">
-                <img
-                  src={formData.photoUrl}
-                  alt="Student preview"
-                  className="w-full h-full object-cover"
-                />
-              </div>
+            {/* Photo Selection: Gallery Upload + Preset Avatar Gallery */}
+            <div className="p-3.5 bg-zinc-900/90 rounded-2xl border border-zinc-800 space-y-3">
+              <input
+                type="file"
+                ref={fileInputRef}
+                accept="image/*"
+                className="hidden"
+                onChange={handleImageUpload}
+              />
 
-              <div className="flex-1 w-full space-y-1">
-                <label className="block text-[11px] font-semibold text-zinc-300">
-                  Profile Photo URL / Avatar
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="url"
-                    value={formData.photoUrl}
-                    onChange={(e) => setFormData({ ...formData, photoUrl: e.target.value })}
-                    className="flex-1 bg-zinc-950 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-red-500"
-                    placeholder="https://..."
+              <div className="flex items-center gap-3.5">
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-16 h-16 rounded-2xl bg-zinc-800 border-2 border-red-500/50 overflow-hidden relative group shrink-0 cursor-pointer shadow-md hover:border-red-400 transition-colors"
+                  title="Click to change student photo from gallery"
+                >
+                  <img
+                    src={formData.photoUrl}
+                    alt="Student preview"
+                    className="w-full h-full object-cover"
                   />
+                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                    <Camera className="w-5 h-5 text-white" />
+                  </div>
+                </div>
+
+                <div className="flex-1 space-y-1.5">
+                  <span className="block text-xs font-bold text-zinc-200">
+                    Student Profile Photo
+                  </span>
+
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-500 active:scale-95 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-red-600/20 cursor-pointer"
+                    >
+                      <Upload className="w-3.5 h-3.5" />
+                      <span>📁 Upload from Gallery</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setShowAvatarGallery(!showAvatarGallery)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 active:scale-95 text-zinc-300 hover:text-white rounded-xl text-xs font-semibold border border-zinc-700 transition-all cursor-pointer"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                      <span>{showAvatarGallery ? 'Hide Gallery' : '🥋 Avatar Gallery'}</span>
+                    </button>
+                  </div>
                 </div>
               </div>
+
+              {/* Collapsible Avatar Gallery */}
+              {showAvatarGallery && (
+                <div className="p-3 bg-zinc-950/80 rounded-xl border border-zinc-800/80 space-y-2 animate-fade-in">
+                  <span className="text-[11px] font-semibold text-zinc-400 block">
+                    Choose a preset student avatar:
+                  </span>
+                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                    {PRESET_AVATARS.map((avatar) => {
+                      const isSelected = formData.photoUrl === avatar.url;
+                      return (
+                        <button
+                          key={avatar.name}
+                          type="button"
+                          onClick={() => {
+                            setFormData(prev => ({ ...prev, photoUrl: avatar.url }));
+                            showToast(`Selected avatar: ${avatar.name}`);
+                          }}
+                          className={`relative rounded-xl overflow-hidden border-2 transition-all p-0.5 cursor-pointer ${
+                            isSelected
+                              ? 'border-red-500 ring-2 ring-red-500/30 scale-105'
+                              : 'border-zinc-800 hover:border-zinc-600'
+                          }`}
+                        >
+                          <img
+                            src={avatar.url}
+                            alt={avatar.name}
+                            className="w-full h-12 rounded-lg object-cover"
+                          />
+                          <span className="text-[9px] font-medium text-zinc-400 truncate block mt-0.5 text-center">
+                            {avatar.name}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -210,7 +399,7 @@ export const StudentRegistrationModal = ({ isOpen, onClose }) => {
                 </label>
                 <input
                   type="tel"
-                  placeholder="+91 98765 43210"
+                  placeholder="+971 50 123 4567"
                   value={formData.phone}
                   onChange={(e) => handlePhoneChange(e.target.value)}
                   className={`w-full bg-zinc-900 border ${
@@ -237,7 +426,7 @@ export const StudentRegistrationModal = ({ isOpen, onClose }) => {
                 </div>
                 <input
                   type="tel"
-                  placeholder="+91 98765 43210"
+                  placeholder="+971 50 123 4567"
                   value={formData.whatsapp}
                   disabled={formData.sameAsPhone}
                   onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
@@ -266,7 +455,7 @@ export const StudentRegistrationModal = ({ isOpen, onClose }) => {
                 </label>
                 <input
                   type="tel"
-                  placeholder="+91 98765 43210"
+                  placeholder="+971 50 123 4567"
                   value={formData.parentPhone}
                   onChange={(e) => setFormData({ ...formData, parentPhone: e.target.value })}
                   className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-red-500"
@@ -289,7 +478,15 @@ export const StudentRegistrationModal = ({ isOpen, onClose }) => {
                 </label>
                 <select
                   value={formData.dojoId}
-                  onChange={(e) => setFormData({ ...formData, dojoId: e.target.value })}
+                  onChange={(e) => {
+                    const newDojoId = e.target.value;
+                    const matchingBatches = batches.filter(b => b.dojoId === newDojoId);
+                    setFormData({
+                      ...formData,
+                      dojoId: newDojoId,
+                      batchId: matchingBatches[0]?.id || ''
+                    });
+                  }}
                   className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-red-500"
                 >
                   {dojos.map((d) => (
@@ -314,41 +511,78 @@ export const StudentRegistrationModal = ({ isOpen, onClose }) => {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-zinc-300 mb-1">
-                  Starting Belt Rank *
-                </label>
-                <select
-                  value={formData.beltRank}
-                  onChange={(e) => setFormData({ ...formData, beltRank: e.target.value })}
-                  className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-red-500"
-                >
-                  {BELT_RANKS.map((belt) => (
-                    <option key={belt.name} value={belt.name}>{belt.name}</option>
-                  ))}
-                </select>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-semibold text-zinc-300">
+                    Starting Belt Rank *
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setIsManageBeltsOpen(true)}
+                    className="text-[10px] font-bold text-red-400 hover:text-red-300 underline cursor-pointer"
+                  >
+                    ⚙️ Manage / Add Belts
+                  </button>
+                </div>
+                {beltRanks.length > 0 ? (
+                  <select
+                    value={formData.beltRank}
+                    onChange={(e) => setFormData({ ...formData, beltRank: e.target.value })}
+                    className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-red-500 cursor-pointer"
+                  >
+                    {beltRanks.map((belt) => (
+                      <option key={belt.id || belt.name} value={belt.name}>🥋 {belt.name}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      placeholder="e.g. White Belt"
+                      value={formData.beltRank}
+                      onChange={(e) => setFormData({ ...formData, beltRank: e.target.value })}
+                      className="flex-1 bg-zinc-900 border border-amber-500/50 rounded-xl px-3 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-red-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setIsManageBeltsOpen(true)}
+                      className="px-2.5 py-2 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold shrink-0 cursor-pointer"
+                    >
+                      + Add Belts
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+            <div className="space-y-3 pt-1">
               <div>
                 <label className="block text-xs font-semibold text-zinc-300 mb-1">
-                  Tuition Plan *
+                  Tuition Plan Package *
                 </label>
                 <select
                   value={formData.tuitionPlanId}
-                  onChange={(e) => setFormData({ ...formData, tuitionPlanId: e.target.value })}
-                  className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-red-500"
+                  onChange={(e) => {
+                    const newPlanId = e.target.value;
+                    const newPlanObj = feePlans.find(p => p.id === newPlanId);
+                    setFormData(prev => ({
+                      ...prev,
+                      tuitionPlanId: newPlanId,
+                      nextDueDate: calculateNextDueDate(prev.lastPaidDate || prev.joinDate, newPlanObj) || prev.nextDueDate
+                    }));
+                  }}
+                  className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-red-500 font-bold"
                 >
                   {feePlans.map((p) => (
                     <option key={p.id} value={p.id}>
-                      {p.name} - ₹{p.tuitionFee?.toLocaleString()} ({p.billingCycle})
+                      {p.name} — {p.tuitionFee?.toLocaleString()} Dhs ({p.billingCycle}) {p.specialOffer ? `• 🎁 ${p.specialOffer}` : ''}
                     </option>
                   ))}
                 </select>
               </div>
 
-              <div className="flex items-center">
-                <label className="flex items-center gap-2.5 p-2.5 bg-zinc-900 border border-zinc-800 rounded-xl cursor-pointer w-full hover:border-zinc-700">
+              {/* Checkboxes: Admission & Uniform */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <label className="flex items-center gap-2.5 p-2.5 bg-zinc-900 border border-zinc-800 rounded-xl cursor-pointer hover:border-zinc-700">
                   <input
                     type="checkbox"
                     checked={formData.hasRegistrationFee}
@@ -356,10 +590,196 @@ export const StudentRegistrationModal = ({ isOpen, onClose }) => {
                     className="w-4 h-4 rounded text-red-600 accent-red-600"
                   />
                   <div>
-                    <span className="text-xs font-bold text-white block">One-Time Registration Fee</span>
-                    <span className="text-[11px] text-zinc-400 block">+ ₹800 included in first invoice</span>
+                    <span className="text-xs font-bold text-white block">Admission Fee</span>
+                    <span className="text-[11px] text-zinc-400 block">+ {selectedPlan?.registrationFee || 100} Dhs one-time</span>
                   </div>
                 </label>
+
+                <label className="flex items-center gap-2.5 p-2.5 bg-zinc-900 border border-zinc-800 rounded-xl cursor-pointer hover:border-zinc-700">
+                  <input
+                    type="checkbox"
+                    checked={formData.includeUniform}
+                    onChange={(e) => setFormData({ ...formData, includeUniform: e.target.checked })}
+                    className="w-4 h-4 rounded text-red-600 accent-red-600"
+                  />
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-bold text-white block">Karate Uniform (Gi)</span>
+                      {selectedPlan?.uniformFee === 0 && (
+                        <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-emerald-950 text-emerald-400 border border-emerald-500/30">
+                          FREE
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-[11px] text-zinc-400 block">
+                      {selectedPlan?.uniformFee === 0 ? 'Free Package Offer (0 Dhs)' : `+ ${selectedPlan?.uniformFee || 125} Dhs`}
+                    </span>
+                  </div>
+                </label>
+              </div>
+
+              {/* Live Invoice Breakdown with 5% VAT */}
+              <div className="p-3 bg-zinc-950/80 rounded-xl border border-zinc-800 space-y-1.5 text-xs">
+                <div className="flex items-center justify-between text-zinc-400">
+                  <span>Tuition Fee ({selectedPlan?.name || 'Selected Plan'}):</span>
+                  <span className="font-semibold text-zinc-200">{(selectedPlan?.tuitionFee || 0).toLocaleString()} Dhs</span>
+                </div>
+                {formData.hasRegistrationFee && (
+                  <div className="flex items-center justify-between text-zinc-400">
+                    <span>Admission Fee:</span>
+                    <span className="font-semibold text-zinc-200">+{selectedPlan?.registrationFee || 100} Dhs</span>
+                  </div>
+                )}
+                {formData.includeUniform && (
+                  <div className="flex items-center justify-between text-zinc-400">
+                    <span>Karate Uniform:</span>
+                    <span className="font-semibold text-zinc-200">
+                      {selectedPlan?.uniformFee === 0 ? 'FREE (0 Dhs)' : `+${selectedPlan?.uniformFee || 125} Dhs`}
+                    </span>
+                  </div>
+                )}
+                <div className="flex items-center justify-between text-zinc-400 pt-1 border-t border-zinc-800/80">
+                  <span>UAE VAT (5%):</span>
+                  <span className="font-semibold text-amber-400">+{currentVatAmount.toFixed(2)} Dhs</span>
+                </div>
+                <div className="flex items-center justify-between pt-1 border-t border-zinc-800 font-bold">
+                  <span className="text-white">Net Initial Invoice (Incl. 5% VAT):</span>
+                  <span className="text-sm font-black text-emerald-400">{currentGrandTotal.toFixed(2)} Dhs</span>
+                </div>
+              </div>
+
+              {/* Paid Status Toggle & Detailed Payment Method */}
+              <div className="p-3 bg-zinc-900 border border-zinc-800 rounded-xl space-y-3">
+                <label className="flex items-center gap-2.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.paidAtRegistration}
+                    onChange={(e) => {
+                      const checked = e.target.checked;
+                      setFormData(prev => ({
+                        ...prev,
+                        paidAtRegistration: checked,
+                        lastPaidDate: checked ? (prev.lastPaidDate || prev.joinDate) : prev.lastPaidDate
+                      }));
+                    }}
+                    className="w-4 h-4 rounded text-emerald-500 accent-emerald-500"
+                  />
+                  <div>
+                    <span className="text-xs font-bold text-white block">Tuition Fee Received / Covered for this Period</span>
+                    <span className="text-[11px] text-zinc-400 block">
+                      {formData.paidAtRegistration ? 'Student balance will start as Paid (0 Dhs due until next due date)' : 'Invoice will be queued as Pending Due'}
+                    </span>
+                  </div>
+                </label>
+
+                {formData.paidAtRegistration && (
+                  <div className="pt-2.5 border-t border-zinc-800/80 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {/* Payment Method */}
+                    <div>
+                      <label className="block text-[11px] font-bold text-zinc-300 mb-1">
+                        💳 Payment Method *
+                      </label>
+                      <select
+                        value={formData.paymentMethod}
+                        onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value })}
+                        className="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:border-red-500 font-semibold cursor-pointer"
+                      >
+                        <option value="Cash">💵 Cash (Reception Desk)</option>
+                        <option value="Card / POS">💳 Card / POS Machine</option>
+                        <option value="Bank Transfer">🏦 Bank Transfer (IBAN)</option>
+                        <option value="Cheque">📜 Cheque</option>
+                        <option value="Online Link">📱 Apple Pay / Online Link</option>
+                      </select>
+                    </div>
+
+                    {/* Payment Reference / Receipt Note */}
+                    <div>
+                      <label className="block text-[11px] font-bold text-zinc-300 mb-1">
+                        Receipt / Ref No. (Optional)
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g. REC-1024 or POS-8842"
+                        value={formData.paymentNotes}
+                        onChange={(e) => setFormData({ ...formData, paymentNotes: e.target.value })}
+                        className="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-2.5 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-red-500"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Subscription Start Date, Next Due Date & Last Payment Date */}
+                <div className="pt-2.5 border-t border-zinc-800/80 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {/* Subscription Start Date */}
+                  <div>
+                    <label className="block text-[11px] font-bold text-blue-400 mb-1">
+                      📅 Subscription Starts
+                    </label>
+                    <input
+                      type="date"
+                      value={formData.subscriptionStartDate || formData.joinDate}
+                      onChange={(e) => {
+                        const newDate = e.target.value;
+                        setFormData(prev => ({
+                          ...prev,
+                          subscriptionStartDate: newDate,
+                          nextDueDate: calculateNextDueDate(newDate, selectedPlan) || prev.nextDueDate
+                        }));
+                      }}
+                      className="w-full bg-zinc-950 border border-blue-500/40 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:border-blue-400 cursor-pointer font-semibold"
+                    />
+                  </div>
+
+                  {/* Next Payment Due Date */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-[11px] font-bold text-amber-400 flex items-center gap-1">
+                        ⏰ Next Due Date *
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const autoDue = calculateNextDueDate(formData.subscriptionStartDate || formData.lastPaidDate || formData.joinDate, selectedPlan);
+                          if (autoDue) setFormData(prev => ({ ...prev, nextDueDate: autoDue }));
+                        }}
+                        className="text-[10px] font-bold text-red-400 hover:text-red-300 underline cursor-pointer"
+                      >
+                        ⚡ Auto ({selectedPlan?.durationMonths || 1}M)
+                      </button>
+                    </div>
+                    <input
+                      type="date"
+                      value={formData.nextDueDate}
+                      onChange={(e) => setFormData({ ...formData, nextDueDate: e.target.value })}
+                      className="w-full bg-zinc-950 border border-amber-500/40 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:border-amber-400 cursor-pointer font-bold"
+                    />
+                  </div>
+
+                  {/* Last Payment Date */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-[11px] font-bold text-zinc-300">
+                        💳 Payment Date
+                      </label>
+                    </div>
+                    <input
+                      type="date"
+                      value={formData.lastPaidDate}
+                      onChange={(e) => {
+                        const newDate = e.target.value;
+                        setFormData(prev => ({
+                          ...prev,
+                          lastPaidDate: newDate
+                        }));
+                      }}
+                      className="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:border-red-500 cursor-pointer"
+                    />
+                  </div>
+                </div>
+
+                <p className="text-[11px] text-zinc-400 leading-relaxed bg-zinc-950/60 p-2 rounded-lg border border-zinc-800/80">
+                  💡 <strong className="text-zinc-200">Billing Tracking:</strong> The student's fee status will show as Paid until the due date arrives. Once reached, the outstanding tuition will automatically activate in the dues tracker and WhatsApp reminders.
+                </p>
               </div>
             </div>
           </div>
@@ -404,8 +824,8 @@ export const StudentRegistrationModal = ({ isOpen, onClose }) => {
           <div className="pt-3 border-t border-zinc-800 flex items-center justify-end gap-3 sticky bottom-0 bg-dojo-card py-2">
             <button
               type="button"
-              onClick={onClose}
-              className="px-4 py-2.5 text-xs font-semibold text-zinc-400 hover:text-white transition-colors"
+              onClick={handleClose}
+              className="px-4 py-2.5 text-xs font-semibold text-zinc-400 hover:text-white transition-colors cursor-pointer"
             >
               Cancel
             </button>
@@ -419,6 +839,12 @@ export const StudentRegistrationModal = ({ isOpen, onClose }) => {
           </div>
         </form>
       </div>
+
+      {/* Manage Belt Ranks Modal */}
+      <ManageBeltRanksModal
+        isOpen={isManageBeltsOpen}
+        onClose={() => setIsManageBeltsOpen(false)}
+      />
     </div>
   );
 };

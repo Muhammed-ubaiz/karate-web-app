@@ -1,121 +1,88 @@
 # SenseiBook 🥋 | Martial Arts Academy & Dojo Management System
 
-A mobile-first Web Application designed for martial arts schools, karate dojos, taekwondo clubs, and combat sports academies. Built with a dark mode UI featuring obsidian charcoal backgrounds (`#121214`), crimson red accents (`#E50914`), gold badges, and crisp high-contrast typography.
+A mobile-first Web Application designed for martial arts schools, karate dojos, taekwondo clubs, and combat sports academies. Built with React 18, Vite, Tailwind CSS, Firebase Firestore (Real-Time Cloud DB & Offline Multi-Tab Persistence), Firebase Hosting, SweetAlert2, and Lucide React.
+
+Live Web App: **https://karate-webapp-e2d53.web.app/**
 
 ---
 
-## ⚡ Key Highlights & Core Modules
+## ⚡ Key Highlights & Core Features
 
-1. **Dashboard (Command Center)**:
-   - Live Metric Cards: Active Students, Today's Attendance %, Overdue Fees count, and Blocked/Suspended Students.
-   - Monthly Collection Progress Bar with Target vs. Collected percentage and 1-tap WhatsApp overdue broadcasts.
-   - Quick Action Buttons: 'Take Attendance', 'Record Fee', 'Add Student'.
-   - Recent Activity Feed: Real-time event log for registrations, fee receipts, and attendance.
-   - Today's Class Batches card with live roster capacity meters.
+1. **Dashboard & Command Center**:
+   - Live metrics: Active Students, Attendance %, Unpaid Fees queue, and Dojo capacity.
+   - Monthly Collection Progress Bar with dynamic targets based on student tuition plans.
+   - Quick action shortcuts: 'Attendance', 'Record Fee', '+ Add Student'.
+   - Recent Activity Log tracking all dojo events.
 
-2. **Branch / Dojo Locations Management**:
+2. **Branch & Dojo Locations Management**:
    - Multi-branch architecture with quick switcher in the top navigation bar.
    - Chief Instructor / Sensei assignment, address, contact phone, and student metrics.
-   - Active/Inactive status toggle with mobile drawer modal for branch onboarding.
+   - Direct Firebase Firestore synchronization across all devices.
 
 3. **Class Batches & Scheduling**:
    - Batch creation under designated Dojo branches.
-   - Weekly schedule checkboxes (Mon-Sun), class start time, and duration (45–120 mins).
-   - Real-time roster meter (`Enrolled / Max Capacity`) with visual threshold warnings.
+   - Weekly schedules (Weekly 3 days with 1 hr), class start time, and duration.
+   - Real-time roster meter (`Enrolled / Max Capacity`) with threshold warnings.
 
-4. **Fee Structures & Billing Management**:
-   - Customizable tuition plans (1-month, 3-month quarterly, 12-month annual pass).
-   - Line-item breakdown: Recurring Tuition Fee + One-Time Registration Fee.
-   - Due Day of Month (1–28) and Active Billing Months selector.
-   - Fast 'Record Payment' drawer modal with payment modes (UPI/GPay, Cash, POS, Bank Transfer) and WhatsApp receipt trigger.
+4. **Fee Structures, Packages & 5% UAE VAT**:
+   - Configured UAE Packages:
+     - **Monthly Package**: 250 Dhs (Admission: 100 Dhs, Uniform: 125 Dhs)
+     - **3 Months Package**: 650 Dhs (Admission: 100 Dhs, FREE Karate Uniform worth 125 Dhs)
+     - **6 Months Package**: 1,200 Dhs (Admission: 100 Dhs, FREE Karate Uniform worth 125 Dhs)
+     - **1 Year Package**: 2,200 Dhs (Admission: 100 Dhs, FREE Karate Uniform worth 125 Dhs)
+     - **5% UAE VAT**: Automatically calculated on all bills and invoices.
+   - **Admin Protected Editing**: Only verified administrators can create, edit, or delete fee structures.
+   - **Printable Tax Invoices & Receipts**: Official PDF/print receipts with TRN numbers and line items.
+   - **UAE Payment Methods**: Card / POS, Cash at Dojo, Bank Transfer, Apple Pay / GPay (No third-party Indian gateways).
 
-5. **Student Registration & Roster**:
-   - Detailed onboarding form: Photo avatar, DOB, Join Date, Email, Phone, WhatsApp with 'Same as Phone' toggle, Parent/Guardian contact, Dojo branch selector, Batch selector, Starting Belt Rank, Tuition Plan, One-Time Reg Fee checkbox, Medical info, and past martial arts experience.
-   - Filterable student directory by Dojo, Belt rank, and Active/Blocked status.
-   - Full student profile drawer with 1-click WhatsApp messaging (`https://wa.me/...`).
+5. **WhatsApp Fee Reminder Broadcast**:
+   - Detects all students with unpaid fees (dueAmount > 0, status Pending/Overdue, or 30 days elapsed).
+   - 1-tap WhatsApp fee reminders with pre-filled personalized messages containing exact Dhs amounts, 5% VAT notice, and schedule.
+   - UAE mobile number cleaner (+971 formatting).
 
-6. **Daily Batch Attendance Roll Call**:
+6. **Student Directory & Profile Management**:
+   - Photo upload from device gallery + preset avatar picker.
+   - Belt rank progression (White to 1st Dan Black Belt).
+   - Medical notes, prior experience, and parent emergency contacts.
+   - Admin-protected student deletion with SweetAlert confirmation dialogs.
+
+7. **Batch Attendance Roll Call**:
    - 1-tap fast attendance toggle: `P` (Present), `A` (Absent), `L` (Late).
-   - 'All Present' quick bulk action.
-   - Instant WhatsApp notification trigger for parents of absent students.
+   - 'All Present' bulk marking.
+   - Direct WhatsApp absentee alerts for parents.
 
 ---
 
-## 🚀 Quick Start Guide
+## 🛠️ Tech Stack & Architecture
+
+- **Frontend**: React 18, Vite 6, Tailwind CSS
+- **Database & Sync**: Firebase Firestore with `persistentLocalCache` (offline support) & `onSnapshot` real-time listeners
+- **Hosting**: Firebase Hosting with immutable asset caching and HTTP security headers
+- **UI Alerts & Modals**: SweetAlert2 + Tailwind Dark Obsidian Theme (`#121214`)
+- **Icons**: Lucide React
+- **PWA**: Installable Web App with `manifest.json` and mobile-optimized viewport
+
+---
+
+## 🚀 Setup & Deployment
 
 ### 1. Install Dependencies
 ```bash
 npm install
 ```
 
-### 2. Run the Development Server
-```bash
-npm run dev
+### 2. Environment Variables (.env)
+```env
+VITE_FIREBASE_PROJECT_ID=karate-webapp-e2d53
+VITE_FIREBASE_AUTH_DOMAIN=karate-webapp-e2d53.firebaseapp.com
+VITE_FIREBASE_STORAGE_BUCKET=karate-webapp-e2d53.firebasestorage.app
+VITE_FIREBASE_API_KEY=AIzaSy...
+VITE_FIREBASE_MESSAGING_SENDER_ID=212299839451
+VITE_FIREBASE_APP_ID=1:212299839451:web:...
 ```
-Open `http://localhost:3000` in your mobile device emulator or desktop browser.
 
-### 3. Build for Production
+### 3. Build & Deploy
 ```bash
 npm run build
+firebase deploy
 ```
-
----
-
-## 🏗️ Folder Structure
-
-```
-karate-webApp/
-├── backend-architecture/
-│   └── mongoModels.js            # Mongoose Schema models (MongoDB option)
-├── prisma/
-│   └── schema.prisma             # PostgreSQL schema (Supabase / Prisma ORM)
-├── public/
-├── src/
-│   ├── components/
-│   │   ├── attendance/
-│   │   │   └── AttendanceView.jsx        # 1-tap batch roll call & absentee alerts
-│   │   ├── batches/
-│   │   │   ├── AddBatchModal.jsx         # Batch scheduler modal
-│   │   │   └── BatchListView.jsx         # Batch cards & capacity progress
-│   │   ├── dashboard/
-│   │   │   ├── ActivityFeed.jsx          # Real-time event log
-│   │   │   ├── CollectionProgress.jsx    # Monthly fee collection progress bar
-│   │   │   ├── DashboardView.jsx         # Main command center
-│   │   │   └── MetricCard.jsx            # KPI metric cards
-│   │   ├── dojos/
-│   │   │   ├── AddDojoModal.jsx          # Dojo branch onboarding drawer
-│   │   │   └── DojoListView.jsx          # Branch management cards
-│   │   ├── fees/
-│   │   │   ├── AddFeePlanModal.jsx       # Tuition plan builder modal
-│   │   │   ├── FeePlansView.jsx          # Fee structures & overdue table
-│   │   │   └── RecordPaymentModal.jsx    # Fast payment collection modal
-│   │   ├── layout/
-│   │   │   ├── BottomNav.jsx             # Mobile-friendly bottom navigation bar
-│   │   │   ├── DesktopTabs.jsx           # Tablet / desktop navigation tabs
-│   │   │   ├── Navbar.jsx                # Header with Dojo switcher & role badge
-│   │   │   └── Toast.jsx                 # Global notification banner
-│   │   └── students/
-│   │       ├── StudentListView.jsx       # Searchable student directory
-│   │       ├── StudentProfileModal.jsx   # Student card & WhatsApp link
-│   │       └── StudentRegistrationModal.jsx # Comprehensive onboarding form
-│   ├── context/
-│   │   └── DojoContext.jsx               # Global state store & LocalStorage persistence
-│   ├── data/
-│   │   └── mockData.js                   # Seed data for dojos, batches, fee plans & students
-│   ├── App.jsx                           # Root application layout & router
-│   ├── index.css                         # Tailwind CSS styling & custom belt colors
-│   └── main.jsx                          # React DOM entrypoint
-├── index.html                            # HTML5 template with Inter / Plus Jakarta Sans
-├── package.json
-├── tailwind.config.js                    # Dojo dark color theme config
-└── vite.config.js                        # Vite configuration
-```
-
----
-
-## 🗄️ Database Schema & Role-Based Auth
-
-### Roles:
-- **`ADMIN`**: Multi-academy franchise owner. Can add/remove dojos, configure global fee plans, manage staff accounts.
-- **`SENSEI`**: Chief instructor. Takes attendance, grades belts, records fees, sends WhatsApp notices.
-- **`STAFF`**: Desk assistant. Registers new students, marks daily attendance, issues fee receipts.

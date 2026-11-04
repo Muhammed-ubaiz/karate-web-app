@@ -25,8 +25,8 @@ export const DesktopTabs = () => {
 
   return (
     <div className="hidden sm:block border-b border-dojo-border bg-dojo-bg/60">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <nav className="flex space-x-1 sm:space-x-4 overflow-x-auto py-2">
+      <div className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8">
+        <nav className="flex space-x-1.5 sm:space-x-3 overflow-x-auto py-2 scroll-smooth">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;

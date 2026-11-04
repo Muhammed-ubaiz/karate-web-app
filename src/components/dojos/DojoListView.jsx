@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useDojo } from '../../context/DojoContext';
+import { showConfirmDialog, showSuccessAlert } from '../../utils/sweetAlert';
 import { AddDojoModal } from './AddDojoModal';
 import {
   Building2,
@@ -16,12 +17,14 @@ import {
 } from 'lucide-react';
 
 export const DojoListView = () => {
-  const { dojos, deleteDojo, updateDojo } = useDojo();
+  const { dojos, deleteDojo, updateDojo, isAdmin, requireAdmin } = useDojo();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   const toggleStatus = (dojo) => {
-    const nextStatus = dojo.status === 'Active' ? 'Inactive' : 'Active';
-    updateDojo(dojo.id, { status: nextStatus });
+    requireAdmin(() => {
+      const nextStatus = dojo.status === 'Active' ? 'Inactive' : 'Active';
+      updateDojo(dojo.id, { status: nextStatus });
+    });
   };
 
   return (
@@ -38,11 +41,15 @@ export const DojoListView = () => {
         </div>
 
         <button
-          onClick={() => setIsAddModalOpen(true)}
-          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-dojo-red hover:bg-dojo-redHover active:scale-95 text-xs font-bold text-white rounded-xl shadow-lg shadow-red-600/30 transition-all"
+          onClick={() => requireAdmin(() => setIsAddModalOpen(true))}
+          className={`inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold shadow-lg transition-all cursor-pointer ${
+            isAdmin
+              ? 'bg-dojo-red hover:bg-dojo-redHover active:scale-95 text-white shadow-red-600/30'
+              : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700'
+          }`}
         >
           <Plus className="w-4 h-4" />
-          <span>Add Dojo Branch</span>
+          <span>{isAdmin ? 'Add Dojo Branch' : 'Add Branch 🔒'}</span>
         </button>
       </div>
 
@@ -129,9 +136,16 @@ export const DojoListView = () => {
                     Set as {isActive ? 'Inactive' : 'Active'}
                   </button>
                   <button
-                    onClick={() => {
-                      if (confirm(`Are you sure you want to delete ${dojo.name}?`)) {
+                    onClick={async () => {
+                      const confirmed = await showConfirmDialog({
+                        title: 'Delete Dojo Branch? 🗑️',
+                        text: `Are you sure you want to permanently delete "${dojo.name}"? This will detach assigned batches.`,
+                        confirmText: 'Yes, Delete Branch',
+                        icon: 'warning'
+                      });
+                      if (confirmed) {
                         deleteDojo(dojo.id);
+                        await showSuccessAlert('Branch Deleted! 🏢', `"${dojo.name}" has been removed.`);
                       }
                     }}
                     className="text-zinc-500 hover:text-red-400 transition-colors p-1"

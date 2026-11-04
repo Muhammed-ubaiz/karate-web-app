@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDojo } from '../../context/DojoContext';
 import { X, Building2, MapPin, Phone, User, Mail, ShieldCheck } from 'lucide-react';
 
 export const AddDojoModal = ({ isOpen, onClose }) => {
   const { addDojo } = useDojo();
-  const [formData, setFormData] = useState({
+
+  const getInitialFormData = () => ({
     name: '',
     instructor: '',
     address: '',
@@ -14,7 +15,21 @@ export const AddDojoModal = ({ isOpen, onClose }) => {
     logo: '🥋'
   });
 
+  const [formData, setFormData] = useState(getInitialFormData);
   const [errors, setErrors] = useState({});
+
+  useEffect(() => {
+    if (isOpen) {
+      setFormData(getInitialFormData());
+      setErrors({});
+    }
+  }, [isOpen]);
+
+  const handleClose = () => {
+    setFormData(getInitialFormData());
+    setErrors({});
+    onClose();
+  };
 
   if (!isOpen) return null;
 
@@ -32,20 +47,16 @@ export const AddDojoModal = ({ isOpen, onClose }) => {
     e.preventDefault();
     if (!validate()) return;
     addDojo(formData);
-    onClose();
-    setFormData({
-      name: '',
-      instructor: '',
-      address: '',
-      phone: '',
-      email: '',
-      status: 'Active',
-      logo: '🥋'
-    });
+    handleClose();
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+    <div
+      onClick={(e) => {
+        if (e.target === e.currentTarget) handleClose();
+      }}
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-sm animate-fade-in"
+    >
       {/* Drawer / Modal Container */}
       <div className="w-full sm:max-w-lg bg-dojo-card border-t sm:border border-dojo-border rounded-t-3xl sm:rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
         {/* Header */}
@@ -60,8 +71,9 @@ export const AddDojoModal = ({ isOpen, onClose }) => {
             </div>
           </div>
           <button
-            onClick={onClose}
-            className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
+            type="button"
+            onClick={handleClose}
+            className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -117,7 +129,7 @@ export const AddDojoModal = ({ isOpen, onClose }) => {
               <MapPin className="w-4 h-4 text-zinc-500 absolute left-3.5 top-3" />
               <textarea
                 rows={2}
-                placeholder="Floor 2, Greenfield Sports Complex, Central Avenue"
+                placeholder="Floor 2, Al Barsha Sports Arena, Dubai"
                 value={formData.address}
                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                 className={`w-full bg-zinc-900 border ${
@@ -138,7 +150,7 @@ export const AddDojoModal = ({ isOpen, onClose }) => {
                 <Phone className="w-4 h-4 text-zinc-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="tel"
-                  placeholder="+91 98765 00000"
+                  placeholder="+971 50 123 4567"
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                   className={`w-full bg-zinc-900 border ${
@@ -210,8 +222,8 @@ export const AddDojoModal = ({ isOpen, onClose }) => {
           <div className="pt-3 border-t border-zinc-800 flex items-center justify-end gap-3">
             <button
               type="button"
-              onClick={onClose}
-              className="px-4 py-2.5 text-xs font-semibold text-zinc-400 hover:text-white transition-colors"
+              onClick={handleClose}
+              className="px-4 py-2.5 text-xs font-semibold text-zinc-400 hover:text-white transition-colors cursor-pointer"
             >
               Cancel
             </button>

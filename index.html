@@ -2,16 +2,39 @@
 <html lang="en" class="dark">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23E50914'><path d='M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5'/></svg>" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#121214" />
-    <meta name="description" content="SenseiBook - Martial Arts Academy & Dojo Management System" />
+    <meta name="description" content="SenseiBook - Martial Arts Academy, Dojo & Student Management System" />
+
+    <!-- Open Graph / Facebook / WhatsApp Preview -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="SenseiBook 🥋 | Martial Arts Academy Management" />
+    <meta property="og:description" content="Complete karate dojo operations, student rosters, automated fee reminders, and attendance management." />
+    <meta property="og:url" content="https://karate-webapp-e2d53.web.app/" />
+
+    <!-- Twitter Preview -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="SenseiBook 🥋 | Martial Arts Academy Management" />
+    <meta name="twitter:description" content="Complete karate dojo operations, student rosters, automated fee reminders, and attendance management." />
+
+    <!-- PWA Manifest & App Icons -->
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='48' fill='%23121214' stroke='%23E50914' stroke-width='4'/><path d='M30 65 L50 25 L70 65 L50 52 Z' fill='%23E50914'/><circle cx='50' cy='48' r='7' fill='%23f59e0b'/><path d='M22 68 C35 78, 65 78, 78 68' stroke='%23ffffff' stroke-width='4' stroke-linecap='round' fill='none'/></svg>" />
+
     <title>SenseiBook 🥋 | Martial Arts Academy Management</title>
+    
+    <!-- Google Fonts: Plus Jakarta Sans & Inter with display=swap -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   </head>
   <body class="bg-dojo-bg text-white antialiased min-h-screen selection:bg-red-600 selection:text-white">
+    <noscript>
+      <div style="padding: 2rem; text-align: center; background: #121214; color: #fff; font-family: sans-serif;">
+        <h2>🥋 SenseiBook Dojo Management</h2>
+        <p>Please enable JavaScript in your browser to run this application.</p>
+      </div>
+    </noscript>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

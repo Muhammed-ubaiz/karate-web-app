@@ -17,13 +17,22 @@ import { AddBatchModal } from './components/batches/AddBatchModal';
 import { AddFeePlanModal } from './components/fees/AddFeePlanModal';
 import { StudentRegistrationModal } from './components/students/StudentRegistrationModal';
 import { RecordPaymentModal } from './components/fees/RecordPaymentModal';
-import { Building, CalendarDays } from 'lucide-react';
+import { AdminLoginModal } from './components/auth/AdminLoginModal';
+import { Building, CalendarDays, CreditCard, ChevronRight } from 'lucide-react';
 
 const MainContent = () => {
-  const { activeTab, setActiveTab, modalState, setModalState } = useDojo();
+  const {
+    activeTab,
+    setActiveTab,
+    modalState,
+    setModalState,
+    isAdminLoginOpen,
+    setIsAdminLoginOpen,
+    pendingAdminAction
+  } = useDojo();
 
   return (
-    <div className="min-h-screen bg-dojo-bg text-white pb-24 sm:pb-12">
+    <div className="min-h-screen w-full bg-dojo-bg text-white pb-24 sm:pb-12 overflow-x-hidden">
       {/* Toast Notifications */}
       <Toast />
 
@@ -34,7 +43,7 @@ const MainContent = () => {
       <DesktopTabs />
 
       {/* Main View Container */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-8">
+      <main className="w-full max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 py-4 sm:py-8">
         {activeTab === 'dashboard' && <DashboardView />}
         {activeTab === 'attendance' && <AttendanceView />}
         {activeTab === 'students' && <StudentListView />}
@@ -45,38 +54,57 @@ const MainContent = () => {
         {/* Mobile 'More' screen */}
         {activeTab === 'more' && (
           <div className="space-y-4">
-            <h2 className="text-xl font-black text-white">Management & Settings</h2>
-            <div className="grid grid-cols-1 gap-3">
+            <div>
+              <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">Management & Settings</h2>
+              <p className="text-xs sm:text-sm text-zinc-400 mt-0.5">Dojo branches, training batches, and tuition structures</p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <button
                 onClick={() => setActiveTab('dojos')}
-                className="flex items-center justify-between p-4 bg-dojo-card border border-dojo-border rounded-2xl hover:border-zinc-700 transition-colors"
+                className="flex items-center justify-between p-4 bg-dojo-card border border-dojo-border rounded-2xl hover:border-zinc-700 active:scale-[0.99] transition-all"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-red-600/20 text-red-500 flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-xl bg-red-600/20 text-red-500 flex items-center justify-center shrink-0">
                     <Building className="w-5 h-5" />
                   </div>
                   <div className="text-left">
                     <h4 className="text-sm font-bold text-white">Dojo Branches</h4>
-                    <p className="text-xs text-zinc-400">Manage locations and chief instructors</p>
+                    <p className="text-xs text-zinc-400">Locations & instructors</p>
                   </div>
                 </div>
-                <span className="text-xs font-bold text-dojo-red">Manage →</span>
+                <ChevronRight className="w-4 h-4 text-zinc-500" />
               </button>
 
               <button
                 onClick={() => setActiveTab('batches')}
-                className="flex items-center justify-between p-4 bg-dojo-card border border-dojo-border rounded-2xl hover:border-zinc-700 transition-colors"
+                className="flex items-center justify-between p-4 bg-dojo-card border border-dojo-border rounded-2xl hover:border-zinc-700 active:scale-[0.99] transition-all"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-amber-600/20 text-amber-500 flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-xl bg-amber-600/20 text-amber-500 flex items-center justify-center shrink-0">
                     <CalendarDays className="w-5 h-5" />
                   </div>
                   <div className="text-left">
-                    <h4 className="text-sm font-bold text-white">Class Batches & Schedules</h4>
-                    <p className="text-xs text-zinc-400">Timings, days of week, and capacity limits</p>
+                    <h4 className="text-sm font-bold text-white">Batches & Schedules</h4>
+                    <p className="text-xs text-zinc-400">Timings & capacity</p>
                   </div>
                 </div>
-                <span className="text-xs font-bold text-amber-500">Manage →</span>
+                <ChevronRight className="w-4 h-4 text-zinc-500" />
+              </button>
+
+              <button
+                onClick={() => setActiveTab('fees')}
+                className="flex items-center justify-between p-4 bg-dojo-card border border-dojo-border rounded-2xl hover:border-zinc-700 active:scale-[0.99] transition-all"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-600/20 text-emerald-500 flex items-center justify-center shrink-0">
+                    <CreditCard className="w-5 h-5" />
+                  </div>
+                  <div className="text-left">
+                    <h4 className="text-sm font-bold text-white">Fee Plans & Dues</h4>
+                    <p className="text-xs text-zinc-400">Subscriptions & billing</p>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-zinc-500" />
               </button>
             </div>
           </div>
@@ -102,7 +130,19 @@ const MainContent = () => {
       />
       <RecordPaymentModal
         isOpen={modalState.recordPayment}
-        onClose={() => setModalState(prev => ({ ...prev, recordPayment: false }))}
+        onClose={() => setModalState(prev => ({
+          ...prev,
+          recordPayment: false,
+          recordPaymentStudentId: null,
+          recordPaymentRenewalType: null
+        }))}
+        defaultStudentId={modalState.recordPaymentStudentId}
+        defaultRenewalType={modalState.recordPaymentRenewalType}
+      />
+      <AdminLoginModal
+        isOpen={isAdminLoginOpen}
+        onClose={() => setIsAdminLoginOpen(false)}
+        pendingAction={pendingAdminAction}
       />
 
       {/* Mobile-Friendly Pinned Bottom Navigation */}

@@ -5,6 +5,12 @@ npm-debug.log*
 yarn-debug.log*
 pnpm-debug.log*
 
+# Firebase
+.firebase/
+.firebaserc.local
+firebase-debug.log*
+firestore-debug.log*
+
 # Node modules
 node_modules
 dist
