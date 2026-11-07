@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 
 export const DojoListView = () => {
-  const { dojos, deleteDojo, updateDojo, isAdmin, requireAdmin } = useDojo();
+  const { dojos, students, batches, deleteDojo, updateDojo, isAdmin, requireAdmin } = useDojo();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   const toggleStatus = (dojo) => {
@@ -119,12 +119,16 @@ export const DojoListView = () => {
               <div className="mt-5 pt-4 border-t border-zinc-800/80">
                 <div className="grid grid-cols-2 gap-2 mb-3.5 text-center">
                   <div className="bg-zinc-900/80 rounded-xl p-2 border border-zinc-800">
-                    <span className="block text-[10px] text-zinc-400 font-medium uppercase">Students</span>
-                    <span className="text-base font-extrabold text-white">{dojo.studentCount || 0}</span>
+                    <span className="block text-[10px] text-zinc-400 font-medium uppercase">Active Students</span>
+                    <span className="text-base font-extrabold text-white">
+                      {students.filter(s => s.dojoId === dojo.id && s.status !== 'Inactive' && s.status !== 'Stopped').length}
+                    </span>
                   </div>
                   <div className="bg-zinc-900/80 rounded-xl p-2 border border-zinc-800">
                     <span className="block text-[10px] text-zinc-400 font-medium uppercase">Batches</span>
-                    <span className="text-base font-extrabold text-white">{dojo.batchesCount || 0}</span>
+                    <span className="text-base font-extrabold text-white">
+                      {batches.filter(b => b.dojoId === dojo.id).length}
+                    </span>
                   </div>
                 </div>
 

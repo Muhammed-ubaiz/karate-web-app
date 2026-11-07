@@ -49,6 +49,131 @@ import {
   showErrorAlert
 } from '../utils/sweetAlert';
 
+// Accurate Attendance Calculation Helper for all-time stats
+export const calculateStudentAttendanceStats = (studentId, history = []) => {
+  if (!studentId || !Array.isArray(history)) {
+    return {
+      totalSessions: 0,
+      attended: 0,
+      present: 0,
+      absent: 0,
+      late: 0,
+      attendanceRate: 100,
+      lastAttendedDate: null
+    };
+  }
+
+  let totalSessions = 0;
+  let present = 0;
+  let absent = 0;
+  let late = 0;
+  let lastAttendedDate = null;
+
+  history.forEach(session => {
+    const status = session.records?.[studentId];
+    if (status) {
+      totalSessions += 1;
+      if (status === 'Present') {
+        present += 1;
+      } else if (status === 'Late') {
+        late += 1;
+      } else if (status === 'Absent') {
+        absent += 1;
+      }
+
+      if (status === 'Present' || status === 'Late') {
+        if (!lastAttendedDate || session.date > lastAttendedDate) {
+          lastAttendedDate = session.date;
+        }
+      }
+    }
+  });
+
+  const attended = present + late;
+  const attendanceRate = totalSessions > 0
+    ? Math.round((attended / totalSessions) * 100)
+    : 100;
+
+  return {
+    totalSessions,
+    attended,
+    present,
+    absent,
+    late,
+    attendanceRate,
+    lastAttendedDate
+  };
+};
+
+// Accurate Month-wise Attendance Calculation Helper
+export const calculateStudentMonthlyAttendanceStats = (studentId, history = [], year = null, month = null) => {
+  if (!studentId || !Array.isArray(history)) {
+    return {
+      totalSessions: 0,
+      attended: 0,
+      present: 0,
+      absent: 0,
+      late: 0,
+      attendanceRate: 100,
+      records: []
+    };
+  }
+
+  const records = [];
+  let totalSessions = 0;
+  let present = 0;
+  let absent = 0;
+  let late = 0;
+
+  history.forEach(session => {
+    const status = session.records?.[studentId];
+    if (!status) return;
+
+    if (year !== null && month !== null && year !== '' && month !== '') {
+      const parts = (session.date || '').split('-');
+      if (parts.length < 2) return;
+      const sYear = parseInt(parts[0], 10);
+      const sMonth = parseInt(parts[1], 10);
+      if (sYear !== Number(year) || sMonth !== Number(month)) return;
+    }
+
+    totalSessions += 1;
+    if (status === 'Present') present += 1;
+    else if (status === 'Late') late += 1;
+    else if (status === 'Absent') absent += 1;
+
+    records.push({
+      id: `${session.id || session.batchId + '_' + session.date}_${studentId}`,
+      sessionId: session.id || `att-${session.batchId}_${session.date}`,
+      date: session.date,
+      batchId: session.batchId,
+      batchName: session.batchName || 'Training Session',
+      dojoId: session.dojoId,
+      status,
+      isGuest: Array.isArray(session.guestStudentIds) && session.guestStudentIds.includes(studentId),
+      notes: session.notes || '',
+      timestamp: session.timestamp
+    });
+  });
+
+  records.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+  const attended = present + late;
+  const attendanceRate = totalSessions > 0
+    ? Math.round((attended / totalSessions) * 100)
+    : 100;
+
+  return {
+    totalSessions,
+    attended,
+    present,
+    absent,
+    late,
+    attendanceRate,
+    records
+  };
+};
+
 const DojoContext = createContext();
 
 export const DojoProvider = ({ children }) => {
@@ -426,6 +551,32 @@ export const DojoProvider = ({ children }) => {
     localStorage.setItem('sensei_attendance_history', JSON.stringify(attendanceHistory));
   }, [attendanceHistory]);
 
+  // Ensure students have 100% mathematically accurate attendance rates calculated from actual recorded history
+  useEffect(() => {
+    if (attendanceHistory && attendanceHistory.length > 0 && students && students.length > 0) {
+      let hasChanges = false;
+      const updatedStudents = students.map(s => {
+        const stats = calculateStudentAttendanceStats(s.id, attendanceHistory);
+        if (stats.totalSessions > 0) {
+          if (s.attendanceRate !== stats.attendanceRate || (stats.lastAttendedDate && s.lastAttendedDate !== stats.lastAttendedDate)) {
+            hasChanges = true;
+            return {
+              ...s,
+              attendanceRate: stats.attendanceRate,
+              lastAttendedDate: stats.lastAttendedDate || s.lastAttendedDate
+            };
+          }
+        }
+        return s;
+      });
+
+      if (hasChanges) {
+        setStudents(updatedStudents);
+        localStorage.setItem('sensei_students', JSON.stringify(updatedStudents));
+      }
+    }
+  }, [attendanceHistory]);
+
   useEffect(() => {
     localStorage.setItem('sensei_activities', JSON.stringify(activities));
   }, [activities]);
@@ -720,13 +871,37 @@ export const DojoProvider = ({ children }) => {
     }
   };
 
-  // Update Student Status
+  // Update Student Status (Supports Active, Inactive, Stopped, Blocked, Frozen)
   const updateStudentStatus = async (studentId, status) => {
+    const student = students.find(s => s.id === studentId);
     setStudents(prev => prev.map(s => s.id === studentId ? { ...s, status } : s));
-    showToast(`Student status updated to ${status}`);
+
+    if (status === 'Active') {
+      addActivity(`Reactivated student: ${student?.fullName || 'Student'} is now Active 🥋`, 'student', 'UserCheck');
+      showToast(`${student?.fullName || 'Student'} has been set to Active! 🥋`, 'success');
+    } else if (status === 'Inactive' || status === 'Stopped') {
+      addActivity(`Student ${student?.fullName || 'Student'} moved to ${status} list`, 'student', 'UserMinus');
+      showToast(`${student?.fullName || 'Student'} moved to ${status} list.`);
+    } else {
+      showToast(`Student status updated to ${status}`);
+    }
 
     if (isFirebaseConfigured) {
       await updateStudentInFirestore(studentId, { status }).catch(console.error);
+    }
+  };
+
+  // Reactivate student account without losing any previous attendance records or payment history
+  const reactivateStudent = async (studentId) => {
+    const student = students.find(s => s.id === studentId);
+    if (!student) return;
+
+    setStudents(prev => prev.map(s => s.id === studentId ? { ...s, status: 'Active' } : s));
+    addActivity(`Reactivated student: ${student.fullName} restored to Active enrollment 🥋`, 'student', 'UserCheck');
+    showToast(`${student.fullName} has been reactivated successfully! 🥋`, 'success');
+
+    if (isFirebaseConfigured) {
+      await updateStudentInFirestore(studentId, { status: 'Active' }).catch(console.error);
     }
   };
 
@@ -1125,11 +1300,14 @@ export const DojoProvider = ({ children }) => {
     showToast('Payment record removed from ledger.', 'info');
   };
 
-  // Mark Attendance batch (Supports regular batch students and guest make-up students from other batches)
+  // Mark or Edit Attendance batch (Supports current date, past missed dates, and editing previously recorded sessions)
   const markAttendanceBatch = async (batchId, date, records, guestStudentIds = []) => {
     const batch = batches.find(b => b.id === batchId);
-    const presentCount = Object.values(records).filter(status => status === 'Present').length;
+    const presentCount = Object.values(records).filter(status => status === 'Present' || status === 'Late').length;
     const totalCount = Object.keys(records).length;
+
+    // Check if session was already recorded previously
+    const isExistingSession = attendanceHistory.some(s => s.batchId === batchId && s.date === date);
 
     // Save batch session to local attendance history
     const sessionRecord = {
@@ -1143,59 +1321,59 @@ export const DojoProvider = ({ children }) => {
       timestamp: new Date().toISOString()
     };
 
+    let nextHistory;
     setAttendanceHistory(prev => {
       const filtered = prev.filter(s => !(s.batchId === batchId && s.date === date));
-      const next = [sessionRecord, ...filtered];
-      localStorage.setItem('sensei_attendance_history', JSON.stringify(next));
-      return next;
+      nextHistory = [sessionRecord, ...filtered];
+      localStorage.setItem('sensei_attendance_history', JSON.stringify(nextHistory));
+      return nextHistory;
     });
 
-    // Update students attendance rates and lastAttendedDate in real-time
+    // Update students attendance rates and lastAttendedDate with 100% mathematical accuracy
     setStudents(prev => prev.map(s => {
-      const status = records[s.id];
-      if (status) {
-        if (status === 'Present' || status === 'Late') {
-          return {
-            ...s,
-            lastAttendedDate: date,
-            attendanceRate: Math.min(100, Math.max(50, (s.attendanceRate || 85) + 1))
-          };
-        } else if (status === 'Absent') {
-          return {
-            ...s,
-            attendanceRate: Math.max(30, (s.attendanceRate || 85) - 2)
-          };
-        }
+      if (records[s.id] !== undefined) {
+        const stats = calculateStudentAttendanceStats(s.id, nextHistory || [sessionRecord]);
+        return {
+          ...s,
+          lastAttendedDate: stats.lastAttendedDate || (records[s.id] === 'Present' || records[s.id] === 'Late' ? date : s.lastAttendedDate),
+          attendanceRate: stats.attendanceRate
+        };
       }
       return s;
     }));
 
-    addActivity(`Attendance recorded: ${batch?.name || 'Batch'} (${presentCount}/${totalCount} present)`, 'attendance', 'CheckCircle');
-    showToast(`Attendance marked for ${presentCount} students!`);
+    if (isExistingSession) {
+      addActivity(`Updated attendance session: ${batch?.name || 'Batch'} on ${date} (${presentCount}/${totalCount} attended)`, 'attendance', 'RefreshCw');
+      showToast(`Attendance record updated for ${date}!`, 'success');
+    } else {
+      addActivity(`Attendance recorded: ${batch?.name || 'Batch'} on ${date} (${presentCount}/${totalCount} attended)`, 'attendance', 'CheckCircle');
+      showToast(`Attendance marked for ${presentCount} students on ${date}!`, 'success');
+    }
 
     if (isFirebaseConfigured) {
       await recordBatchAttendanceToFirestore(batchId, date, records, guestStudentIds).catch(console.error);
     }
   };
 
-  // Record Attendance for an individual student (e.g. from student profile modal)
-  const recordStudentAttendanceIndividual = async ({ studentId, date, status, batchId, notes }) => {
+  // Correct or add individual attendance record for any date (Supports correcting mistakes and adding missed dates)
+  const updateSingleAttendanceRecord = async ({ studentId, date, batchId, status, notes }) => {
     const student = students.find(s => s.id === studentId);
     if (!student) return;
     const targetBatch = batches.find(b => b.id === (batchId || student.batchId)) || batches[0];
     const targetBatchId = targetBatch?.id || 'manual';
 
+    let nextHistory;
     setAttendanceHistory(prev => {
       const existingSessionIndex = prev.findIndex(s => s.batchId === targetBatchId && s.date === date);
-      let next;
       if (existingSessionIndex >= 0) {
-        next = [...prev];
-        next[existingSessionIndex] = {
-          ...next[existingSessionIndex],
+        nextHistory = [...prev];
+        nextHistory[existingSessionIndex] = {
+          ...nextHistory[existingSessionIndex],
           records: {
-            ...next[existingSessionIndex].records,
+            ...nextHistory[existingSessionIndex].records,
             [studentId]: status
-          }
+          },
+          ...(notes !== undefined ? { notes } : {})
         };
       } else {
         const newSession = {
@@ -1209,28 +1387,77 @@ export const DojoProvider = ({ children }) => {
           notes: notes || '',
           timestamp: new Date().toISOString()
         };
-        next = [newSession, ...prev];
+        nextHistory = [newSession, ...prev];
       }
-      localStorage.setItem('sensei_attendance_history', JSON.stringify(next));
-      return next;
+      localStorage.setItem('sensei_attendance_history', JSON.stringify(nextHistory));
+      return nextHistory;
     });
 
+    // Recalculate student stats accurately
+    const updatedStats = calculateStudentAttendanceStats(studentId, nextHistory);
     setStudents(prev => prev.map(s => {
       if (s.id === studentId) {
-        const isPresent = status === 'Present' || status === 'Late';
         return {
           ...s,
-          lastAttendedDate: isPresent ? date : s.lastAttendedDate,
-          attendanceRate: isPresent
-            ? Math.min(100, Math.max(50, (s.attendanceRate || 85) + 1))
-            : Math.max(30, (s.attendanceRate || 85) - 2)
+          lastAttendedDate: updatedStats.lastAttendedDate || s.lastAttendedDate,
+          attendanceRate: updatedStats.attendanceRate
         };
       }
       return s;
     }));
 
-    addActivity(`Attendance logged: ${student.fullName} marked ${status} on ${date}`, 'attendance', 'CheckCircle');
-    showToast(`Marked ${status} for ${student.fullName} on ${date}!`);
+    addActivity(`Attendance updated: ${student.fullName} marked ${status} on ${date}`, 'attendance', 'CheckCircle');
+    showToast(`Updated ${student.fullName} to ${status} on ${date}!`, 'success');
+
+    if (isFirebaseConfigured) {
+      const session = nextHistory.find(s => s.batchId === targetBatchId && s.date === date);
+      if (session) {
+        await recordBatchAttendanceToFirestore(targetBatchId, date, session.records, session.guestStudentIds || []).catch(console.error);
+      }
+      await updateStudentInFirestore(studentId, {
+        lastAttendedDate: updatedStats.lastAttendedDate || student.lastAttendedDate,
+        attendanceRate: updatedStats.attendanceRate
+      }).catch(console.error);
+    }
+  };
+
+  // Alias for backward compatibility
+  const recordStudentAttendanceIndividual = async (params) => {
+    return updateSingleAttendanceRecord(params);
+  };
+
+  // Delete / Remove an accidental individual attendance entry
+  const deleteSingleAttendanceRecord = async ({ studentId, date, batchId }) => {
+    const student = students.find(s => s.id === studentId);
+    let nextHistory;
+    setAttendanceHistory(prev => {
+      const existingSessionIndex = prev.findIndex(s => (!batchId || s.batchId === batchId) && s.date === date);
+      if (existingSessionIndex >= 0) {
+        nextHistory = [...prev];
+        const updatedRecords = { ...nextHistory[existingSessionIndex].records };
+        delete updatedRecords[studentId];
+        nextHistory[existingSessionIndex] = {
+          ...nextHistory[existingSessionIndex],
+          records: updatedRecords
+        };
+        localStorage.setItem('sensei_attendance_history', JSON.stringify(nextHistory));
+        return nextHistory;
+      }
+      return prev;
+    });
+
+    if (student && nextHistory) {
+      const updatedStats = calculateStudentAttendanceStats(studentId, nextHistory);
+      setStudents(prev => prev.map(s => s.id === studentId ? { ...s, attendanceRate: updatedStats.attendanceRate, lastAttendedDate: updatedStats.lastAttendedDate } : s));
+      showToast(`Removed attendance record for ${student.fullName} on ${date}`, 'info');
+
+      if (isFirebaseConfigured) {
+        const session = nextHistory.find(s => (!batchId || s.batchId === batchId) && s.date === date);
+        if (session) {
+          await recordBatchAttendanceToFirestore(session.batchId, date, session.records, session.guestStudentIds || []).catch(console.error);
+        }
+      }
+    }
   };
 
   // Get student attendance history list
@@ -1325,6 +1552,7 @@ export const DojoProvider = ({ children }) => {
         addStudent,
         updateStudent,
         updateStudentStatus,
+        reactivateStudent,
         updateStudentPhoto,
         deleteStudent,
         freezeStudentSubscription,
@@ -1337,6 +1565,10 @@ export const DojoProvider = ({ children }) => {
         getStudentAttendanceHistory,
         getStudentPaymentHistory,
         recordStudentAttendanceIndividual,
+        updateSingleAttendanceRecord,
+        deleteSingleAttendanceRecord,
+        calculateStudentAttendanceStats,
+        calculateStudentMonthlyAttendanceStats,
         markAttendanceBatch,
         fetchBatchAttendanceFromFirestore,
         clearActivities,

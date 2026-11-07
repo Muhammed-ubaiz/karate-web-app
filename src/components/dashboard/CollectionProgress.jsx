@@ -11,8 +11,8 @@ export const CollectionProgress = () => {
 
   // Month calculations
   const currentMonthName = new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
-  const activeStudents = students.filter(s => s.status !== 'Blocked');
-  const unpaidCount = students.filter(s => isStudentFeeDue(s)).length;
+  const activeStudents = students.filter(s => s.status !== 'Blocked' && s.status !== 'Inactive' && s.status !== 'Stopped');
+  const unpaidCount = activeStudents.filter(s => isStudentFeeDue(s)).length;
   
   // Calculate Target vs Collected dynamically
   const estimatedTarget = activeStudents.reduce((acc, s) => {
@@ -20,7 +20,7 @@ export const CollectionProgress = () => {
     return acc + (plan ? Number(plan.tuitionFee || 250) : 250);
   }, 0);
 
-  const overdueTotal = students.reduce((acc, s) => acc + (s.dueAmount || 0), 0);
+  const overdueTotal = activeStudents.reduce((acc, s) => acc + (s.dueAmount || 0), 0);
   const collectedTotal = Math.max(0, estimatedTarget - overdueTotal);
   const percentCollected = Math.min(100, Math.round((collectedTotal / (estimatedTarget || 1)) * 100));
 

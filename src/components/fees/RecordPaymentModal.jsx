@@ -302,7 +302,7 @@ export const RecordPaymentModal = ({ isOpen, onClose, defaultStudentId = null, d
                 >
                   {students.map((s) => (
                     <option key={s.id} value={s.id}>
-                      {s.fullName} ({s.beltRank}) — Due: AED {s.dueAmount || 0}
+                      {s.fullName} ({s.beltRank}){s.status === 'Inactive' || s.status === 'Stopped' ? ` [${s.status}]` : ''} — Due: AED {s.dueAmount || 0}
                     </option>
                   ))}
                 </select>

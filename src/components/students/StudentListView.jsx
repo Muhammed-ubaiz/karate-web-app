@@ -30,7 +30,8 @@ import {
   Send,
   Award,
   Pencil,
-  CreditCard
+  CreditCard,
+  RefreshCw
 } from 'lucide-react';
 
 export const StudentListView = () => {
@@ -45,8 +46,12 @@ export const StudentListView = () => {
     setModalState,
     isAdmin,
     requireAdmin,
-    deleteStudent
+    deleteStudent,
+    reactivateStudent
   } = useDojo();
+
+  // Primary Roster Separation Tab: 'active' | 'inactive' (Requirement 3)
+  const [rosterViewTab, setRosterViewTab] = useState('active');
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedBranch, setSelectedBranch] = useState(selectedDojoId || 'all');
@@ -58,8 +63,12 @@ export const StudentListView = () => {
   const [isManageBeltsOpen, setIsManageBeltsOpen] = useState(false);
   const [isBroadcastModalOpen, setIsBroadcastModalOpen] = useState(false);
 
-  // Count students who have pending fees due
-  const dueStudentsCount = students.filter(s => isStudentFeeDue(s)).length;
+  // Active vs Inactive counts
+  const activeStudentsCount = students.filter(s => s.status !== 'Inactive' && s.status !== 'Stopped').length;
+  const inactiveStudentsCount = students.filter(s => s.status === 'Inactive' || s.status === 'Stopped').length;
+
+  // Count active students who have pending fees due (Pending fees for inactive/stopped separated)
+  const dueStudentsCount = students.filter(s => s.status !== 'Inactive' && s.status !== 'Stopped' && isStudentFeeDue(s)).length;
 
   // Sync with global branch selection
   React.useEffect(() => {
@@ -72,8 +81,15 @@ export const StudentListView = () => {
     ? batches
     : batches.filter(b => b.dojoId === selectedBranch);
 
-  // Filter students based on branch, batch, search, belt, status
+  // Filter students based on roster tab, branch, batch, search, belt, status
   const displayedStudents = students.filter(student => {
+    // 1. Separate Active vs Inactive / Stopped students (Requirement 3)
+    if (rosterViewTab === 'active') {
+      if (student.status === 'Inactive' || student.status === 'Stopped') return false;
+    } else {
+      if (student.status !== 'Inactive' && student.status !== 'Stopped') return false;
+    }
+
     const matchesBranch = selectedBranch === 'all' || student.dojoId === selectedBranch;
     const matchesBatch = selectedBatch === 'all' || student.batchId === selectedBatch;
 
@@ -161,6 +177,41 @@ export const StudentListView = () => {
             <span>+ Enroll Student</span>
           </button>
         </div>
+      </div>
+
+      {/* Primary Tab Switch: Active Students vs Inactive / Stopped Students (Requirement 3) */}
+      <div className="flex items-center gap-2 p-1.5 bg-zinc-900 border border-zinc-800 rounded-2xl w-fit">
+        <button
+          type="button"
+          onClick={() => {
+            setRosterViewTab('active');
+            setSelectedStatus('all');
+          }}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            rosterViewTab === 'active'
+              ? 'bg-dojo-red text-white shadow-lg shadow-red-600/30'
+              : 'text-zinc-400 hover:text-white hover:bg-zinc-850'
+          }`}
+        >
+          <Users className="w-4 h-4" />
+          <span>Active Students ({activeStudentsCount})</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            setRosterViewTab('inactive');
+            setSelectedStatus('all');
+          }}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            rosterViewTab === 'inactive'
+              ? 'bg-amber-600 text-white shadow-lg shadow-amber-600/30'
+              : 'text-zinc-400 hover:text-white hover:bg-zinc-850'
+          }`}
+        >
+          <ShieldBan className="w-4 h-4 text-amber-400" />
+          <span>Inactive / Stopped Students ({inactiveStudentsCount})</span>
+        </button>
       </div>
 
       {/* Filter and Search Bar: Branch, Batch, Search, Belt, Status */}
@@ -260,6 +311,7 @@ export const StudentListView = () => {
               <option value="frozen">❄️ Frozen / On Break</option>
               <option value="blocked">Blocked / Suspended</option>
               <option value="inactive">Inactive</option>
+              <option value="stopped">Stopped</option>
             </select>
           </div>
         </div>
@@ -306,16 +358,26 @@ export const StudentListView = () => {
         {displayedStudents.length === 0 ? (
           <div className="p-12 text-center text-zinc-500">
             <Users className="w-10 h-10 mx-auto text-zinc-600 mb-2 stroke-[1.5]" />
-            <p className="text-sm font-semibold text-zinc-400">No students currently in directory</p>
-            <p className="text-xs text-zinc-600 mt-1">Start by enrolling your karate trainees into the academy.</p>
-            <button
-              type="button"
-              onClick={() => setModalState(prev => ({ ...prev, addStudent: true }))}
-              className="mt-3 inline-flex items-center gap-1.5 px-4 py-2 bg-dojo-red hover:bg-dojo-redHover text-white text-xs font-bold rounded-xl shadow cursor-pointer active:scale-95"
-            >
-              <Plus className="w-4 h-4" />
-              <span>+ Register New Student</span>
-            </button>
+            <p className="text-sm font-semibold text-zinc-400">
+              {rosterViewTab === 'inactive'
+                ? 'No Inactive or Stopped Students'
+                : 'No active students currently matching filter'}
+            </p>
+            <p className="text-xs text-zinc-600 mt-1">
+              {rosterViewTab === 'inactive'
+                ? 'All enrolled students are currently active in training.'
+                : 'Enroll karate trainees or reset search filters.'}
+            </p>
+            {rosterViewTab === 'active' && (
+              <button
+                type="button"
+                onClick={() => setModalState(prev => ({ ...prev, addStudent: true }))}
+                className="mt-3 inline-flex items-center gap-1.5 px-4 py-2 bg-dojo-red hover:bg-dojo-redHover text-white text-xs font-bold rounded-xl shadow cursor-pointer active:scale-95"
+              >
+                <Plus className="w-4 h-4" />
+                <span>+ Register New Student</span>
+              </button>
+            )}
           </div>
         ) : (
           <div className="divide-y divide-zinc-800/80">
@@ -362,6 +424,11 @@ export const StudentListView = () => {
                         {student.status === 'Frozen' && (
                           <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-cyan-950 text-cyan-300 border border-cyan-500/40 shrink-0">
                             ❄️ Frozen
+                          </span>
+                        )}
+                        {(student.status === 'Inactive' || student.status === 'Stopped') && (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-950 text-amber-300 border border-amber-500/40 shrink-0">
+                            ⏸️ {student.status}
                           </span>
                         )}
                       </div>
@@ -413,6 +480,30 @@ export const StudentListView = () => {
                         </p>
                       )}
                     </div>
+
+                    {/* 1-Click Reactivate Student (Requirement 3) */}
+                    {(student.status === 'Inactive' || student.status === 'Stopped') && (
+                      <button
+                        type="button"
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          const confirmed = await showConfirmDialog({
+                            title: 'Reactivate Student? 🥋',
+                            text: `Restore ${student.fullName}'s account to Active status? All previous attendance records and payment history will be preserved.`,
+                            confirmText: 'Yes, Reactivate',
+                            icon: 'question'
+                          });
+                          if (confirmed) {
+                            await reactivateStudent(student.id);
+                          }
+                        }}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow transition-all cursor-pointer active:scale-95 shrink-0"
+                        title="Reactivate this student's account"
+                      >
+                        <RefreshCw className="w-3.5 h-3.5" />
+                        <span>Reactivate</span>
+                      </button>
+                    )}
 
                     {/* Quick Record Payment / Renewal Button */}
                     <button

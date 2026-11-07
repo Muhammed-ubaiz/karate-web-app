@@ -19,7 +19,12 @@ import {
   Sparkles,
   Tag,
   Clock,
-  ShieldCheck
+  ShieldCheck,
+  RefreshCw,
+  Phone,
+  ShieldBan,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 
 const MONTH_NAMES = [
@@ -36,16 +41,31 @@ export const FeePlansView = () => {
     setModalState,
     showToast,
     isAdmin,
-    requireAdmin
+    requireAdmin,
+    reactivateStudent
   } = useDojo();
 
   const [isAddPlanModalOpen, setIsAddPlanModalOpen] = useState(false);
   const [editingPlan, setEditingPlan] = useState(null);
   const [isRecordModalOpen, setIsRecordModalOpen] = useState(false);
   const [isBroadcastModalOpen, setIsBroadcastModalOpen] = useState(false);
+  const [isInactiveDuesExpanded, setIsInactiveDuesExpanded] = useState(false);
 
-  const unpaidStudents = students.filter(s => isStudentFeeDue(s));
-  const totalPendingDues = unpaidStudents.reduce((acc, s) => acc + getStudentDueAmount(s, feePlans), 0);
+  // 1. Active students due for renewal / fees (Requirement 3: Inactive/stopped excluded from active dues)
+  const unpaidActiveStudents = students.filter(
+    s => s.status !== 'Inactive' && s.status !== 'Stopped' && isStudentFeeDue(s)
+  );
+  const totalPendingActiveDues = unpaidActiveStudents.reduce(
+    (acc, s) => acc + getStudentDueAmount(s, feePlans), 0
+  );
+
+  // 2. Inactive / Stopped students with outstanding dues (Requirement 3: Maintained & accessible separately)
+  const unpaidInactiveStudents = students.filter(
+    s => (s.status === 'Inactive' || s.status === 'Stopped') && isStudentFeeDue(s)
+  );
+  const totalPendingInactiveDues = unpaidInactiveStudents.reduce(
+    (acc, s) => acc + getStudentDueAmount(s, feePlans), 0
+  );
 
   const handleDeletePlan = async (plan) => {
     const enrolledCount = students.filter(s => s.tuitionPlanId === plan.id).length;
@@ -134,8 +154,8 @@ export const FeePlansView = () => {
         </div>
       </div>
 
-      {/* Overdue / Unpaid Students Alert Card if any */}
-      {unpaidStudents.length > 0 && (
+      {/* Active Students Overdue / Pending Fees Alert Card (Requirement 3: Inactive/stopped excluded) */}
+      {unpaidActiveStudents.length > 0 && (
         <div className="bg-gradient-to-r from-red-950/40 via-dojo-card to-zinc-900 border border-red-500/40 rounded-2xl p-4 sm:p-5 shadow-lg">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-start gap-3">
@@ -143,19 +163,22 @@ export const FeePlansView = () => {
                 <AlertCircle className="w-5 h-5" />
               </div>
               <div>
-                <h4 className="text-sm font-bold text-white">
-                  {unpaidStudents.length} Students with Unpaid / Pending Tuition Fees
+                <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                  <span>{unpaidActiveStudents.length} Active Students with Unpaid / Pending Tuition Fees</span>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-600/20 text-red-400 border border-red-500/30">
+                    Active Roster
+                  </span>
                 </h4>
                 <p className="text-xs text-zinc-400 mt-0.5">
-                  Total unpaid collection: <strong className="text-red-400">{totalPendingDues.toLocaleString()} Dhs</strong>
+                  Total active pending collection: <strong className="text-red-400">{totalPendingActiveDues.toLocaleString()} Dhs</strong>
                 </p>
               </div>
             </div>
 
             <button
               onClick={() => {
-                if (unpaidStudents.length === 0) {
-                  showToast('No students with overdue fees currently!', 'info');
+                if (unpaidActiveStudents.length === 0) {
+                  showToast('No active students with overdue fees currently!', 'info');
                   return;
                 }
                 setIsBroadcastModalOpen(true);
@@ -166,6 +189,111 @@ export const FeePlansView = () => {
               <span>Broadcast WhatsApp Reminders</span>
             </button>
           </div>
+        </div>
+      )}
+
+      {/* Dedicated Section: Inactive / Stopped Students Outstanding Balances (Requirement 3) */}
+      {unpaidInactiveStudents.length > 0 && (
+        <div className="bg-gradient-to-r from-amber-950/30 via-zinc-900 to-zinc-900 border border-amber-500/40 rounded-2xl p-4 sm:p-5 shadow-lg space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center shrink-0">
+                <ShieldBan className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                  <span>Outstanding Dues from Inactive / Stopped Students ({unpaidInactiveStudents.length})</span>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                    Reference & Collection Ledger
+                  </span>
+                </h4>
+                <p className="text-xs text-zinc-400 mt-0.5">
+                  Total outstanding balance: <strong className="text-amber-400">{totalPendingInactiveDues.toLocaleString()} Dhs</strong> (Excluded from active students' Due Fees).
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setIsInactiveDuesExpanded(!isInactiveDuesExpanded)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-semibold border border-zinc-700 transition-all cursor-pointer self-start sm:self-auto"
+            >
+              <span>{isInactiveDuesExpanded ? 'Hide Inactive Dues List' : 'View Outstanding Students'}</span>
+              {isInactiveDuesExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+            </button>
+          </div>
+
+          {/* Expandable Table / Card List of Inactive Students with Outstanding Dues */}
+          {isInactiveDuesExpanded && (
+            <div className="pt-3 border-t border-zinc-800 space-y-2 animate-fade-in">
+              <p className="text-[11px] text-zinc-400">
+                Staff can collect outstanding payments from inactive students below, or reactivate them if rejoining the academy:
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                {unpaidInactiveStudents.map((s) => {
+                  const studentDue = getStudentDueAmount(s, feePlans);
+                  return (
+                    <div
+                      key={s.id}
+                      className="p-3 bg-zinc-950/80 rounded-xl border border-zinc-800 flex items-center justify-between gap-3 hover:border-amber-500/40 transition-colors"
+                    >
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <p className="text-xs font-bold text-white truncate">{s.fullName}</p>
+                          <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-amber-950 text-amber-300 border border-amber-500/30">
+                            {s.status}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-zinc-400 mt-0.5 truncate">
+                          Belt: {s.beltRank} • Phone: {s.phone}
+                        </p>
+                        <p className="text-[11px] font-bold text-red-400 mt-0.5">
+                          Outstanding: AED {studentDue.toLocaleString()}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setModalState(prev => ({
+                              ...prev,
+                              recordPayment: true,
+                              recordPaymentStudentId: s.id,
+                              recordPaymentRenewalType: 'normal'
+                            }));
+                          }}
+                          className="px-2.5 py-1.5 bg-amber-600 hover:bg-amber-500 text-white text-[11px] font-bold rounded-lg shadow cursor-pointer transition-all active:scale-95"
+                          title="Record payment settlement for this inactive student"
+                        >
+                          Collect Fee
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            const confirmed = await showConfirmDialog({
+                              title: 'Reactivate Student? 🥋',
+                              text: `Reactivate ${s.fullName} to Active status? All previous records will be preserved.`,
+                              confirmText: 'Yes, Reactivate',
+                              icon: 'question'
+                            });
+                            if (confirmed) {
+                              await reactivateStudent(s.id);
+                            }
+                          }}
+                          className="p-1.5 bg-zinc-800 hover:bg-emerald-600 text-zinc-300 hover:text-white rounded-lg text-xs cursor-pointer transition-all"
+                          title="Reactivate student if rejoining"
+                        >
+                          <RefreshCw className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       )}
 

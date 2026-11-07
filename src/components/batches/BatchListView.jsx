@@ -275,8 +275,8 @@ export const BatchListView = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {displayedBatches.map((batch) => {
               const dojo = dojos.find(d => d.id === batch.dojoId);
-              // Real-time calculation of enrolled students
-              const enrolledCount = students.filter(s => s.batchId === batch.id).length;
+              // Real-time calculation of active enrolled students (Excluding inactive/stopped)
+              const enrolledCount = students.filter(s => s.batchId === batch.id && s.status !== 'Inactive' && s.status !== 'Stopped').length;
               const maxCap = Number(batch.maxCapacity) || 25;
               const capacityPercent = Math.round((enrolledCount / maxCap) * 100);
               const isNearlyFull = capacityPercent >= 85;

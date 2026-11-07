@@ -1,4 +1,9 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useMemo } from 'react';
+
+const MONTH_NAMES = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'
+];
 import { useDojo } from '../../context/DojoContext';
 import { showConfirmDialog, showSuccessAlert } from '../../utils/sweetAlert';
 import { EditStudentModal } from './EditStudentModal';
@@ -53,8 +58,10 @@ export const StudentProfileModal = ({ student, onClose }) => {
     getStudentAttendanceHistory,
     getStudentPaymentHistory,
     recordStudentAttendanceIndividual,
+    updateSingleAttendanceRecord,
     deletePayment,
     updateStudentStatus,
+    reactivateStudent,
     updateStudentPhoto,
     deleteStudent,
     freezeStudentSubscription,
@@ -76,6 +83,7 @@ export const StudentProfileModal = ({ student, onClose }) => {
   const [logStatus, setLogStatus] = useState('Present');
   const [logNote, setLogNote] = useState('');
   const [attendanceFilter, setAttendanceFilter] = useState('all'); // 'all' | 'Present' | 'Absent' | 'Late'
+  const [attendanceMonthFilter, setAttendanceMonthFilter] = useState('all');
 
   if (!student) return null;
 
@@ -151,16 +159,39 @@ export const StudentProfileModal = ({ student, onClose }) => {
   const studentAttendanceList = getStudentAttendanceHistory ? getStudentAttendanceHistory(currentStudent.id) : [];
   const studentPaymentsList = getStudentPaymentHistory ? getStudentPaymentHistory(currentStudent.id) : [];
 
-  // Attendance stats
-  const totalAttendanceCount = studentAttendanceList.length;
-  const presentCount = studentAttendanceList.filter(a => a.status === 'Present').length;
-  const absentCount = studentAttendanceList.filter(a => a.status === 'Absent').length;
-  const lateCount = studentAttendanceList.filter(a => a.status === 'Late').length;
-  const computedAttendanceRate = totalAttendanceCount > 0
-    ? Math.round(((presentCount + lateCount) / totalAttendanceCount) * 100)
-    : (currentStudent.attendanceRate || 85);
+  // Available recorded months for this student
+  const availableMonths = useMemo(() => {
+    const map = new Map();
+    studentAttendanceList.forEach(item => {
+      const parts = (item.date || '').split('-');
+      if (parts.length >= 2) {
+        const key = `${parts[0]}-${parts[1]}`;
+        const year = parseInt(parts[0], 10);
+        const monthIdx = parseInt(parts[1], 10) - 1;
+        const label = `${MONTH_NAMES[monthIdx] || ''} ${year}`;
+        if (!map.has(key)) map.set(key, label);
+      }
+    });
+    return Array.from(map.entries()).map(([key, label]) => ({ key, label }));
+  }, [studentAttendanceList]);
 
-  const filteredAttendanceList = studentAttendanceList.filter(item => {
+  // Filter attendance by selected month (if attendanceMonthFilter !== 'all')
+  const monthFilteredList = useMemo(() => {
+    if (attendanceMonthFilter === 'all') return studentAttendanceList;
+    return studentAttendanceList.filter(item => (item.date || '').startsWith(attendanceMonthFilter));
+  }, [studentAttendanceList, attendanceMonthFilter]);
+
+  // Attendance stats for filtered list
+  const totalAttendanceCount = monthFilteredList.length;
+  const presentCount = monthFilteredList.filter(a => a.status === 'Present').length;
+  const absentCount = monthFilteredList.filter(a => a.status === 'Absent').length;
+  const lateCount = monthFilteredList.filter(a => a.status === 'Late').length;
+  const attendedCount = presentCount + lateCount;
+  const computedAttendanceRate = totalAttendanceCount > 0
+    ? Math.round((attendedCount / totalAttendanceCount) * 100)
+    : 100;
+
+  const filteredAttendanceList = monthFilteredList.filter(item => {
     if (attendanceFilter === 'all') return true;
     return item.status === attendanceFilter;
   });
@@ -265,6 +296,8 @@ export const StudentProfileModal = ({ student, onClose }) => {
                     ? 'bg-cyan-950/80 text-cyan-300 border-cyan-500/40'
                     : currentStudent.status === 'Blocked'
                     ? 'bg-red-950/60 text-red-400 border-red-500/40'
+                    : currentStudent.status === 'Inactive' || currentStudent.status === 'Stopped'
+                    ? 'bg-amber-950/80 text-amber-300 border-amber-500/40'
                     : 'bg-zinc-800 text-zinc-400 border-zinc-700'
                 }`}>
                   {currentStudent.status === 'Frozen' ? '❄️ Frozen / Paused' : currentStudent.status}
@@ -321,6 +354,35 @@ export const StudentProfileModal = ({ student, onClose }) => {
               </div>
             </div>
           </div>
+
+          {/* Inactive / Stopped Student Notice Banner with 1-Click Reactivation (Requirement 3) */}
+          {(currentStudent.status === 'Inactive' || currentStudent.status === 'Stopped') && (
+            <div className="mt-3 p-3.5 bg-gradient-to-r from-amber-950/40 via-zinc-900 to-zinc-900 border border-amber-500/40 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
+              <div className="flex items-center gap-2.5">
+                <AlertCircle className="w-5 h-5 text-amber-400 shrink-0" />
+                <div>
+                  <h4 className="text-xs sm:text-sm font-bold text-white flex items-center gap-1.5">
+                    <span>Student is currently {currentStudent.status}</span>
+                    <span className="text-[10px] font-bold px-2 py-0.2 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                      Excluded from Active Registers
+                    </span>
+                  </h4>
+                  <p className="text-[11px] text-zinc-400 mt-0.5">
+                    Pending dues are separated from active fee rolls. All previous attendance logs ({studentAttendanceList.length}) and payment records ({studentPaymentsList.length}) are safely preserved.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => requireAdmin(() => reactivateStudent(currentStudent.id))}
+                className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow cursor-pointer transition-all shrink-0 active:scale-95"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span>Reactivate Student 🥋</span>
+              </button>
+            </div>
+          )}
 
           {/* Navigation Tabs (Overview, Attendance History, Payment History) */}
           <div className="flex items-center gap-1 mt-4 pt-2 border-t border-zinc-800/80">
@@ -582,7 +644,7 @@ export const StudentProfileModal = ({ student, onClose }) => {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
                   <span className="text-xs font-medium text-zinc-400">Quick Status Override:</span>
                   <div className="flex gap-1.5 flex-wrap">
-                    {['Active', 'Blocked', 'Inactive'].map((status) => (
+                    {['Active', 'Inactive', 'Stopped', 'Blocked'].map((status) => (
                       <button
                         key={status}
                         onClick={() => requireAdmin(() => updateStudentStatus(currentStudent.id, status))}
@@ -617,6 +679,37 @@ export const StudentProfileModal = ({ student, onClose }) => {
           {/* TAB 2: ATTENDANCE HISTORY */}
           {activeTab === 'attendance' && (
             <div className="space-y-4">
+              {/* Month-Wise Filter Bar (Requirement 2) */}
+              <div className="bg-zinc-900/90 p-3 rounded-2xl border border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-red-500" />
+                  <span className="text-xs font-bold text-white">Month-Wise Filter:</span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <select
+                    value={attendanceMonthFilter}
+                    onChange={(e) => setAttendanceMonthFilter(e.target.value)}
+                    className="bg-zinc-950 border border-zinc-700 rounded-xl px-3 py-1.5 text-xs text-white font-bold focus:outline-none focus:border-red-500 cursor-pointer"
+                  >
+                    <option value="all">📅 All Recorded Months ({studentAttendanceList.length} sessions)</option>
+                    {availableMonths.map(m => (
+                      <option key={m.key} value={m.key}>{m.label}</option>
+                    ))}
+                  </select>
+
+                  {attendanceMonthFilter !== 'all' && (
+                    <button
+                      type="button"
+                      onClick={() => setAttendanceMonthFilter('all')}
+                      className="px-2.5 py-1 text-[11px] font-bold text-zinc-400 hover:text-white bg-zinc-800 rounded-lg cursor-pointer"
+                    >
+                      Reset
+                    </button>
+                  )}
+                </div>
+              </div>
+
               {/* Summary Stats Card */}
               <div className="grid grid-cols-4 gap-2 bg-zinc-900/90 p-3 rounded-2xl border border-zinc-800 text-center">
                 <div className="p-2 bg-zinc-950/60 rounded-xl border border-zinc-800/80">
@@ -624,16 +717,16 @@ export const StudentProfileModal = ({ student, onClose }) => {
                   <span className="text-base font-black text-white">{totalAttendanceCount}</span>
                 </div>
                 <div className="p-2 bg-emerald-950/40 rounded-xl border border-emerald-500/30">
-                  <span className="text-[10px] text-emerald-400 block uppercase font-semibold">Present</span>
-                  <span className="text-base font-black text-emerald-400">{presentCount}</span>
+                  <span className="text-[10px] text-emerald-400 block uppercase font-semibold">Attended</span>
+                  <span className="text-base font-black text-emerald-400">{attendedCount}</span>
                 </div>
                 <div className="p-2 bg-red-950/40 rounded-xl border border-red-500/30">
-                  <span className="text-[10px] text-red-400 block uppercase font-semibold">Absent</span>
+                  <span className="text-[10px] text-red-400 block uppercase font-semibold">Missed</span>
                   <span className="text-base font-black text-red-400">{absentCount}</span>
                 </div>
-                <div className="p-2 bg-amber-950/40 rounded-xl border border-amber-500/30">
-                  <span className="text-[10px] text-amber-400 block uppercase font-semibold">Late</span>
-                  <span className="text-base font-black text-amber-400">{lateCount}</span>
+                <div className="p-2 bg-zinc-950/60 rounded-xl border border-zinc-800/80">
+                  <span className="text-[10px] text-zinc-400 block uppercase font-semibold">Turnout %</span>
+                  <span className="text-base font-black text-white">{computedAttendanceRate}%</span>
                 </div>
               </div>
 
@@ -787,15 +880,50 @@ export const StudentProfileModal = ({ student, onClose }) => {
                         </div>
                       </div>
 
-                      <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold ${
-                        record.status === 'Present'
-                          ? 'bg-emerald-950/80 text-emerald-400 border border-emerald-500/30'
-                          : record.status === 'Absent'
-                          ? 'bg-red-950/80 text-red-400 border border-red-500/30'
-                          : 'bg-amber-950/80 text-amber-400 border border-amber-500/30'
-                      }`}>
-                        {record.status}
-                      </span>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                          record.status === 'Present'
+                            ? 'bg-emerald-950/80 text-emerald-400 border border-emerald-500/30'
+                            : record.status === 'Absent'
+                            ? 'bg-red-950/80 text-red-400 border border-red-500/30'
+                            : 'bg-amber-950/80 text-amber-400 border border-amber-500/30'
+                        }`}>
+                          {record.status}
+                        </span>
+
+                        <div className="flex items-center gap-0.5 bg-zinc-950 p-0.5 rounded-lg border border-zinc-800">
+                          <button
+                            type="button"
+                            onClick={() => requireAdmin(() => updateSingleAttendanceRecord({ studentId: currentStudent.id, date: record.date, batchId: record.batchId, status: 'Present' }))}
+                            className={`px-1.5 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-all ${
+                              record.status === 'Present' ? 'bg-emerald-600 text-white shadow' : 'text-zinc-500 hover:text-white'
+                            }`}
+                            title="Correct to Present"
+                          >
+                            P
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => requireAdmin(() => updateSingleAttendanceRecord({ studentId: currentStudent.id, date: record.date, batchId: record.batchId, status: 'Absent' }))}
+                            className={`px-1.5 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-all ${
+                              record.status === 'Absent' ? 'bg-red-600 text-white shadow' : 'text-zinc-500 hover:text-white'
+                            }`}
+                            title="Correct to Absent"
+                          >
+                            A
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => requireAdmin(() => updateSingleAttendanceRecord({ studentId: currentStudent.id, date: record.date, batchId: record.batchId, status: 'Late' }))}
+                            className={`px-1.5 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-all ${
+                              record.status === 'Late' ? 'bg-amber-600 text-white shadow' : 'text-zinc-500 hover:text-white'
+                            }`}
+                            title="Correct to Late"
+                          >
+                            L
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   ))
                 )}

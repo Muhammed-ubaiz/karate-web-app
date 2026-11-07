@@ -3,6 +3,7 @@ import { useDojo } from '../../context/DojoContext';
 import { MetricCard } from './MetricCard';
 import { CollectionProgress } from './CollectionProgress';
 import { ActivityFeed } from './ActivityFeed';
+import { isStudentFeeDue } from '../../utils/whatsappHelper';
 import {
   Users,
   CheckCircle2,
@@ -51,15 +52,16 @@ export const DashboardView = () => {
   const todayBatches = filteredBatches.filter(isBatchScheduledToday);
   const displayedDashboardBatches = dashboardBatchFilter === 'today' ? todayBatches : filteredBatches;
 
-  // Calculate metrics
+  // Calculate metrics (Requirement 3: Inactive/stopped excluded from active tracking & active dues)
   const activeStudents = filteredStudents.filter(s => s.status === 'Active');
   const frozenStudents = filteredStudents.filter(s => s.status === 'Frozen');
   const blockedStudents = filteredStudents.filter(s => s.status === 'Blocked');
-  const overdueStudents = filteredStudents.filter(s => s.feeStatus === 'Overdue');
+  const inactiveOrStoppedStudents = filteredStudents.filter(s => s.status === 'Inactive' || s.status === 'Stopped');
+  const overdueStudents = activeStudents.filter(s => isStudentFeeDue(s));
   
   // Calculate today's average attendance rate
   const avgAttendance = activeStudents.length > 0
-    ? Math.round(activeStudents.reduce((acc, s) => acc + (s.attendanceRate || 85), 0) / activeStudents.length)
+    ? Math.round(activeStudents.reduce((acc, s) => acc + (s.attendanceRate || 100), 0) / activeStudents.length)
     : 0;
 
   const totalOverdueDues = overdueStudents.reduce((acc, s) => acc + (s.dueAmount || 0), 0);
@@ -146,9 +148,9 @@ export const DashboardView = () => {
         />
 
         <MetricCard
-          title={frozenStudents.length > 0 ? "On Break / Frozen" : "Blocked Students"}
-          value={frozenStudents.length > 0 ? frozenStudents.length : blockedStudents.length}
-          subtitle={frozenStudents.length > 0 ? `${frozenStudents.length} Subscriptions Paused` : "Suspended / Inactive"}
+          title={frozenStudents.length > 0 ? "On Break / Frozen" : (inactiveOrStoppedStudents.length > 0 ? "Inactive / Stopped" : "Blocked Students")}
+          value={frozenStudents.length > 0 ? frozenStudents.length : (inactiveOrStoppedStudents.length > 0 ? inactiveOrStoppedStudents.length : blockedStudents.length)}
+          subtitle={frozenStudents.length > 0 ? `${frozenStudents.length} Subscriptions Paused` : (inactiveOrStoppedStudents.length > 0 ? `${inactiveOrStoppedStudents.length} Inactive / Stopped` : "Suspended Students")}
           icon={frozenStudents.length > 0 ? Snowflake : ShieldBan}
           onClick={() => setActiveTab('students')}
         />

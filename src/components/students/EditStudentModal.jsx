@@ -612,8 +612,9 @@ export const EditStudentModal = ({ isOpen, onClose, student }) => {
                   className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-red-500 font-semibold"
                 >
                   <option value="Active">Active</option>
-                  <option value="Blocked">Blocked / Suspended</option>
                   <option value="Inactive">Inactive</option>
+                  <option value="Stopped">Stopped</option>
+                  <option value="Blocked">Blocked / Suspended</option>
                 </select>
               </div>
             </div>
