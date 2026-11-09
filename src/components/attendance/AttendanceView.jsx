@@ -46,6 +46,8 @@ export const AttendanceView = () => {
     markAttendanceBatch,
     updateSingleAttendanceRecord,
     deleteSingleAttendanceRecord,
+    deleteAttendanceSession,
+    clearAllAttendanceRecords,
     fetchBatchAttendanceFromFirestore,
     showToast,
     isAdmin,
@@ -447,6 +449,34 @@ export const AttendanceView = () => {
     setSelectedDate(session.date);
     setActiveAttendanceTab('register');
     showToast(`Loaded ${session.batchName || 'Batch'} on ${formatDisplayDate(session.date)} for editing.`, 'info');
+  };
+
+  const handleDeletePastSession = async (session) => {
+    requireAdmin(async () => {
+      const confirmed = await showConfirmDialog({
+        title: 'Delete Attendance Session? 🗑️',
+        text: `Are you sure you want to delete the attendance record for ${session.batchName || 'Batch'} on ${formatDisplayDate(session.date)}? Student details and fees will NOT be affected.`,
+        confirmText: 'Yes, Delete Session',
+        icon: 'warning'
+      });
+      if (confirmed) {
+        await deleteAttendanceSession(session.batchId, session.date);
+      }
+    });
+  };
+
+  const handleClearAllAttendance = async () => {
+    requireAdmin(async () => {
+      const confirmed = await showConfirmDialog({
+        title: 'Clear All Attendance Records? ⚠️',
+        text: 'This will clear only attendance records across all sessions. Student details, fees, and class schedules will remain 100% safe and untouched.',
+        confirmText: 'Yes, Clear Attendance Only',
+        icon: 'warning'
+      });
+      if (confirmed) {
+        await clearAllAttendanceRecords();
+      }
+    });
   };
 
   return (
@@ -1474,7 +1504,7 @@ export const AttendanceView = () => {
               </p>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <select
                 value={sessionFilterBranch}
                 onChange={(e) => setSessionFilterBranch(e.target.value)}
@@ -1496,6 +1526,18 @@ export const AttendanceView = () => {
                   <option key={b.id} value={b.id}>{b.name}</option>
                 ))}
               </select>
+
+              {recordedPastSessions.length > 0 && (
+                <button
+                  type="button"
+                  onClick={handleClearAllAttendance}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-500/10 hover:bg-red-600 text-red-400 hover:text-white border border-red-500/30 rounded-xl text-xs font-bold transition-all cursor-pointer shadow"
+                  title="Clear all recorded attendance logs (keeps students and fees safe)"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Clear All Attendance</span>
+                </button>
+              )}
             </div>
           </div>
 
@@ -1535,14 +1577,24 @@ export const AttendanceView = () => {
                         </p>
                       </div>
 
-                      <button
-                        type="button"
-                        onClick={() => handleEditPastSession(session)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-600/20 hover:bg-amber-600 text-amber-300 hover:text-white border border-amber-500/40 rounded-xl text-xs font-bold transition-all cursor-pointer shadow"
-                      >
-                        <Edit className="w-3.5 h-3.5" />
-                        <span>Edit Session</span>
-                      </button>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => handleEditPastSession(session)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-600/20 hover:bg-amber-600 text-amber-300 hover:text-white border border-amber-500/40 rounded-xl text-xs font-bold transition-all cursor-pointer shadow"
+                        >
+                          <Edit className="w-3.5 h-3.5" />
+                          <span>Edit</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeletePastSession(session)}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white border border-red-500/40 rounded-xl text-xs font-bold transition-all cursor-pointer shadow"
+                          title="Delete this session record"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
 
                     <div className="grid grid-cols-3 gap-2 pt-2 border-t border-zinc-800 text-center text-xs">

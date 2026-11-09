@@ -38,6 +38,8 @@ import {
   COL_ATTENDANCE,
   recordBatchAttendanceToFirestore,
   fetchBatchAttendanceFromFirestore,
+  deleteBatchAttendanceFromFirestore,
+  clearAllAttendanceFromFirestore,
   recordPaymentToFirestore,
   logActivityToFirestore
 } from '../services/firebaseService';
@@ -368,6 +370,14 @@ export const DojoProvider = ({ children }) => {
       localStorage.setItem('sensei_belt_ranks', JSON.stringify([]));
       setBeltRanks([]);
     }
+
+    // Auto-sync cleared attendance state
+    const isAttendanceCleared = localStorage.getItem('sensei_attendance_cleared_v1');
+    if (!isAttendanceCleared) {
+      localStorage.setItem('sensei_attendance_cleared_v1', 'true');
+      localStorage.setItem('sensei_attendance_history', JSON.stringify([]));
+      setAttendanceHistory([]);
+    }
   }, []);
 
   const clearActivities = () => {
@@ -553,19 +563,21 @@ export const DojoProvider = ({ children }) => {
 
   // Ensure students have 100% mathematically accurate attendance rates calculated from actual recorded history
   useEffect(() => {
-    if (attendanceHistory && attendanceHistory.length > 0 && students && students.length > 0) {
+    if (students && students.length > 0) {
       let hasChanges = false;
+      const history = Array.isArray(attendanceHistory) ? attendanceHistory : [];
       const updatedStudents = students.map(s => {
-        const stats = calculateStudentAttendanceStats(s.id, attendanceHistory);
-        if (stats.totalSessions > 0) {
-          if (s.attendanceRate !== stats.attendanceRate || (stats.lastAttendedDate && s.lastAttendedDate !== stats.lastAttendedDate)) {
-            hasChanges = true;
-            return {
-              ...s,
-              attendanceRate: stats.attendanceRate,
-              lastAttendedDate: stats.lastAttendedDate || s.lastAttendedDate
-            };
-          }
+        const stats = calculateStudentAttendanceStats(s.id, history);
+        const targetRate = stats.totalSessions > 0 ? stats.attendanceRate : 100;
+        const targetLastDate = stats.totalSessions > 0 ? stats.lastAttendedDate : null;
+
+        if (s.attendanceRate !== targetRate || (s.lastAttendedDate || null) !== targetLastDate) {
+          hasChanges = true;
+          return {
+            ...s,
+            attendanceRate: targetRate,
+            lastAttendedDate: targetLastDate
+          };
         }
         return s;
       });
@@ -1460,6 +1472,51 @@ export const DojoProvider = ({ children }) => {
     }
   };
 
+  // Delete an entire attendance session
+  const deleteAttendanceSession = async (batchId, date) => {
+    const session = attendanceHistory.find(s => s.batchId === batchId && s.date === date);
+    const nextHistory = attendanceHistory.filter(s => !(s.batchId === batchId && s.date === date));
+    setAttendanceHistory(nextHistory);
+    localStorage.setItem('sensei_attendance_history', JSON.stringify(nextHistory));
+
+    // Update students
+    setStudents(prev => prev.map(s => {
+      const stats = calculateStudentAttendanceStats(s.id, nextHistory);
+      return {
+        ...s,
+        attendanceRate: stats.totalSessions > 0 ? stats.attendanceRate : 100,
+        lastAttendedDate: stats.totalSessions > 0 ? stats.lastAttendedDate : null
+      };
+    }));
+
+    if (isFirebaseConfigured) {
+      await deleteBatchAttendanceFromFirestore(batchId, date).catch(console.error);
+    }
+
+    addActivity(`Deleted attendance session for ${session?.batchName || 'Batch'} on ${date}`, 'attendance', 'Trash2');
+    showToast(`Attendance session for ${date} deleted.`, 'info');
+  };
+
+  // Clear all attendance records while preserving students, fees, and class schedules
+  const clearAllAttendanceRecords = async () => {
+    setAttendanceHistory([]);
+    localStorage.setItem('sensei_attendance_history', JSON.stringify([]));
+
+    // Reset attendance metrics on all students without touching any other fields
+    setStudents(prev => prev.map(s => ({
+      ...s,
+      attendanceRate: 100,
+      lastAttendedDate: null
+    })));
+
+    if (isFirebaseConfigured) {
+      await clearAllAttendanceFromFirestore().catch(console.error);
+    }
+
+    addActivity('All attendance records cleared', 'attendance', 'RotateCcw');
+    showToast('All attendance records cleared successfully!', 'success');
+  };
+
   // Get student attendance history list
   const getStudentAttendanceHistory = (studentId) => {
     if (!studentId) return [];
@@ -1567,6 +1624,8 @@ export const DojoProvider = ({ children }) => {
         recordStudentAttendanceIndividual,
         updateSingleAttendanceRecord,
         deleteSingleAttendanceRecord,
+        deleteAttendanceSession,
+        clearAllAttendanceRecords,
         calculateStudentAttendanceStats,
         calculateStudentMonthlyAttendanceStats,
         markAttendanceBatch,

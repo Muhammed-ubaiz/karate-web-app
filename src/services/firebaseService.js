@@ -205,6 +205,28 @@ export const fetchBatchAttendanceFromFirestore = async (batchId, date) => {
   return null;
 };
 
+export const deleteBatchAttendanceFromFirestore = async (batchId, date) => {
+  if (!isFirebaseConfigured || !db) return;
+  try {
+    const attendanceId = `${batchId}_${date}`;
+    const docRef = doc(db, COL_ATTENDANCE, attendanceId);
+    await deleteDoc(docRef);
+  } catch (err) {
+    console.error('Error deleting attendance session:', err);
+  }
+};
+
+export const clearAllAttendanceFromFirestore = async () => {
+  if (!isFirebaseConfigured || !db) return;
+  try {
+    const snap = await getDocs(collection(db, COL_ATTENDANCE));
+    const promises = snap.docs.map(d => deleteDoc(doc(db, COL_ATTENDANCE, d.id)));
+    await Promise.all(promises);
+  } catch (err) {
+    console.error('Error clearing attendance from Firestore:', err);
+  }
+};
+
 /**
  * --- PAYMENTS SERVICE ---
  */
