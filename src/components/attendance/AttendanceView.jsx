@@ -484,11 +484,11 @@ export const AttendanceView = () => {
       {/* Header & Main Navigation Tabs */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
               Attendance Management Center
             </h2>
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-600/20 text-red-400 border border-red-500/30">
+            <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-red-600/20 text-red-400 border border-red-500/30 whitespace-nowrap shrink-0">
               Verified & Accurate 🥋
             </span>
           </div>
@@ -498,44 +498,47 @@ export const AttendanceView = () => {
         </div>
 
         {/* Top 3 Navigation Tabs */}
-        <div className="flex items-center gap-1.5 p-1 bg-zinc-900 border border-zinc-800 rounded-2xl self-start lg:self-auto overflow-x-auto max-w-full">
+        <div className="grid grid-cols-3 sm:inline-flex items-center gap-1 sm:gap-1.5 p-1 bg-zinc-900 border border-zinc-800 rounded-2xl w-full sm:w-auto lg:self-auto">
           <button
             type="button"
             onClick={() => setActiveAttendanceTab('register')}
-            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+            className={`flex items-center justify-center sm:justify-start gap-1 sm:gap-1.5 px-2 sm:px-3.5 py-2 rounded-xl text-[11px] sm:text-xs font-bold transition-all cursor-pointer whitespace-nowrap min-w-0 ${
               activeAttendanceTab === 'register'
                 ? 'bg-dojo-red text-white shadow-lg shadow-red-600/30'
                 : 'text-zinc-400 hover:text-white hover:bg-zinc-850'
             }`}
           >
-            <ClipboardCheck className="w-4 h-4" />
-            <span>Daily Roll Call Register</span>
+            <ClipboardCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+            <span className="sm:hidden truncate">Roll Call</span>
+            <span className="hidden sm:inline">Daily Roll Call Register</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveAttendanceTab('monthly')}
-            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+            className={`flex items-center justify-center sm:justify-start gap-1 sm:gap-1.5 px-2 sm:px-3.5 py-2 rounded-xl text-[11px] sm:text-xs font-bold transition-all cursor-pointer whitespace-nowrap min-w-0 ${
               activeAttendanceTab === 'monthly'
                 ? 'bg-dojo-red text-white shadow-lg shadow-red-600/30'
                 : 'text-zinc-400 hover:text-white hover:bg-zinc-850'
             }`}
           >
-            <CalendarDays className="w-4 h-4" />
-            <span>Month-wise Student History</span>
+            <CalendarDays className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+            <span className="sm:hidden truncate">Month Log</span>
+            <span className="hidden sm:inline">Month-wise Student History</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveAttendanceTab('pastSessions')}
-            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+            className={`flex items-center justify-center sm:justify-start gap-1 sm:gap-1.5 px-2 sm:px-3.5 py-2 rounded-xl text-[11px] sm:text-xs font-bold transition-all cursor-pointer whitespace-nowrap min-w-0 ${
               activeAttendanceTab === 'pastSessions'
                 ? 'bg-dojo-red text-white shadow-lg shadow-red-600/30'
                 : 'text-zinc-400 hover:text-white hover:bg-zinc-850'
             }`}
           >
-            <History className="w-4 h-4" />
-            <span>Past Sessions Log ({attendanceHistory.length})</span>
+            <History className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+            <span className="sm:hidden truncate">Past ({attendanceHistory.length})</span>
+            <span className="hidden sm:inline">Past Sessions Log ({attendanceHistory.length})</span>
           </button>
         </div>
       </div>
@@ -723,9 +726,9 @@ export const AttendanceView = () => {
                   <Calendar className="w-5 h-5" />
                 </div>
                 <div>
-                  <h4 className="text-xs sm:text-sm font-bold text-white flex items-center gap-2">
+                  <h4 className="text-xs sm:text-sm font-bold text-white flex items-center gap-2 flex-wrap">
                     <span>Recording Attendance for Previous Date ({formatDisplayDate(selectedDate)})</span>
-                    <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/40">
+                    <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/40 shrink-0">
                       Missed Date Entry
                     </span>
                   </h4>
@@ -752,10 +755,10 @@ export const AttendanceView = () => {
                 <RefreshCw className="w-4 h-4" />
               </div>
               <div>
-                <h4 className="text-xs sm:text-sm font-bold text-white flex items-center gap-1.5">
+                <h4 className="text-xs sm:text-sm font-bold text-white flex items-center gap-1.5 flex-wrap">
                   <span>Flexible Make-up Class Check-in</span>
                   {guestStudents.length > 0 && (
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-500/30">
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-500/30 shrink-0">
                       {guestStudents.length} Make-up Attendee(s)
                     </span>
                   )}
@@ -772,7 +775,7 @@ export const AttendanceView = () => {
               className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 bg-zinc-800 hover:bg-zinc-700 text-xs font-bold text-white border border-zinc-700 rounded-xl transition-all cursor-pointer shadow active:scale-95 shrink-0"
             >
               <Plus className="w-3.5 h-3.5 text-amber-400" />
-              <span>+ Check-in Make-up Student</span>
+              <span>Check-in Make-up Student</span>
             </button>
           </div>
 
@@ -921,14 +924,14 @@ export const AttendanceView = () => {
                   return (
                     <div
                       key={student.id}
-                      className={`p-3.5 sm:px-5 sm:py-3.5 flex items-center justify-between gap-3 transition-colors ${
+                      className={`p-3 sm:px-5 sm:py-3.5 flex items-center justify-between gap-2 sm:gap-3 transition-colors ${
                         isGuest ? 'bg-amber-950/15 hover:bg-amber-950/25' : 'hover:bg-zinc-850/50'
                       }`}
                     >
                       {/* Student Info */}
                       <div
                         onClick={() => setActiveStudentProfile(student)}
-                        className="flex items-center gap-3 min-w-0 cursor-pointer group"
+                        className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1 cursor-pointer group"
                         title="View student profile, month-wise attendance & payment ledger"
                       >
                         <img
@@ -936,7 +939,7 @@ export const AttendanceView = () => {
                           alt={student.fullName}
                           className="w-10 h-10 rounded-xl object-cover border border-zinc-700 shrink-0 group-hover:border-red-500 transition-colors"
                         />
-                        <div className="min-w-0">
+                        <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2 flex-wrap">
                             <h4 className="text-xs sm:text-sm font-bold text-white truncate group-hover:text-red-400 transition-colors flex items-center gap-1.5">
                               <span>{student.fullName}</span>
@@ -979,11 +982,11 @@ export const AttendanceView = () => {
                       </div>
 
                       {/* 1-Tap Toggle Pill Buttons: Present, Absent, Late */}
-                      <div className="flex items-center gap-1.5 shrink-0">
+                      <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
                         <button
                           type="button"
                           onClick={() => setStatus(student.id, 'Present')}
-                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
+                          className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
                             currentStatus === 'Present'
                               ? 'bg-emerald-600 text-white border-emerald-500 shadow-md shadow-emerald-950/40'
                               : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-white'
@@ -996,7 +999,7 @@ export const AttendanceView = () => {
                         <button
                           type="button"
                           onClick={() => setStatus(student.id, 'Absent')}
-                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
+                          className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
                             currentStatus === 'Absent'
                               ? 'bg-red-600 text-white border-red-500 shadow-md shadow-red-950/40'
                               : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-white'
@@ -1009,7 +1012,7 @@ export const AttendanceView = () => {
                         <button
                           type="button"
                           onClick={() => setStatus(student.id, 'Late')}
-                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
+                          className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
                             currentStatus === 'Late'
                               ? 'bg-amber-600 text-white border-amber-500 shadow-md shadow-amber-950/40'
                               : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-white'
@@ -1037,15 +1040,15 @@ export const AttendanceView = () => {
           <div className="bg-dojo-card border border-dojo-border rounded-2xl p-4 sm:p-5 shadow-lg space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Left: Branch & Student Picker */}
-              <div>
+              <div className="min-w-0">
                 <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-1.5">
                   🥋 Select Individual Student
                 </label>
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2">
                   <select
                     value={monthlyBranchId}
                     onChange={(e) => setMonthlyBranchId(e.target.value)}
-                    className="w-1/3 bg-zinc-900 border border-zinc-700 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:border-red-500 cursor-pointer truncate"
+                    className="w-full sm:w-1/3 min-w-0 bg-zinc-900 border border-zinc-700 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:border-red-500 cursor-pointer truncate"
                   >
                     <option value="all">All Branches</option>
                     {dojos.map(d => (
@@ -1056,7 +1059,7 @@ export const AttendanceView = () => {
                   <select
                     value={selectedStudentId}
                     onChange={(e) => setSelectedStudentId(e.target.value)}
-                    className="flex-1 bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-xs sm:text-sm text-white font-semibold focus:outline-none focus:border-red-500 cursor-pointer truncate"
+                    className="w-full sm:flex-1 min-w-0 bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-xs sm:text-sm text-white font-semibold focus:outline-none focus:border-red-500 cursor-pointer truncate"
                   >
                     {monthlyFilteredStudents.map(s => (
                       <option key={s.id} value={s.id}>
@@ -1068,15 +1071,15 @@ export const AttendanceView = () => {
               </div>
 
               {/* Right: Month-Wise Filter with Prev / Next Navigation */}
-              <div>
+              <div className="min-w-0">
                 <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-1.5">
                   📅 Month-Wise Period Filter
                 </label>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap sm:flex-nowrap items-center gap-1.5 sm:gap-2">
                   <button
                     type="button"
                     onClick={handlePrevMonth}
-                    className="p-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-700 cursor-pointer transition-colors"
+                    className="p-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-700 cursor-pointer transition-colors shrink-0"
                     title="Previous Month"
                   >
                     <ChevronLeft className="w-4 h-4" />
@@ -1086,7 +1089,7 @@ export const AttendanceView = () => {
                   <select
                     value={selectedMonth}
                     onChange={(e) => setSelectedMonth(Number(e.target.value))}
-                    className="flex-1 bg-zinc-900 border border-zinc-700 rounded-xl px-2.5 py-2 text-xs sm:text-sm text-white font-bold focus:outline-none focus:border-red-500 cursor-pointer"
+                    className="flex-1 min-w-[110px] bg-zinc-900 border border-zinc-700 rounded-xl px-2.5 py-2 text-xs sm:text-sm text-white font-bold focus:outline-none focus:border-red-500 cursor-pointer"
                   >
                     {MONTH_NAMES.map((name, idx) => (
                       <option key={name} value={idx + 1}>{name}</option>
@@ -1097,7 +1100,7 @@ export const AttendanceView = () => {
                   <select
                     value={selectedYear}
                     onChange={(e) => setSelectedYear(Number(e.target.value))}
-                    className="w-24 bg-zinc-900 border border-zinc-700 rounded-xl px-2.5 py-2 text-xs sm:text-sm text-white font-bold focus:outline-none focus:border-red-500 cursor-pointer"
+                    className="w-20 sm:w-24 bg-zinc-900 border border-zinc-700 rounded-xl px-2 sm:px-2.5 py-2 text-xs sm:text-sm text-white font-bold focus:outline-none focus:border-red-500 cursor-pointer shrink-0"
                   >
                     {[2025, 2026, 2027, 2028].map(y => (
                       <option key={y} value={y}>{y}</option>
@@ -1107,7 +1110,7 @@ export const AttendanceView = () => {
                   <button
                     type="button"
                     onClick={handleNextMonth}
-                    className="p-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-700 cursor-pointer transition-colors"
+                    className="p-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-700 cursor-pointer transition-colors shrink-0"
                     title="Next Month"
                   >
                     <ChevronRight className="w-4 h-4" />
@@ -1368,10 +1371,10 @@ export const AttendanceView = () => {
 
               {/* Detailed Month Session Log with In-line Mistake Correction */}
               <div className="bg-dojo-card border border-dojo-border rounded-2xl overflow-hidden shadow-lg">
-                <div className="p-4 bg-zinc-900/80 border-b border-zinc-800 flex items-center justify-between">
-                  <h4 className="text-xs sm:text-sm font-bold text-white flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-red-500" />
-                    <span>Attendance Records for {MONTH_NAMES[selectedMonth - 1]} {selectedYear} ({monthlyStats.records.length} sessions)</span>
+                <div className="p-4 bg-zinc-900/80 border-b border-zinc-800 flex flex-wrap items-center justify-between gap-2">
+                  <h4 className="text-xs sm:text-sm font-bold text-white flex items-center gap-2 min-w-0">
+                    <Calendar className="w-4 h-4 text-red-500 shrink-0" />
+                    <span className="break-words">Attendance Records for {MONTH_NAMES[selectedMonth - 1]} {selectedYear} ({monthlyStats.records.length} sessions)</span>
                   </h4>
                   <span className="text-[11px] text-zinc-400">
                     Tap P, A, or L to correct any mistake instantly
@@ -1393,10 +1396,10 @@ export const AttendanceView = () => {
                     {monthlyStats.records.map((record) => (
                       <div
                         key={record.id}
-                        className="p-3.5 sm:px-5 sm:py-3.5 flex items-center justify-between gap-3 hover:bg-zinc-850/50 transition-colors"
+                        className="p-3 sm:px-5 sm:py-3.5 flex items-center justify-between gap-2 sm:gap-3 hover:bg-zinc-850/50 transition-colors"
                       >
                         {/* Session Details */}
-                        <div className="flex items-center gap-3 min-w-0">
+                        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
                           <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold shrink-0 ${
                             record.status === 'Present'
                               ? 'bg-emerald-950 text-emerald-400 border border-emerald-500/30'
@@ -1442,7 +1445,7 @@ export const AttendanceView = () => {
                             <button
                               type="button"
                               onClick={() => handleQuickStatusCorrection(record, 'Present')}
-                              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                              className={`px-2 sm:px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                                 record.status === 'Present'
                                   ? 'bg-emerald-600 text-white shadow'
                                   : 'text-zinc-500 hover:text-white hover:bg-zinc-850'
@@ -1454,7 +1457,7 @@ export const AttendanceView = () => {
                             <button
                               type="button"
                               onClick={() => handleQuickStatusCorrection(record, 'Absent')}
-                              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                              className={`px-2 sm:px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                                 record.status === 'Absent'
                                   ? 'bg-red-600 text-white shadow'
                                   : 'text-zinc-500 hover:text-white hover:bg-zinc-850'
@@ -1466,7 +1469,7 @@ export const AttendanceView = () => {
                             <button
                               type="button"
                               onClick={() => handleQuickStatusCorrection(record, 'Late')}
-                              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                              className={`px-2 sm:px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                                 record.status === 'Late'
                                   ? 'bg-amber-600 text-white shadow'
                                   : 'text-zinc-500 hover:text-white hover:bg-zinc-850'

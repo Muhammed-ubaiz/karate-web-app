@@ -164,7 +164,7 @@ export const DashboardView = () => {
         {/* Today's Training Batches */}
         <div className="lg:col-span-2 space-y-4 min-w-0">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Calendar className="w-4 h-4 text-dojo-red shrink-0" />
               <h3 className="text-sm font-bold text-white tracking-tight">
                 Today's Class Batches ({todayFullName})
@@ -174,7 +174,7 @@ export const DashboardView = () => {
               </span>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <div className="flex items-center bg-zinc-900 border border-zinc-800 p-0.5 rounded-xl text-[11px] font-bold">
                 <button
                   type="button"

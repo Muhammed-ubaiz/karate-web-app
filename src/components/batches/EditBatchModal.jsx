@@ -180,7 +180,7 @@ export const EditBatchModal = ({ isOpen, onClose, batch }) => {
             <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
               Weekly Schedule Days *
             </label>
-            <div className="grid grid-cols-7 gap-1.5">
+            <div className="grid grid-cols-4 sm:grid-cols-7 gap-1.5">
               {DAYS_OF_WEEK.map((day) => {
                 const isSelected = formData.scheduleDays.includes(day);
                 return (
@@ -203,7 +203,7 @@ export const EditBatchModal = ({ isOpen, onClose, batch }) => {
           </div>
 
           {/* Timings: Start Time & Duration */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
                 Class Start Time *
@@ -271,7 +271,7 @@ export const EditBatchModal = ({ isOpen, onClose, batch }) => {
           </div>
 
           {/* Submit Actions & Danger Zone */}
-          <div className="pt-4 border-t border-zinc-800 flex items-center justify-between gap-3">
+          <div className="pt-4 border-t border-zinc-800 flex flex-wrap items-center justify-between gap-3">
             <button
               type="button"
               onClick={handleDelete}

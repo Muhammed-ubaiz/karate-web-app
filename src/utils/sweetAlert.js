@@ -85,6 +85,40 @@ export const showConfirmDialog = async ({
   return result.isConfirmed;
 };
 
+export const showConfirmWithReasonDialog = async ({
+  title,
+  text,
+  inputLabel = 'Reason / Reference Note (Recorded in Activity Log)',
+  inputPlaceholder = 'e.g. Wrong amount entered / Duplicate bill / Refunded',
+  confirmText = 'Yes, Confirm',
+  cancelText = 'Cancel',
+  icon = 'warning',
+  requireReason = false
+}) => {
+  const result = await DojoSwal.fire({
+    icon,
+    title,
+    text,
+    input: 'text',
+    inputLabel,
+    inputPlaceholder,
+    showCancelButton: true,
+    confirmButtonText: confirmText,
+    cancelButtonText: cancelText,
+    iconColor: icon === 'warning' ? '#f59e0b' : '#ef4444',
+    reverseButtons: true,
+    inputValidator: (value) => {
+      if (requireReason && (!value || !value.trim())) {
+        return 'Please provide a brief reason for the activity log.';
+      }
+      return undefined;
+    }
+  });
+
+  if (!result.isConfirmed) return null;
+  return { confirmed: true, reason: (result.value || '').trim() };
+};
+
 export const showToastAlert = (message, icon = 'success') => {
   return ToastSwal.fire({
     icon,

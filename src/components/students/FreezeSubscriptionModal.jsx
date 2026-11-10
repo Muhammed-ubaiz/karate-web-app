@@ -177,7 +177,7 @@ export const FreezeSubscriptionModal = ({ isOpen, onClose, student }) => {
                 Break scheduled from <strong>{formatDisplayDate(currentStudent.currentFreeze?.startDate)}</strong> to <strong>{formatDisplayDate(currentStudent.currentFreeze?.endDate)}</strong> ({currentStudent.currentFreeze?.durationMonths || 1} month(s)).
                 Due date has been extended to <strong className="text-emerald-400">{formatDisplayDate(currentStudent.nextDueDate)}</strong>.
               </p>
-              <div className="pt-2 border-t border-cyan-500/30 flex items-center justify-between">
+              <div className="pt-2 border-t border-cyan-500/30 flex flex-wrap items-center justify-between gap-2">
                 <span className="text-[11px] text-zinc-400">Student returned early?</span>
                 <button
                   type="button"
@@ -192,22 +192,22 @@ export const FreezeSubscriptionModal = ({ isOpen, onClose, student }) => {
           )}
 
           {/* Student & Active Subscription Info */}
-          <div className="p-3.5 bg-zinc-900/90 rounded-2xl border border-zinc-800 flex items-center justify-between gap-3 text-xs">
-            <div className="flex items-center gap-3 min-w-0">
+          <div className="p-3.5 bg-zinc-900/90 rounded-2xl border border-zinc-800 flex flex-wrap items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-3 min-w-0 flex-1">
               <img
                 src={currentStudent.photoUrl}
                 alt={currentStudent.fullName}
                 className="w-10 h-10 rounded-xl object-cover border border-zinc-700 shrink-0"
               />
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <h4 className="font-bold text-white text-sm truncate">{currentStudent.fullName}</h4>
-                <p className="text-zinc-400 text-[11px]">
+                <p className="text-zinc-400 text-[11px] truncate">
                   {currentStudent.beltRank} • {plan?.name || 'Active Package'}
                 </p>
               </div>
             </div>
 
-            <div className="text-right shrink-0">
+            <div className="sm:text-right shrink-0">
               <span className="text-[10px] text-zinc-500 uppercase block font-semibold">Current Due Date</span>
               <span className="text-xs font-bold text-amber-400">
                 {currentStudent.nextDueDate ? formatDisplayDate(currentStudent.nextDueDate) : 'N/A'}
@@ -227,13 +227,13 @@ export const FreezeSubscriptionModal = ({ isOpen, onClose, student }) => {
               <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
             )}
             <div className="min-w-0 flex-1">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-1.5">
                 <span className="font-bold">
                   {alreadyUsedFreeze && !isCurrentlyFrozen
                     ? `Annual Freeze Limit Reached for ${currentYear}`
                     : `Annual Freeze Eligibility: Available for ${currentYear}`}
                 </span>
-                <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-black/40">
+                <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-black/40 shrink-0">
                   {alreadyUsedFreeze ? '1/1 Used' : '0/1 Used'}
                 </span>
               </div>
@@ -249,12 +249,12 @@ export const FreezeSubscriptionModal = ({ isOpen, onClose, student }) => {
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Break Duration Presets (Rule: Minimum 1 Full Month) */}
             <div>
-              <div className="flex items-center justify-between mb-1.5">
+              <div className="flex flex-wrap items-center justify-between gap-1.5 mb-1.5">
                 <label className="text-xs font-bold text-white flex items-center gap-1.5">
-                  <Clock className="w-3.5 h-3.5 text-amber-400" />
+                  <Clock className="w-3.5 h-3.5 text-amber-400 shrink-0" />
                   <span>Break Duration (Minimum: 1 Full Month) *</span>
                 </label>
-                <span className="text-[10px] text-emerald-400 font-bold">
+                <span className="text-[10px] text-emerald-400 font-bold shrink-0">
                   Selected: {durationMonths} Month{durationMonths > 1 ? 's' : ''}
                 </span>
               </div>
@@ -339,7 +339,7 @@ export const FreezeSubscriptionModal = ({ isOpen, onClose, student }) => {
                 Automatic Due Date Adjustment
               </span>
 
-              <div className="flex items-center justify-between text-xs">
+              <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
                 <div>
                   <span className="text-zinc-500 block text-[10px]">Original Due Date</span>
                   <span className="font-bold text-zinc-300 line-through">
@@ -351,7 +351,7 @@ export const FreezeSubscriptionModal = ({ isOpen, onClose, student }) => {
                   + {durationMonths} Month{durationMonths > 1 ? 's' : ''} Extension
                 </div>
 
-                <div className="text-right">
+                <div className="sm:text-right">
                   <span className="text-zinc-500 block text-[10px]">New Adjusted Due Date</span>
                   <span className="font-black text-sm text-emerald-400">
                     {formatDisplayDate(newDueDate)}
@@ -360,11 +360,11 @@ export const FreezeSubscriptionModal = ({ isOpen, onClose, student }) => {
               </div>
 
               {/* Visual timeline */}
-              <div className="p-2 bg-zinc-900 rounded-xl border border-zinc-800/80 text-[11px] flex items-center justify-between text-zinc-400">
+              <div className="p-2 bg-zinc-900 rounded-xl border border-zinc-800/80 text-[11px] flex flex-wrap items-center justify-between gap-1.5 text-zinc-400">
                 <span>Paused: <strong className="text-cyan-300">{formatDisplayDate(startDate)}</strong></span>
-                <ArrowRight className="w-3.5 h-3.5 text-zinc-600" />
+                <ArrowRight className="w-3.5 h-3.5 text-zinc-600 shrink-0" />
                 <span>Resumes: <strong className="text-cyan-300">{formatDisplayDate(endDate)}</strong></span>
-                <ArrowRight className="w-3.5 h-3.5 text-zinc-600" />
+                <ArrowRight className="w-3.5 h-3.5 text-zinc-600 shrink-0" />
                 <span>Due: <strong className="text-emerald-400">{formatDisplayDate(newDueDate)}</strong></span>
               </div>
             </div>

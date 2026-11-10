@@ -20,7 +20,9 @@ import {
   CheckCircle2,
   Image as ImageIcon,
   Camera,
-  Sparkles
+  Sparkles,
+  Hash,
+  AlertCircle
 } from 'lucide-react';
 
 const PRESET_AVATARS = [
@@ -33,7 +35,7 @@ const PRESET_AVATARS = [
 ];
 
 export const StudentRegistrationModal = ({ isOpen, onClose }) => {
-  const { dojos, batches, feePlans, beltRanks, addStudent, showToast } = useDojo();
+  const { dojos, batches, feePlans, beltRanks, addStudent, showToast, getNextBillNumber, isBillNumberUnique } = useDojo();
   const fileInputRef = useRef(null);
   const [showAvatarGallery, setShowAvatarGallery] = useState(false);
   const [isManageBeltsOpen, setIsManageBeltsOpen] = useState(false);
@@ -69,6 +71,7 @@ export const StudentRegistrationModal = ({ isOpen, onClose }) => {
       includeUniform: true,
       paidAtRegistration: true,
       paymentMethod: 'Cash',
+      billNumber: getNextBillNumber ? getNextBillNumber() : '',
       paymentNotes: '',
       medicalNotes: '',
       experience: 'Beginner / First time karate'
@@ -179,6 +182,12 @@ export const StudentRegistrationModal = ({ isOpen, onClose }) => {
     if (!formData.dojoId) errs.dojoId = 'Select a Dojo branch';
     if (!formData.batchId) errs.batchId = 'Select a class batch';
     if (!formData.tuitionPlanId) errs.tuitionPlanId = 'Select tuition plan';
+    if (formData.paidAtRegistration && isBillNumberUnique) {
+      const billCheck = isBillNumberUnique(formData.billNumber);
+      if (!billCheck.valid) {
+        errs.billNumber = billCheck.error;
+      }
+    }
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -186,14 +195,20 @@ export const StudentRegistrationModal = ({ isOpen, onClose }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!validate()) return;
+    const savedName = formData.fullName;
+    const savedBelt = formData.beltRank;
+    const savedPaid = formData.paidAtRegistration;
+    const savedBill = String(formData.billNumber || '').trim();
+
     addStudent({
       ...formData,
-      initialDueAmount: formData.paidAtRegistration ? 0 : Math.round(currentGrandTotal)
+      billNumber: savedPaid ? savedBill : '',
+      initialDueAmount: savedPaid ? 0 : Math.round(currentGrandTotal)
     });
     handleClose();
     showSuccessAlert(
       'Student Registered! 🥋',
-      `Welcome ${formData.fullName} to the dojo! Starting Rank: ${formData.beltRank}. ${formData.paidAtRegistration ? 'Payment recorded as Paid.' : `Initial invoice: ${Math.round(currentGrandTotal)} Dhs.`}`
+      `Welcome ${savedName} to the dojo! Starting Rank: ${savedBelt}. ${savedPaid ? `Payment recorded as Paid (Bill No: ${savedBill}).` : `Initial invoice: ${Math.round(currentGrandTotal)} Dhs.`}`
     );
   };
 
@@ -358,7 +373,7 @@ export const StudentRegistrationModal = ({ isOpen, onClose }) => {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-semibold text-zinc-300 mb-1">
                   Date of Birth
@@ -659,8 +674,15 @@ export const StudentRegistrationModal = ({ isOpen, onClose }) => {
                       setFormData(prev => ({
                         ...prev,
                         paidAtRegistration: checked,
-                        lastPaidDate: checked ? (prev.lastPaidDate || prev.joinDate) : prev.lastPaidDate
+                        lastPaidDate: checked ? (prev.lastPaidDate || prev.joinDate) : prev.lastPaidDate,
+                        billNumber: checked && !prev.billNumber && getNextBillNumber ? getNextBillNumber() : prev.billNumber
                       }));
+                      if (!checked) {
+                        setErrors(prev => {
+                          const { billNumber: _b, ...rest } = prev;
+                          return rest;
+                        });
+                      }
                     }}
                     className="w-4 h-4 rounded text-emerald-500 accent-emerald-500"
                   />
@@ -673,37 +695,84 @@ export const StudentRegistrationModal = ({ isOpen, onClose }) => {
                 </label>
 
                 {formData.paidAtRegistration && (
-                  <div className="pt-2.5 border-t border-zinc-800/80 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {/* Payment Method */}
-                    <div>
-                      <label className="block text-[11px] font-bold text-zinc-300 mb-1">
-                        💳 Payment Method *
-                      </label>
-                      <select
-                        value={formData.paymentMethod}
-                        onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value })}
-                        className="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:border-red-500 font-semibold cursor-pointer"
-                      >
-                        <option value="Cash">💵 Cash (Reception Desk)</option>
-                        <option value="Card / POS">💳 Card / POS Machine</option>
-                        <option value="Bank Transfer">🏦 Bank Transfer (IBAN)</option>
-                        <option value="Cheque">📜 Cheque</option>
-                        <option value="Online Link">📱 Apple Pay / Online Link</option>
-                      </select>
-                    </div>
-
-                    {/* Payment Reference / Receipt Note */}
-                    <div>
-                      <label className="block text-[11px] font-bold text-zinc-300 mb-1">
-                        Receipt / Ref No. (Optional)
-                      </label>
+                  <div className="pt-2.5 border-t border-zinc-800/80 space-y-3">
+                    {/* Unique Bill / Receipt Serial Number */}
+                    <div className="p-2.5 bg-zinc-950/90 border border-amber-500/30 rounded-xl space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <label className="text-[11px] font-bold text-amber-300 flex items-center gap-1">
+                          <Hash className="w-3 h-3 text-amber-400" />
+                          <span>Bill / Receipt Number *</span>
+                        </label>
+                        {getNextBillNumber && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const nextBill = getNextBillNumber();
+                              setFormData(prev => ({ ...prev, billNumber: nextBill }));
+                              setErrors(prev => ({ ...prev, billNumber: undefined }));
+                            }}
+                            className="text-[10px] font-bold text-amber-400 hover:text-amber-300 underline cursor-pointer"
+                          >
+                            ⚡ Auto Next Serial
+                          </button>
+                        )}
+                      </div>
                       <input
                         type="text"
-                        placeholder="e.g. REC-1024 or POS-8842"
-                        value={formData.paymentNotes}
-                        onChange={(e) => setFormData({ ...formData, paymentNotes: e.target.value })}
-                        className="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-2.5 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-red-500"
+                        placeholder="e.g. BILL-0001"
+                        value={formData.billNumber || ''}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setFormData(prev => ({ ...prev, billNumber: val }));
+                          if (isBillNumberUnique) {
+                            const chk = isBillNumberUnique(val);
+                            setErrors(prev => ({ ...prev, billNumber: chk.valid ? undefined : chk.error }));
+                          }
+                        }}
+                        className={`w-full bg-zinc-900 border ${
+                          errors.billNumber ? 'border-red-500' : 'border-zinc-700 focus:border-amber-400'
+                        } rounded-xl px-2.5 py-2 text-xs font-mono font-bold text-amber-300 placeholder-zinc-500 focus:outline-none`}
                       />
+                      {errors.billNumber && (
+                        <p className="text-[10px] text-red-400 font-semibold flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3 shrink-0" />
+                          <span>{errors.billNumber}</span>
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {/* Payment Method */}
+                      <div>
+                        <label className="block text-[11px] font-bold text-zinc-300 mb-1">
+                          💳 Payment Method *
+                        </label>
+                        <select
+                          value={formData.paymentMethod}
+                          onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value })}
+                          className="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:border-red-500 font-semibold cursor-pointer"
+                        >
+                          <option value="Cash">💵 Cash (Reception Desk)</option>
+                          <option value="Card / POS">💳 Card / POS Machine</option>
+                          <option value="Bank Transfer">🏦 Bank Transfer (IBAN)</option>
+                          <option value="Cheque">📜 Cheque</option>
+                          <option value="Online Link">📱 Apple Pay / Online Link</option>
+                        </select>
+                      </div>
+
+                      {/* Payment Reference / Receipt Note */}
+                      <div>
+                        <label className="block text-[11px] font-bold text-zinc-300 mb-1">
+                          Payment Reference / Note (Optional)
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="e.g. POS Slip #8842 / Discount note"
+                          value={formData.paymentNotes}
+                          onChange={(e) => setFormData({ ...formData, paymentNotes: e.target.value })}
+                          className="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-2.5 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-red-500"
+                        />
+                      </div>
                     </div>
                   </div>
                 )}

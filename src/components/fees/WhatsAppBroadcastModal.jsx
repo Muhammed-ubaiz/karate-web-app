@@ -167,25 +167,25 @@ export const WhatsAppBroadcastModal = ({ isOpen, onClose }) => {
                       : 'bg-[#18181c] border-zinc-800 hover:border-zinc-700'
                   }`}
                 >
-                  <div className="flex items-start justify-between gap-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3">
                     {/* Student Info */}
-                    <div className="flex items-start gap-3 min-w-0">
+                    <div className="flex items-start gap-3 min-w-0 flex-1">
                       <img
                         src={student.photoUrl}
                         alt={student.fullName}
                         className="w-11 h-11 rounded-xl object-cover border border-zinc-700 shrink-0"
                       />
-                      <div className="min-w-0">
+                      <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5 flex-wrap">
-                          <h4 className="text-sm font-bold text-white truncate">
+                          <h4 className="text-sm font-bold text-white break-words">
                             {student.fullName}
                           </h4>
-                          <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-zinc-800 text-amber-400 border border-zinc-700">
+                          <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-zinc-800 text-amber-400 border border-zinc-700 shrink-0">
                             {student.beltRank}
                           </span>
                         </div>
 
-                        <p className="text-xs text-zinc-400 mt-0.5 flex items-center gap-1">
+                        <p className="text-xs text-zinc-400 mt-0.5 flex items-center gap-1 flex-wrap">
                           <Phone className="w-3 h-3 text-emerald-400 shrink-0" />
                           <span>{studentPhone}</span>
                           {student.parentName && (
@@ -215,7 +215,7 @@ export const WhatsAppBroadcastModal = ({ isOpen, onClose }) => {
                     <button
                       type="button"
                       onClick={() => handleSendWhatsApp(student)}
-                      className={`inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 shrink-0 shadow cursor-pointer ${
+                      className={`inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 shrink-0 w-full sm:w-auto shadow cursor-pointer ${
                         isSent
                           ? 'bg-zinc-800 hover:bg-zinc-700 text-emerald-400 border border-emerald-500/40'
                           : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-950/40 border border-emerald-500/50'

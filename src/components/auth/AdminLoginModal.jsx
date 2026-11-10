@@ -19,7 +19,9 @@ export const AdminLoginModal = ({ isOpen, onClose, pendingAction }) => {
     loginAdmin,
     dojos,
     selectedDojoId,
-    setIsAdminLoginOpen
+    setIsAdminLoginOpen,
+    closeAdminLoginModal,
+    adminPromptMessage
   } = useDojo();
 
   const [username, setUsername] = useState('');
@@ -31,12 +33,14 @@ export const AdminLoginModal = ({ isOpen, onClose, pendingAction }) => {
 
   const activeDojo = dojos.find(d => d.id === selectedDojoId);
 
-  // Close handler that safely closes
+  // Close handler that safely closes and clears pending action
   const handleClose = () => {
     setError('');
     setUsername('');
     setPassword('');
-    if (typeof onClose === 'function') {
+    if (typeof closeAdminLoginModal === 'function') {
+      closeAdminLoginModal();
+    } else if (typeof onClose === 'function') {
       onClose();
     } else if (typeof setIsAdminLoginOpen === 'function') {
       setIsAdminLoginOpen(false);
@@ -91,13 +95,14 @@ export const AdminLoginModal = ({ isOpen, onClose, pendingAction }) => {
     setIsLoading(false);
 
     if (success) {
+      const actionToRun = pendingAction;
       handleClose();
       await showSuccessAlert(
-        'Identity Verified! 🥋',
-        `Welcome, Administrator! Full permissions enabled: You can now add students, record fees, and manage branches.`
+        'Staff Identity Verified! 🥋',
+        `Authorized Staff / Administrator access enabled. You can now manage students, record bills, and edit or delete payment transactions.`
       );
-      if (pendingAction && typeof pendingAction === 'function') {
-        pendingAction();
+      if (actionToRun && typeof actionToRun === 'function') {
+        actionToRun();
       }
     } else {
       setError('Invalid username or password. Please verify your credentials.');
@@ -115,7 +120,7 @@ export const AdminLoginModal = ({ isOpen, onClose, pendingAction }) => {
           handleClose();
         }
       }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in"
+      className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in"
     >
       <div className="w-full max-w-md bg-[#16161a] border border-zinc-700/90 rounded-3xl shadow-2xl overflow-hidden relative">
         
@@ -129,8 +134,8 @@ export const AdminLoginModal = ({ isOpen, onClose, pendingAction }) => {
               <Lock className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-white tracking-tight">Admin Login</h3>
-              <p className="text-[11px] text-zinc-400">Sign in to manage academy & students</p>
+              <h3 className="text-base font-bold text-white tracking-tight">Authorized Staff Login</h3>
+              <p className="text-[11px] text-zinc-400">Sign in to manage academy, fees &amp; bills</p>
             </div>
           </div>
 
@@ -160,6 +165,12 @@ export const AdminLoginModal = ({ isOpen, onClose, pendingAction }) => {
 
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-5 sm:p-6 space-y-4 bg-[#16161a]">
+          {adminPromptMessage && (
+            <div className="p-3 bg-amber-950/40 border border-amber-500/40 rounded-xl text-xs text-amber-200 font-medium">
+              🔒 {adminPromptMessage}
+            </div>
+          )}
+
           {error && (
             <div className="p-3 bg-red-950/50 border border-red-500/50 rounded-xl text-xs text-red-300 font-medium animate-shake">
               ⚠️ {error}

@@ -248,7 +248,7 @@ export const BatchListView = () => {
       ) : (
         <div className="space-y-3">
           {/* Active Filter Helper Subtitle */}
-          <div className="flex items-center justify-between text-xs text-zinc-400 px-1">
+          <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-zinc-400 px-1">
             <p className="flex items-center gap-1.5">
               <span>Showing:</span>
               <strong className="text-white font-bold">

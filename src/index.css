@@ -138,3 +138,25 @@ div.swal2-popup .swal2-cancel {
   border: 1px solid #3f3f46 !important;
   cursor: pointer !important;
 }
+
+div.swal2-popup .swal2-input-label {
+  color: #d4d4d8 !important;
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  margin-top: 0.75rem !important;
+}
+
+div.swal2-popup .swal2-input {
+  background: #121214 !important;
+  color: #ffffff !important;
+  border: 1px solid #3f3f46 !important;
+  border-radius: 0.75rem !important;
+  font-size: 0.8125rem !important;
+  margin: 0.5rem auto 0 !important;
+  width: 100% !important;
+  box-shadow: none !important;
+}
+
+div.swal2-popup .swal2-input:focus {
+  border-color: #E50914 !important;
+}

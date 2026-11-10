@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import {
   INITIAL_DOJOS,
   INITIAL_BATCHES,
@@ -36,14 +36,17 @@ import {
   COL_DOJOS,
   COL_PAYMENTS,
   COL_ATTENDANCE,
+  COL_ACTIVITIES,
   recordBatchAttendanceToFirestore,
   fetchBatchAttendanceFromFirestore,
   deleteBatchAttendanceFromFirestore,
   clearAllAttendanceFromFirestore,
   recordPaymentToFirestore,
+  updatePaymentInFirestore,
+  deletePaymentFromFirestore,
   logActivityToFirestore
 } from '../services/firebaseService';
-import { calculateNextDueDate } from '../utils/whatsappHelper';
+import { calculateNextDueDate, formatDisplayDate, normalizeDateToISO } from '../utils/whatsappHelper';
 import {
   showToastAlert,
   showSuccessAlert,
@@ -176,9 +179,167 @@ export const calculateStudentMonthlyAttendanceStats = (studentId, history = [], 
   };
 };
 
+// Safe timestamp conversion helper (supports ISO strings, Date, Firestore Timestamps)
+export const toIsoTimestamp = (val) => {
+  if (!val) return '';
+  if (typeof val === 'string') return val;
+  if (val instanceof Date) return isNaN(val.getTime()) ? '' : val.toISOString();
+  if (typeof val?.toDate === 'function') {
+    try {
+      return val.toDate().toISOString();
+    } catch {
+      return '';
+    }
+  }
+  if (typeof val?.seconds === 'number') {
+    return new Date(val.seconds * 1000).toISOString();
+  }
+  return '';
+};
+
+export const formatActivityTimeDisplay = (isoStr) => {
+  const iso = toIsoTimestamp(isoStr) || new Date().toISOString();
+  try {
+    const d = new Date(iso);
+    if (!isNaN(d.getTime())) {
+      return d.toLocaleString('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+  } catch {}
+  return 'Just now';
+};
+
+export const normalizeBillKey = (val) => String(val || '').trim().toUpperCase();
+
+export const extractBillSequence = (billStr) => {
+  const str = String(billStr || '').trim();
+  if (!str) return 0;
+  const billMatch = str.match(/^BILL-(\d+)$/i);
+  if (billMatch) return parseInt(billMatch[1], 10) || 0;
+  const numericMatch = str.match(/^0*(\d{1,5})$/);
+  if (numericMatch) return parseInt(numericMatch[1], 10) || 0;
+  return 0;
+};
+
+export const formatBillSerial = (seqNum) => {
+  const safeNum = Math.max(1, Number(seqNum) || 1);
+  return `BILL-${String(safeNum).padStart(4, '0')}`;
+};
+
+export const normalizePaymentRecord = (p) => {
+  if (!p) return p;
+  const bill = String(p.billNumber || p.receiptNumber || '').trim();
+  const createdAtIso = toIsoTimestamp(p.createdAt) || toIsoTimestamp(p.updatedAt) || new Date().toISOString();
+  return {
+    ...p,
+    billNumber: bill,
+    receiptNumber: bill,
+    status: p.status || 'Active',
+    createdAt: createdAtIso
+  };
+};
+
+export const sortPaymentsDesc = (list = []) => {
+  const getPayTime = (p) => {
+    const normDate = p?.paymentDate ? normalizeDateToISO(p.paymentDate) : '';
+    const dateVal = /^\d{4}-\d{2}-\d{2}$/.test(normDate)
+      ? normDate
+      : (p?.paymentDate || toIsoTimestamp(p?.createdAt) || 0);
+    return new Date(dateVal).getTime() || 0;
+  };
+  return [...list].sort((a, b) => {
+    const dateA = getPayTime(a);
+    const dateB = getPayTime(b);
+    if (dateB !== dateA) return dateB - dateA;
+    const createdA = new Date(toIsoTimestamp(a?.createdAt) || 0).getTime() || 0;
+    const createdB = new Date(toIsoTimestamp(b?.createdAt) || 0).getTime() || 0;
+    return createdB - createdA;
+  });
+};
+
+export const getCurrentMonthKey = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+};
+
+export const getPaymentMonthKey = (payment) => {
+  if (!payment) return '';
+  const normDate = payment.paymentDate ? normalizeDateToISO(payment.paymentDate) : '';
+  if (/^\d{4}-\d{2}/.test(normDate)) {
+    return normDate.slice(0, 7);
+  }
+  const isoCreated = toIsoTimestamp(payment.createdAt);
+  if (/^\d{4}-\d{2}/.test(isoCreated)) {
+    return isoCreated.slice(0, 7);
+  }
+  return '';
+};
+
+export const formatMonthKeyLabel = (monthKey) => {
+  if (!monthKey || monthKey === 'unknown') return 'Unspecified Month';
+  if (monthKey === 'all') return 'All Months (Month-by-Month)';
+  const match = String(monthKey).match(/^(\d{4})-(\d{2})$/);
+  if (!match) return String(monthKey);
+  const year = parseInt(match[1], 10);
+  const month = parseInt(match[2], 10);
+  if (month < 1 || month > 12) return String(monthKey);
+  return new Date(year, month - 1, 1).toLocaleString('en-US', {
+    month: 'long',
+    year: 'numeric'
+  });
+};
+
+export const shiftMonthKey = (monthKey, delta = 0) => {
+  const base = /^\d{4}-\d{2}$/.test(String(monthKey || ''))
+    ? String(monthKey)
+    : getCurrentMonthKey();
+  const [y, m] = base.split('-').map(Number);
+  const d = new Date(y, m - 1 + delta, 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+};
+
+export const groupPaymentsByMonth = (paymentList = []) => {
+  if (!Array.isArray(paymentList) || paymentList.length === 0) return [];
+  const sorted = sortPaymentsDesc(paymentList.map(normalizePaymentRecord));
+  const groupsMap = new Map();
+
+  sorted.forEach((p) => {
+    const key = getPaymentMonthKey(p) || 'unknown';
+    if (!groupsMap.has(key)) {
+      groupsMap.set(key, []);
+    }
+    groupsMap.get(key).push(p);
+  });
+
+  return Array.from(groupsMap.entries())
+    .sort(([a], [b]) => {
+      if (a === 'unknown') return 1;
+      if (b === 'unknown') return -1;
+      return b.localeCompare(a);
+    })
+    .map(([monthKey, transactions]) => {
+      const validTransactions = transactions.filter((t) => t.status !== 'Reset');
+      const totalCollected = validTransactions.reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
+      return {
+        monthKey,
+        monthLabel: formatMonthKeyLabel(monthKey),
+        transactions,
+        totalCollected,
+        validCount: validTransactions.length,
+        resetCount: transactions.length - validTransactions.length,
+        totalCount: transactions.length
+      };
+    });
+};
+
 const DojoContext = createContext();
 
-export const DojoProvider = ({ children }) => {
+export const DojoProvider = ({ children, initialFeesSubTab = 'plans' }) => {
   // Load from LocalStorage or use defaults
   const [dojos, setDojos] = useState(() => {
     const saved = localStorage.getItem('sensei_dojos');
@@ -233,7 +394,7 @@ export const DojoProvider = ({ children }) => {
     if (saved !== null) {
       try {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) return parsed;
+        if (Array.isArray(parsed)) return parsed.map(normalizePaymentRecord);
       } catch {}
     }
     return [];
@@ -255,18 +416,41 @@ export const DojoProvider = ({ children }) => {
     return saved ? JSON.parse(saved) : INITIAL_ACTIVITIES;
   });
 
+  // Dedicated permanent audit log for payment creations, edits/corrections, resets, and deletions
+  const [paymentAuditLogs, setPaymentAuditLogs] = useState(() => {
+    const saved = localStorage.getItem('sensei_payment_audit_logs');
+    if (saved !== null) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      } catch {}
+    }
+    return [];
+  });
+
   // Selected active branch filter ("all" or specific dojoId)
   const [selectedDojoId, setSelectedDojoId] = useState('all');
 
   // Active view: 'dashboard' | 'attendance' | 'students' | 'fees' | 'batches' | 'dojos'
   const [activeTab, setActiveTab] = useState('dashboard');
+  // Sub-tab inside Fees & Billing: 'plans' | 'ledger' | 'logs'
+  const [activeFeesSubTab, setActiveFeesSubTab] = useState(initialFeesSubTab);
 
   // Active user / role: 'Admin' | 'Sensei' | 'Staff'
   const [isAdmin, setIsAdmin] = useState(() => {
     return localStorage.getItem('sensei_is_admin') === 'true';
   });
+  const isAdminRef = useRef(isAdmin);
+  useEffect(() => {
+    isAdminRef.current = isAdmin;
+  }, [isAdmin]);
+
+  const [authorizedStaffName, setAuthorizedStaffName] = useState(() => {
+    return localStorage.getItem('sensei_staff_name') || 'Admin';
+  });
   const [isAdminLoginOpen, setIsAdminLoginOpen] = useState(false);
   const [pendingAdminAction, setPendingAdminAction] = useState(null);
+  const [adminPromptMessage, setAdminPromptMessage] = useState('');
   const [currentRole, setCurrentRole] = useState(() => {
     return localStorage.getItem('sensei_is_admin') === 'true' ? 'Admin' : 'Sensei';
   });
@@ -285,9 +469,13 @@ export const DojoProvider = ({ children }) => {
     const isCustomPass = customPass && cleanPass === customPass.trim();
 
     if (isMasterUser && (isMasterPass || isCustomPass)) {
+      isAdminRef.current = true;
       setIsAdmin(true);
       setCurrentRole('Admin');
+      const staffLabel = cleanUser === 'admin@gmail.com' ? 'Admin (Master)' : 'Admin';
+      setAuthorizedStaffName(staffLabel);
       localStorage.setItem('sensei_is_admin', 'true');
+      localStorage.setItem('sensei_staff_name', staffLabel);
       return true;
     }
     return false;
@@ -299,9 +487,12 @@ export const DojoProvider = ({ children }) => {
     const validPins = [customPin, '1234', '0000', '1111', 'admin'];
 
     if (validPins.includes(cleanPin)) {
+      isAdminRef.current = true;
       setIsAdmin(true);
       setCurrentRole('Admin');
+      setAuthorizedStaffName('Authorized Staff');
       localStorage.setItem('sensei_is_admin', 'true');
+      localStorage.setItem('sensei_staff_name', 'Authorized Staff');
       return true;
     }
     return false;
@@ -318,13 +509,17 @@ export const DojoProvider = ({ children }) => {
   };
 
   const quickAdminLogin = () => {
+    isAdminRef.current = true;
     setIsAdmin(true);
     setCurrentRole('Admin');
+    setAuthorizedStaffName('Admin');
     localStorage.setItem('sensei_is_admin', 'true');
+    localStorage.setItem('sensei_staff_name', 'Admin');
     showToast('Logged in as Administrator (Full Access)! 👑', 'success');
   };
 
   const logoutAdmin = () => {
+    isAdminRef.current = false;
     setIsAdmin(false);
     setCurrentRole('Sensei');
     localStorage.removeItem('sensei_is_admin');
@@ -332,19 +527,27 @@ export const DojoProvider = ({ children }) => {
   };
 
   const toggleAdminMode = () => {
-    if (isAdmin) {
+    if (isAdminRef.current) {
       logoutAdmin();
     } else {
+      setAdminPromptMessage('');
       setIsAdminLoginOpen(true);
     }
   };
 
-  const requireAdmin = (actionCallback) => {
-    if (isAdmin) {
+  const closeAdminLoginModal = () => {
+    setIsAdminLoginOpen(false);
+    setPendingAdminAction(null);
+    setAdminPromptMessage('');
+  };
+
+  const requireAdmin = (actionCallback, promptMessage = '') => {
+    if (isAdminRef.current) {
       if (typeof actionCallback === 'function') actionCallback();
       return true;
     }
     setPendingAdminAction(() => actionCallback);
+    setAdminPromptMessage(promptMessage || '');
     setIsAdminLoginOpen(true);
     return false;
   };
@@ -381,9 +584,16 @@ export const DojoProvider = ({ children }) => {
   }, []);
 
   const clearActivities = () => {
+    if (!isAdminRef.current) {
+      showErrorAlert('Authorization Required 🔒', 'Only authorized staff / administrators can clear the dashboard activity feed.');
+      return false;
+    }
+    const clearedAt = new Date().toISOString();
+    localStorage.setItem('sensei_feed_cleared_at', clearedAt);
     setActivities([]);
     localStorage.setItem('sensei_activities', JSON.stringify([]));
-    showToast('Activity logs cleared!', 'info');
+    showToast('Dashboard activity feed cleared! Payment audit logs remain preserved.', 'info');
+    return true;
   };
 
   const resetAllDataToCleanSlate = () => {
@@ -394,6 +604,10 @@ export const DojoProvider = ({ children }) => {
     setFeePlans(INITIAL_FEE_PLANS);
     setStudents([]);
     localStorage.setItem('sensei_students', JSON.stringify([]));
+    setPayments([]);
+    localStorage.setItem('sensei_payments', JSON.stringify([]));
+    setPaymentAuditLogs([]);
+    localStorage.setItem('sensei_payment_audit_logs', JSON.stringify([]));
     setActivities(INITIAL_ACTIVITIES);
     localStorage.setItem('sensei_activities', JSON.stringify(INITIAL_ACTIVITIES));
     setSelectedDojoId('all');
@@ -509,8 +723,9 @@ export const DojoProvider = ({ children }) => {
 
     const unsubPayments = subscribeToCollection(COL_PAYMENTS, (cloudPayments) => {
       if (cloudPayments) {
-        setPayments(cloudPayments);
-        localStorage.setItem('sensei_payments', JSON.stringify(cloudPayments));
+        const normalized = sortPaymentsDesc(cloudPayments.map(normalizePaymentRecord));
+        setPayments(normalized);
+        localStorage.setItem('sensei_payments', JSON.stringify(normalized));
       }
     });
 
@@ -518,6 +733,54 @@ export const DojoProvider = ({ children }) => {
       if (cloudAttendance) {
         setAttendanceHistory(cloudAttendance);
         localStorage.setItem('sensei_attendance_history', JSON.stringify(cloudAttendance));
+      }
+    });
+
+    const unsubActivities = subscribeToCollection(COL_ACTIVITIES, (cloudActivities) => {
+      if (cloudActivities && cloudActivities.length > 0) {
+        const normalizedActs = cloudActivities.map(a => {
+          const iso = toIsoTimestamp(a.createdAtIso || a.serverCreatedAt || a.createdAt) || '';
+          return {
+            ...a,
+            createdAtIso: iso,
+            timestamp: a.timestamp && a.timestamp !== 'Just now' ? a.timestamp : (iso ? formatActivityTimeDisplay(iso) : 'Just now')
+          };
+        }).sort((a, b) => {
+          const tA = new Date(a.createdAtIso || 0).getTime() || 0;
+          const tB = new Date(b.createdAtIso || 0).getTime() || 0;
+          return tB - tA;
+        });
+
+        const clearedAt = localStorage.getItem('sensei_feed_cleared_at');
+        const clearedTime = clearedAt ? new Date(clearedAt).getTime() : 0;
+        const visibleFeed = clearedTime > 0
+          ? normalizedActs.filter(a => (new Date(a.createdAtIso || 0).getTime() || 0) > clearedTime)
+          : normalizedActs;
+
+        setActivities(visibleFeed.slice(0, 100));
+        localStorage.setItem('sensei_activities', JSON.stringify(visibleFeed.slice(0, 100)));
+
+        // Merge payment audit logs permanently (never filtered by feed clear)
+        const cloudPaymentLogs = normalizedActs.filter(
+          a => a.type === 'payment' || (a.actionType && a.actionType.startsWith('payment_'))
+        );
+        if (cloudPaymentLogs.length > 0) {
+          setPaymentAuditLogs(prev => {
+            const byId = new Map();
+            [...cloudPaymentLogs, ...prev].forEach(item => {
+              if (item?.id && !byId.has(item.id)) {
+                byId.set(item.id, item);
+              }
+            });
+            const merged = Array.from(byId.values()).sort((a, b) => {
+              const tA = new Date(a.createdAtIso || 0).getTime() || 0;
+              const tB = new Date(b.createdAtIso || 0).getTime() || 0;
+              return tB - tA;
+            }).slice(0, 500);
+            localStorage.setItem('sensei_payment_audit_logs', JSON.stringify(merged));
+            return merged;
+          });
+        }
       }
     });
 
@@ -529,6 +792,7 @@ export const DojoProvider = ({ children }) => {
       unsubDojos();
       unsubPayments();
       unsubAttendance();
+      unsubActivities();
     };
   }, []);
 
@@ -560,6 +824,10 @@ export const DojoProvider = ({ children }) => {
   useEffect(() => {
     localStorage.setItem('sensei_attendance_history', JSON.stringify(attendanceHistory));
   }, [attendanceHistory]);
+
+  useEffect(() => {
+    localStorage.setItem('sensei_payment_audit_logs', JSON.stringify(paymentAuditLogs));
+  }, [paymentAuditLogs]);
 
   // Ensure students have 100% mathematically accurate attendance rates calculated from actual recorded history
   useEffect(() => {
@@ -600,22 +868,36 @@ export const DojoProvider = ({ children }) => {
     }, 3500);
   };
 
-  const addActivity = async (text, type = 'general', icon = 'Activity') => {
+  const addActivity = async (text, type = 'general', icon = 'Activity', metadata = {}) => {
+    const nowIso = new Date().toISOString();
     const newActivity = {
-      id: `act-${Date.now()}`,
+      id: `act-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       text,
-      timestamp: 'Just now',
+      timestamp: formatActivityTimeDisplay(nowIso),
+      createdAtIso: nowIso,
       type,
       icon,
-      badgeColor: type === 'attendance' ? 'text-emerald-400' :
-                  type === 'payment' ? 'text-amber-400' :
-                  type === 'student' ? 'text-blue-400' : 'text-red-400'
+      badgeColor: metadata.badgeColor || (
+        type === 'attendance' ? 'text-emerald-400' :
+        type === 'payment' ? 'text-amber-400' :
+        type === 'student' ? 'text-blue-400' : 'text-red-400'
+      ),
+      ...metadata
     };
-    setActivities(prev => [newActivity, ...prev.slice(0, 15)]);
+    setActivities(prev => [newActivity, ...prev.slice(0, 99)]);
+
+    if (type === 'payment' || (metadata.actionType && metadata.actionType.startsWith('payment_'))) {
+      setPaymentAuditLogs(prev => {
+        const next = [newActivity, ...prev.slice(0, 499)];
+        localStorage.setItem('sensei_payment_audit_logs', JSON.stringify(next));
+        return next;
+      });
+    }
 
     if (isFirebaseConfigured) {
       await logActivityToFirestore(newActivity).catch(console.error);
     }
+    return newActivity;
   };
 
   // Add Dojo
@@ -810,6 +1092,64 @@ export const DojoProvider = ({ children }) => {
     return true;
   };
 
+  // Bill Number Helpers (Physical Bill Book Serial Tracking)
+  const advanceBillSerial = (billStr) => {
+    const seq = extractBillSequence(billStr);
+    if (seq > 0) {
+      const currentStored = parseInt(localStorage.getItem('sensei_last_bill_serial') || '0', 10) || 0;
+      if (seq > currentStored) {
+        localStorage.setItem('sensei_last_bill_serial', String(seq));
+      }
+    }
+  };
+
+  const getNextBillNumber = (extraExcludePayments = null) => {
+    const paymentList = Array.isArray(extraExcludePayments) ? extraExcludePayments : payments;
+    const storedSerial = parseInt(localStorage.getItem('sensei_last_bill_serial') || '0', 10) || 0;
+
+    let maxSeq = storedSerial;
+    paymentList.forEach(p => {
+      const seq = extractBillSequence(p.billNumber || p.receiptNumber);
+      if (seq > maxSeq) maxSeq = seq;
+    });
+    paymentAuditLogs.forEach(log => {
+      const seq = extractBillSequence(log.billNumber);
+      if (seq > maxSeq) maxSeq = seq;
+    });
+
+    let nextSeq = maxSeq + 1;
+    let candidate = formatBillSerial(nextSeq);
+    const usedKeys = new Set(
+      paymentList.map(p => normalizeBillKey(p.billNumber || p.receiptNumber)).filter(Boolean)
+    );
+
+    while (usedKeys.has(normalizeBillKey(candidate))) {
+      nextSeq += 1;
+      candidate = formatBillSerial(nextSeq);
+    }
+
+    return candidate;
+  };
+
+  const isBillNumberUnique = (billNumber, excludePaymentId = null) => {
+    const clean = String(billNumber || '').trim();
+    if (!clean) {
+      return { valid: false, error: 'Bill / Receipt Number is required.' };
+    }
+    const targetKey = normalizeBillKey(clean);
+    const conflict = payments.find(
+      p => p.id !== excludePaymentId && normalizeBillKey(p.billNumber || p.receiptNumber) === targetKey
+    );
+    if (conflict) {
+      return {
+        valid: false,
+        error: `Bill Number "${clean}" is already assigned to ${conflict.studentName || 'another transaction'}${conflict.status === 'Reset' ? ' (Reset/Voided)' : ''}. Every payment must have a unique bill number.`,
+        existingPayment: conflict
+      };
+    }
+    return { valid: true };
+  };
+
   // Add Student
   const addStudent = async (studentData) => {
     const selectedPlan = feePlans.find(p => p.id === studentData.tuitionPlanId) || feePlans[0];
@@ -827,8 +1167,10 @@ export const DojoProvider = ({ children }) => {
     const subscriptionStartDate = studentData.subscriptionStartDate || studentData.joinDate || todayStr;
     const nextDueDate = studentData.nextDueDate || calculateNextDueDate(subscriptionStartDate, selectedPlan);
 
+    const { billNumber: _omitBill, ...cleanStudentFields } = studentData;
+
     const newStudent = {
-      ...studentData,
+      ...cleanStudentFields,
       id: `std-${Date.now()}`,
       attendanceRate: 100,
       dueAmount: isPaid ? 0 : (studentData.initialDueAmount !== undefined ? studentData.initialDueAmount : totalFirstBill),
@@ -853,25 +1195,69 @@ export const DojoProvider = ({ children }) => {
 
     // Record enrollment receipt if paid at desk
     if (isPaid) {
+      const requestedBill = String(studentData.billNumber || '').trim();
+      const finalBillNumber = (requestedBill && isBillNumberUnique(requestedBill).valid)
+        ? requestedBill
+        : getNextBillNumber();
+
+      advanceBillSerial(finalBillNumber);
+
       const enrollmentPayment = {
-        id: `pay-enr-${Date.now()}`,
-        receiptNumber: `REC-ENR-${Date.now().toString().slice(-6)}`,
+        id: `pay-enr-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        billNumber: finalBillNumber,
+        receiptNumber: finalBillNumber,
         studentId: newStudent.id,
         studentName: newStudent.fullName,
         parentName: newStudent.parentName || 'Self',
         phone: newStudent.whatsapp || newStudent.phone || '',
+        beltRank: newStudent.beltRank || '',
+        dojoId: newStudent.dojoId || '',
         amount: totalFirstBill,
         paymentMethod,
         paymentDate: lastPaidDate || todayStr,
         subscriptionStartDate,
         nextDueDate,
         renewalType: 'initial',
-        planId: selectedPlan?.id,
+        planId: selectedPlan?.id || '',
         planName: selectedPlan?.name || 'Package',
         notes: studentData.paymentNotes ? `Enrollment: ${studentData.paymentNotes}` : `Initial Admission & ${selectedPlan?.name || 'Package'}`,
-        createdAt: new Date().toISOString()
+        remainingDue: 0,
+        status: 'Active',
+        createdBy: authorizedStaffName || 'Admin',
+        createdAt: new Date().toISOString(),
+        previousStudentSnapshot: {
+          dueAmount: totalFirstBill,
+          feeStatus: 'Pending',
+          lastPaidDate: '',
+          subscriptionStartDate,
+          nextDueDate,
+          lastPaymentMethod: '',
+          tuitionPlanId: selectedPlan?.id || ''
+        }
       };
-      setPayments(prev => [enrollmentPayment, ...prev]);
+
+      setPayments(prev => {
+        const next = [enrollmentPayment, ...prev];
+        localStorage.setItem('sensei_payments', JSON.stringify(next));
+        return next;
+      });
+
+      addActivity(
+        `Payment Recorded [${finalBillNumber}]: AED ${totalFirstBill.toLocaleString()} from ${newStudent.fullName} (${paymentMethod}) — Initial Admission`,
+        'payment',
+        'CreditCard',
+        {
+          actionType: 'payment_recorded',
+          billNumber: finalBillNumber,
+          paymentId: enrollmentPayment.id,
+          studentId: newStudent.id,
+          studentName: newStudent.fullName,
+          amount: totalFirstBill,
+          paymentMethod,
+          paymentDate: enrollmentPayment.paymentDate,
+          performedBy: authorizedStaffName || 'Admin'
+        }
+      );
 
       if (isFirebaseConfigured) {
         await recordPaymentToFirestore(enrollmentPayment).catch(console.error);
@@ -1204,6 +1590,65 @@ export const DojoProvider = ({ children }) => {
     }
   };
 
+  // Helper: Revert student billing state when a payment is reset or deleted
+  const computeRevertedStudentUpdate = (payment, remainingActivePayments) => {
+    const student = students.find(s => s.id === payment.studentId);
+    if (!student) return null;
+
+    const sortedRemaining = sortPaymentsDesc(remainingActivePayments);
+    const latestOther = sortedRemaining[0] || null;
+
+    let isLatest = true;
+    if (latestOther) {
+      const pTime = new Date(payment.paymentDate || payment.createdAt || 0).getTime() || 0;
+      const otherTime = new Date(latestOther.paymentDate || latestOther.createdAt || 0).getTime() || 0;
+      if (otherTime > pTime) {
+        isLatest = false;
+      } else if (otherTime === pTime) {
+        const pCreated = new Date(payment.createdAt || 0).getTime() || 0;
+        const otherCreated = new Date(latestOther.createdAt || 0).getTime() || 0;
+        if (otherCreated > pCreated) isLatest = false;
+      }
+    }
+
+    let updatedFields;
+    if (isLatest && payment.previousStudentSnapshot) {
+      const snap = payment.previousStudentSnapshot;
+      updatedFields = {
+        dueAmount: Number(snap.dueAmount) || 0,
+        feeStatus: snap.feeStatus || ((Number(snap.dueAmount) || 0) > 0 ? 'Pending' : 'Paid'),
+        lastPaidDate: snap.lastPaidDate || '',
+        subscriptionStartDate: snap.subscriptionStartDate || student.subscriptionStartDate || '',
+        nextDueDate: snap.nextDueDate || student.nextDueDate || '',
+        lastPaymentMethod: snap.lastPaymentMethod || '',
+        ...(snap.tuitionPlanId ? { tuitionPlanId: snap.tuitionPlanId } : {})
+      };
+    } else if (isLatest) {
+      const restoredDue = (Number(student.dueAmount) || 0) + (Number(payment.amount) || 0);
+      updatedFields = {
+        dueAmount: restoredDue,
+        feeStatus: restoredDue > 0 ? 'Pending' : 'Paid',
+        lastPaidDate: latestOther ? (latestOther.paymentDate || '') : '',
+        subscriptionStartDate: latestOther ? (latestOther.subscriptionStartDate || student.subscriptionStartDate || '') : (student.subscriptionStartDate || ''),
+        nextDueDate: latestOther ? (latestOther.nextDueDate || student.nextDueDate || '') : (student.nextDueDate || ''),
+        lastPaymentMethod: latestOther ? (latestOther.paymentMethod || '') : ''
+      };
+    } else {
+      // Older payment was reset/deleted while a newer payment remains active
+      const restoredDue = (Number(student.dueAmount) || 0) + (Number(payment.amount) || 0);
+      updatedFields = {
+        dueAmount: restoredDue,
+        feeStatus: restoredDue > 0 ? 'Pending' : 'Paid'
+      };
+    }
+
+    return {
+      studentId: student.id,
+      updatedFields,
+      updatedStudent: { ...student, ...updatedFields }
+    };
+  };
+
   // Record Payment (Supports Normal Renewal from previous due date, and Restart After Break from actual resume date)
   const recordPayment = async ({
     studentId,
@@ -1215,10 +1660,37 @@ export const DojoProvider = ({ children }) => {
     renewalType = 'normal',
     planId,
     notes,
+    billNumber,
     receiptNumber
   }) => {
+    if (!isAdminRef.current) {
+      showErrorAlert('Authorization Required 🔒', 'Only authorized staff / administrators can record payments.');
+      return null;
+    }
+
     const student = students.find(s => s.id === studentId);
     if (!student) return null;
+
+    const requestedBill = String(billNumber || receiptNumber || '').trim();
+    const finalBillNumber = requestedBill || getNextBillNumber();
+
+    const billCheck = isBillNumberUnique(finalBillNumber);
+    if (!billCheck.valid) {
+      showErrorAlert('Duplicate Bill Number ⚠️', billCheck.error);
+      return null;
+    }
+
+    advanceBillSerial(finalBillNumber);
+
+    const previousStudentSnapshot = {
+      dueAmount: Number(student.dueAmount) || 0,
+      feeStatus: student.feeStatus || 'Pending',
+      lastPaidDate: student.lastPaidDate || '',
+      subscriptionStartDate: student.subscriptionStartDate || '',
+      nextDueDate: student.nextDueDate || '',
+      lastPaymentMethod: student.lastPaymentMethod || '',
+      tuitionPlanId: student.tuitionPlanId || ''
+    };
 
     const remaining = Math.max(0, (student.dueAmount || 0) - Number(amount));
     const updatedFeeStatus = remaining === 0 ? 'Paid' : 'Pending';
@@ -1250,39 +1722,61 @@ export const DojoProvider = ({ children }) => {
       ...(planId ? { tuitionPlanId: planId } : {})
     };
 
-    setStudents(prev => prev.map(s => s.id === studentId ? updatedStudent : s));
+    setStudents(prev => {
+      const next = prev.map(s => s.id === studentId ? updatedStudent : s);
+      localStorage.setItem('sensei_students', JSON.stringify(next));
+      return next;
+    });
 
-    const finalReceiptNumber = receiptNumber || `REC-${Date.now().toString().slice(-6)}`;
     const newPaymentRecord = {
-      id: `pay-${Date.now()}`,
-      receiptNumber: finalReceiptNumber,
+      id: `pay-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      billNumber: finalBillNumber,
+      receiptNumber: finalBillNumber,
       studentId,
       studentName: student.fullName,
       parentName: student.parentName || 'Self',
       phone: student.whatsapp || student.phone || '',
-      beltRank: student.beltRank,
-      dojoId: student.dojoId,
+      beltRank: student.beltRank || '',
+      dojoId: student.dojoId || '',
       amount: Number(amount),
       paymentMethod: paymentMethod || 'Cash',
       paymentDate: actualPaymentDate,
       subscriptionStartDate: finalSubscriptionStart,
       nextDueDate: finalNextDue,
-      renewalType, // 'normal' | 'restart'
-      planId: plan?.id,
+      renewalType, // 'normal' | 'restart' | 'initial'
+      planId: plan?.id || '',
       planName: plan?.name || 'Training Package',
       notes: notes || '',
       remainingDue: remaining,
-      createdAt: new Date().toISOString()
+      status: 'Active',
+      createdBy: authorizedStaffName || 'Admin',
+      createdAt: new Date().toISOString(),
+      previousStudentSnapshot
     };
 
-    setPayments(prev => [newPaymentRecord, ...prev]);
+    setPayments(prev => {
+      const next = [newPaymentRecord, ...prev];
+      localStorage.setItem('sensei_payments', JSON.stringify(next));
+      return next;
+    });
 
     const logText = renewalType === 'restart'
-      ? `Fee & Resumption: AED ${Number(amount).toLocaleString()} from ${student.fullName} (Resumed: ${finalSubscriptionStart} ➔ Due: ${finalNextDue})`
-      : `Fee renewal: AED ${Number(amount).toLocaleString()} from ${student.fullName} (Period: ${finalSubscriptionStart} ➔ Due: ${finalNextDue})`;
+      ? `Payment Recorded [${finalBillNumber}]: AED ${Number(amount).toLocaleString()} from ${student.fullName} via ${newPaymentRecord.paymentMethod} (Resumed: ${finalSubscriptionStart} ➔ Due: ${finalNextDue})`
+      : `Payment Recorded [${finalBillNumber}]: AED ${Number(amount).toLocaleString()} from ${student.fullName} via ${newPaymentRecord.paymentMethod} (Period: ${finalSubscriptionStart} ➔ Due: ${finalNextDue})`;
 
-    addActivity(logText, 'payment', 'CreditCard');
-    showToast(`Payment of AED ${amount} recorded for ${student.fullName}!`);
+    addActivity(logText, 'payment', 'CreditCard', {
+      actionType: 'payment_recorded',
+      billNumber: finalBillNumber,
+      paymentId: newPaymentRecord.id,
+      studentId,
+      studentName: student.fullName,
+      amount: Number(amount),
+      paymentMethod: newPaymentRecord.paymentMethod,
+      paymentDate: actualPaymentDate,
+      performedBy: authorizedStaffName || 'Admin',
+      badgeColor: 'text-emerald-400'
+    });
+    showToast(`Payment [${finalBillNumber}] of AED ${amount} recorded for ${student.fullName}!`);
 
     if (isFirebaseConfigured) {
       await updateStudentInFirestore(studentId, {
@@ -1302,14 +1796,364 @@ export const DojoProvider = ({ children }) => {
     return { student: updatedStudent, payment: newPaymentRecord };
   };
 
-  // Delete / Revert Payment Record
-  const deletePayment = async (paymentId) => {
+  // Edit / Correct Existing Payment Transaction (Authorized Staff Only)
+  const updatePayment = async (paymentId, updatedData, reason = '') => {
+    if (!isAdminRef.current) {
+      showErrorAlert('Authorization Required 🔒', 'Only authorized staff / administrators can edit payment transactions.');
+      return false;
+    }
+
+    const existing = payments.find(p => p.id === paymentId);
+    if (!existing) return false;
+
+    const cleanBill = String(updatedData.billNumber || updatedData.receiptNumber || existing.billNumber || existing.receiptNumber || '').trim();
+    const billCheck = isBillNumberUnique(cleanBill, paymentId);
+    if (!billCheck.valid) {
+      showErrorAlert('Duplicate Bill Number ⚠️', billCheck.error);
+      return false;
+    }
+
+    const newAmount = Number(updatedData.amount);
+    if (!newAmount || newAmount <= 0) {
+      showErrorAlert('Invalid Amount', 'Payment amount must be greater than 0.');
+      return false;
+    }
+
+    advanceBillSerial(cleanBill);
+
+    const targetPlanId = updatedData.planId !== undefined ? updatedData.planId : existing.planId;
+    const plan = feePlans.find(p => p.id === targetPlanId);
+    const newMethod = updatedData.paymentMethod || existing.paymentMethod || 'Cash';
+    const newPaymentDate = updatedData.paymentDate || existing.paymentDate || new Date().toISOString().split('T')[0];
+    const newSubStart = updatedData.subscriptionStartDate !== undefined ? updatedData.subscriptionStartDate : (existing.subscriptionStartDate || '');
+    const newNextDue = updatedData.nextDueDate !== undefined ? updatedData.nextDueDate : (existing.nextDueDate || '');
+    const newRenewalType = updatedData.renewalType || existing.renewalType || 'normal';
+    const newNotes = updatedData.notes !== undefined ? updatedData.notes : (existing.notes || '');
+    const cleanReason = String(reason || '').trim() || 'Transaction corrected by authorized staff';
+
+    // Track field-level changes for audit log
+    const oldBill = existing.billNumber || existing.receiptNumber || '';
+    const changesSummary = [];
+    if (normalizeBillKey(oldBill) !== normalizeBillKey(cleanBill)) {
+      changesSummary.push(`Bill No: ${oldBill || '—'} → ${cleanBill}`);
+    }
+    if (Number(existing.amount) !== newAmount) {
+      changesSummary.push(`Amount: ${Number(existing.amount).toLocaleString()} Dhs → ${newAmount.toLocaleString()} Dhs`);
+    }
+    if ((existing.paymentMethod || '') !== newMethod) {
+      changesSummary.push(`Method: ${existing.paymentMethod || '—'} → ${newMethod}`);
+    }
+    if ((existing.paymentDate || '') !== newPaymentDate) {
+      changesSummary.push(`Date: ${existing.paymentDate || '—'} → ${newPaymentDate}`);
+    }
+    if ((existing.subscriptionStartDate || '') !== (newSubStart || '')) {
+      changesSummary.push(`Start: ${existing.subscriptionStartDate || '—'} → ${newSubStart || '—'}`);
+    }
+    if ((existing.nextDueDate || '') !== (newNextDue || '')) {
+      changesSummary.push(`Next Due: ${existing.nextDueDate || '—'} → ${newNextDue || '—'}`);
+    }
+    if ((existing.renewalType || 'normal') !== newRenewalType) {
+      changesSummary.push(`Mode: ${existing.renewalType || 'normal'} → ${newRenewalType}`);
+    }
+    if ((existing.planId || '') !== (targetPlanId || '')) {
+      changesSummary.push(`Package: ${existing.planName || '—'} → ${plan?.name || 'Package'}`);
+    }
+    if ((existing.notes || '') !== newNotes) {
+      changesSummary.push(`Notes updated`);
+    }
+
+    const nowIso = new Date().toISOString();
+    const staffName = authorizedStaffName || 'Admin';
+
+    // Sync student balance & dates if transaction is active (not Reset)
+    const student = students.find(s => s.id === existing.studentId);
+    let updatedRemainingDue = existing.remainingDue ?? 0;
+
+    if (student && existing.status !== 'Reset') {
+      const otherActive = payments.filter(
+        p => p.studentId === existing.studentId && p.id !== paymentId && p.status !== 'Reset'
+      );
+      const sortedOthers = sortPaymentsDesc(otherActive);
+      const latestOther = sortedOthers[0] || null;
+
+      const checkIsLatest = (payDate) => {
+        if (!latestOther) return true;
+        const pTime = new Date(payDate || existing.createdAt || 0).getTime() || 0;
+        const otherTime = new Date(latestOther.paymentDate || latestOther.createdAt || 0).getTime() || 0;
+        if (otherTime > pTime) return false;
+        if (otherTime === pTime) {
+          const pCreated = new Date(existing.createdAt || 0).getTime() || 0;
+          const otherCreated = new Date(latestOther.createdAt || 0).getTime() || 0;
+          if (otherCreated > pCreated) return false;
+        }
+        return true;
+      };
+
+      const wasLatest = checkIsLatest(existing.paymentDate);
+      const isLatest = checkIsLatest(newPaymentDate);
+
+      let newDue;
+      if (isLatest && existing.previousStudentSnapshot) {
+        newDue = Math.max(0, (Number(existing.previousStudentSnapshot.dueAmount) || 0) - newAmount);
+      } else {
+        const delta = newAmount - (Number(existing.amount) || 0);
+        newDue = Math.max(0, (Number(student.dueAmount) || 0) - delta);
+      }
+      updatedRemainingDue = newDue;
+      const newFeeStatus = newDue === 0 ? 'Paid' : 'Pending';
+
+      const studentPatch = isLatest
+        ? {
+            dueAmount: newDue,
+            feeStatus: newFeeStatus,
+            lastPaidDate: newPaymentDate,
+            subscriptionStartDate: newSubStart,
+            nextDueDate: newNextDue,
+            lastPaymentMethod: newMethod,
+            ...(targetPlanId ? { tuitionPlanId: targetPlanId } : {})
+          }
+        : (wasLatest && latestOther)
+        ? {
+            dueAmount: newDue,
+            feeStatus: newFeeStatus,
+            lastPaidDate: latestOther.paymentDate || '',
+            subscriptionStartDate: latestOther.subscriptionStartDate || student.subscriptionStartDate || '',
+            nextDueDate: latestOther.nextDueDate || student.nextDueDate || '',
+            lastPaymentMethod: latestOther.paymentMethod || '',
+            ...(latestOther.planId ? { tuitionPlanId: latestOther.planId } : {})
+          }
+        : {
+            dueAmount: newDue,
+            feeStatus: newFeeStatus
+          };
+
+      setStudents(prev => {
+        const next = prev.map(s => s.id === student.id ? { ...s, ...studentPatch } : s);
+        localStorage.setItem('sensei_students', JSON.stringify(next));
+        return next;
+      });
+
+      if (isFirebaseConfigured) {
+        await updateStudentInFirestore(student.id, studentPatch).catch(console.error);
+      }
+    }
+
+    const editEntry = {
+      editedAt: nowIso,
+      editedBy: staffName,
+      reason: cleanReason,
+      changes: changesSummary.length > 0 ? changesSummary : ['Transaction details updated'],
+      previousValues: {
+        billNumber: oldBill,
+        amount: Number(existing.amount),
+        paymentMethod: existing.paymentMethod,
+        paymentDate: existing.paymentDate,
+        subscriptionStartDate: existing.subscriptionStartDate,
+        nextDueDate: existing.nextDueDate
+      }
+    };
+
+    const updatedPayment = {
+      ...existing,
+      billNumber: cleanBill,
+      receiptNumber: cleanBill,
+      amount: newAmount,
+      paymentMethod: newMethod,
+      paymentDate: newPaymentDate,
+      subscriptionStartDate: newSubStart,
+      nextDueDate: newNextDue,
+      renewalType: newRenewalType,
+      planId: targetPlanId || '',
+      planName: plan?.name || existing.planName || 'Training Package',
+      notes: newNotes,
+      remainingDue: updatedRemainingDue,
+      isEdited: true,
+      lastEditedAt: nowIso,
+      lastEditedBy: staffName,
+      editReason: cleanReason,
+      editHistory: [editEntry, ...(existing.editHistory || [])]
+    };
+
+    setPayments(prev => {
+      const next = prev.map(p => p.id === paymentId ? updatedPayment : p);
+      localStorage.setItem('sensei_payments', JSON.stringify(next));
+      return next;
+    });
+
+    if (isFirebaseConfigured) {
+      await updatePaymentInFirestore(paymentId, updatedPayment).catch(console.error);
+    }
+
+    const diffText = changesSummary.length > 0 ? changesSummary.join(' • ') : 'Details updated';
+    addActivity(
+      `Edited Payment [${cleanBill}] for ${existing.studentName || student?.fullName || 'Student'}: ${diffText} (${cleanReason}) — by ${staffName}`,
+      'payment',
+      'Pencil',
+      {
+        actionType: 'payment_edited',
+        billNumber: cleanBill,
+        previousBillNumber: oldBill,
+        paymentId,
+        studentId: existing.studentId,
+        studentName: existing.studentName || student?.fullName || 'Student',
+        amount: newAmount,
+        previousAmount: Number(existing.amount),
+        paymentMethod: newMethod,
+        paymentDate: newPaymentDate,
+        changesSummary: editEntry.changes,
+        reason: cleanReason,
+        performedBy: staffName,
+        badgeColor: 'text-amber-400'
+      }
+    );
+
+    showToast(`Payment [${cleanBill}] updated and logged!`, 'success');
+    return updatedPayment;
+  };
+
+  // Reset / Revert Payment Transaction (Authorized Staff Only — rolls back student due & dates, marks bill as Reset)
+  const resetPayment = async (paymentId, reason = '') => {
+    if (!isAdminRef.current) {
+      showErrorAlert('Authorization Required 🔒', 'Only authorized staff / administrators can reset payment transactions.');
+      return false;
+    }
+
+    const existing = payments.find(p => p.id === paymentId);
+    if (!existing) return false;
+    if (existing.status === 'Reset') {
+      showToast('This payment transaction has already been reset.', 'info');
+      return false;
+    }
+
+    const billNo = existing.billNumber || existing.receiptNumber || '—';
+    const cleanReason = String(reason || '').trim() || 'Transaction reset / voided by authorized staff';
+    const nowIso = new Date().toISOString();
+    const staffName = authorizedStaffName || 'Admin';
+
+    const remainingActive = payments.filter(
+      p => p.studentId === existing.studentId && p.id !== paymentId && p.status !== 'Reset'
+    );
+    const revertResult = computeRevertedStudentUpdate(existing, remainingActive);
+
+    if (revertResult) {
+      setStudents(prev => {
+        const next = prev.map(s => s.id === revertResult.studentId ? revertResult.updatedStudent : s);
+        localStorage.setItem('sensei_students', JSON.stringify(next));
+        return next;
+      });
+      if (isFirebaseConfigured) {
+        await updateStudentInFirestore(revertResult.studentId, revertResult.updatedFields).catch(console.error);
+      }
+    }
+
+    const resetRecord = {
+      ...existing,
+      billNumber: billNo,
+      receiptNumber: billNo,
+      status: 'Reset',
+      resetAt: nowIso,
+      resetBy: staffName,
+      resetReason: cleanReason
+    };
+
+    setPayments(prev => {
+      const next = prev.map(p => p.id === paymentId ? resetRecord : p);
+      localStorage.setItem('sensei_payments', JSON.stringify(next));
+      return next;
+    });
+
+    if (isFirebaseConfigured) {
+      await updatePaymentInFirestore(paymentId, resetRecord).catch(console.error);
+    }
+
+    addActivity(
+      `Reset Payment [${billNo}] (AED ${Number(existing.amount).toLocaleString()}, ${existing.paymentMethod}) for ${existing.studentName || 'Student'} — Balance reverted (${cleanReason}) — by ${staffName}`,
+      'payment',
+      'RotateCcw',
+      {
+        actionType: 'payment_reset',
+        billNumber: billNo,
+        paymentId,
+        studentId: existing.studentId,
+        studentName: existing.studentName || 'Student',
+        amount: Number(existing.amount),
+        paymentMethod: existing.paymentMethod,
+        paymentDate: existing.paymentDate,
+        revertedDueAmount: revertResult?.updatedFields?.dueAmount,
+        reason: cleanReason,
+        performedBy: staffName,
+        badgeColor: 'text-orange-400'
+      }
+    );
+
+    showToast(`Payment [${billNo}] reset & student fee balance reverted.`, 'info');
+    return true;
+  };
+
+  // Delete Payment Record (Authorized Staff Only — reverts student balance if active & logs permanently)
+  const deletePayment = async (paymentId, reason = '') => {
+    if (!isAdminRef.current) {
+      showErrorAlert('Authorization Required 🔒', 'Only authorized staff / administrators can delete payment transactions.');
+      return false;
+    }
+
+    const existing = payments.find(p => p.id === paymentId);
+    if (!existing) return false;
+
+    const billNo = existing.billNumber || existing.receiptNumber || '—';
+    const cleanReason = String(reason || '').trim() || 'Transaction deleted by authorized staff';
+    const staffName = authorizedStaffName || 'Admin';
+
+    // Only revert student balance if the payment was still active (not already Reset)
+    if (existing.status !== 'Reset') {
+      const remainingActive = payments.filter(
+        p => p.studentId === existing.studentId && p.id !== paymentId && p.status !== 'Reset'
+      );
+      const revertResult = computeRevertedStudentUpdate(existing, remainingActive);
+      if (revertResult) {
+        setStudents(prev => {
+          const next = prev.map(s => s.id === revertResult.studentId ? revertResult.updatedStudent : s);
+          localStorage.setItem('sensei_students', JSON.stringify(next));
+          return next;
+        });
+        if (isFirebaseConfigured) {
+          await updateStudentInFirestore(revertResult.studentId, revertResult.updatedFields).catch(console.error);
+        }
+      }
+    }
+
     setPayments(prev => {
       const next = prev.filter(p => p.id !== paymentId);
       localStorage.setItem('sensei_payments', JSON.stringify(next));
       return next;
     });
-    showToast('Payment record removed from ledger.', 'info');
+
+    if (isFirebaseConfigured) {
+      await deletePaymentFromFirestore(paymentId).catch(console.error);
+    }
+
+    addActivity(
+      `Deleted Payment [${billNo}] (AED ${Number(existing.amount).toLocaleString()}, ${existing.paymentMethod || 'Cash'}, Date: ${formatDisplayDate(existing.paymentDate || existing.createdAt)}) for ${existing.studentName || 'Student'} (${cleanReason}) — by ${staffName}`,
+      'payment',
+      'Trash2',
+      {
+        actionType: 'payment_deleted',
+        billNumber: billNo,
+        paymentId,
+        studentId: existing.studentId,
+        studentName: existing.studentName || 'Student',
+        amount: Number(existing.amount),
+        paymentMethod: existing.paymentMethod,
+        paymentDate: existing.paymentDate,
+        wasResetBeforeDelete: existing.status === 'Reset',
+        reason: cleanReason,
+        performedBy: staffName,
+        badgeColor: 'text-red-400'
+      }
+    );
+
+    showToast(`Payment [${billNo}] deleted and recorded in activity log.`, 'info');
+    return true;
   };
 
   // Mark or Edit Attendance batch (Supports current date, past missed dates, and editing previously recorded sessions)
@@ -1540,12 +2384,73 @@ export const DojoProvider = ({ children }) => {
     return logs.sort((a, b) => new Date(b.date) - new Date(a.date));
   };
 
-  // Get student payment history list
+  // Get student payment history list (sorted newest first, normalized)
   const getStudentPaymentHistory = (studentId) => {
     if (!studentId) return [];
+    return sortPaymentsDesc(
+      payments
+        .filter(p => p.studentId === studentId)
+        .map(normalizePaymentRecord)
+    );
+  };
+
+  // Get total valid amount paid by a student (excludes Reset / Voided transactions)
+  const getStudentTotalPaid = (studentId) => {
+    if (!studentId) return 0;
     return payments
-      .filter(p => p.studentId === studentId)
-      .sort((a, b) => new Date(b.paymentDate || b.createdAt) - new Date(a.paymentDate || a.createdAt));
+      .filter(p => p.studentId === studentId && p.status !== 'Reset')
+      .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+  };
+
+  // Search payments across bill numbers, student names, methods, notes
+  const searchPayments = (queryText = '') => {
+    const q = String(queryText || '').trim().toLowerCase();
+    const list = sortPaymentsDesc(payments.map(normalizePaymentRecord));
+    if (!q) return list;
+    return list.filter(p => {
+      const bill = (p.billNumber || p.receiptNumber || '').toLowerCase();
+      const sName = (p.studentName || '').toLowerCase();
+      const method = (p.paymentMethod || '').toLowerCase();
+      const plan = (p.planName || '').toLowerCase();
+      const notes = (p.notes || '').toLowerCase();
+      const phone = (p.phone || '').toLowerCase();
+      return (
+        bill.includes(q) ||
+        sName.includes(q) ||
+        method.includes(q) ||
+        plan.includes(q) ||
+        notes.includes(q) ||
+        phone.includes(q)
+      );
+    });
+  };
+
+  // Get monthly payment transactions & summary (supports specific 'YYYY-MM' month or 'all')
+  const getMonthlyPayments = (monthKey = 'all', dojoId = selectedDojoId) => {
+    const branchFiltered = (dojoId && dojoId !== 'all')
+      ? payments.filter(p => {
+          const studentObj = students.find(s => s.id === p.studentId);
+          return (p.dojoId || studentObj?.dojoId) === dojoId;
+        })
+      : payments;
+
+    const normalized = sortPaymentsDesc(branchFiltered.map(normalizePaymentRecord));
+    const filteredByMonth = (!monthKey || monthKey === 'all')
+      ? normalized
+      : normalized.filter(p => getPaymentMonthKey(p) === monthKey);
+
+    const validTransactions = filteredByMonth.filter(p => p.status !== 'Reset');
+    const totalCollected = validTransactions.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+
+    return {
+      monthKey: monthKey || 'all',
+      monthLabel: formatMonthKeyLabel(monthKey || 'all'),
+      transactions: filteredByMonth,
+      validCount: validTransactions.length,
+      resetCount: filteredByMonth.length - validTransactions.length,
+      totalCollected,
+      groups: groupPaymentsByMonth(filteredByMonth)
+    };
   };
 
   // Filtered lists by selected dojo
@@ -1566,18 +2471,25 @@ export const DojoProvider = ({ children }) => {
         beltRanks,
         students,
         activities,
+        paymentAuditLogs,
         filteredStudents,
         filteredBatches,
         selectedDojoId,
         setSelectedDojoId,
         activeTab,
         setActiveTab,
+        activeFeesSubTab,
+        setActiveFeesSubTab,
         currentRole,
         setCurrentRole,
         isAdmin,
+        authorizedStaffName,
+        setAuthorizedStaffName,
         isAdminLoginOpen,
         setIsAdminLoginOpen,
+        closeAdminLoginModal,
         pendingAdminAction,
+        adminPromptMessage,
         loginAdmin,
         loginWithPin,
         changeAdminPassword,
@@ -1616,7 +2528,17 @@ export const DojoProvider = ({ children }) => {
         unfreezeStudentSubscription,
         loadDemoStudent,
         recordPayment,
+        updatePayment,
+        resetPayment,
         deletePayment,
+        getNextBillNumber,
+        isBillNumberUnique,
+        getStudentTotalPaid,
+        searchPayments,
+        getMonthlyPayments,
+        groupPaymentsByMonth,
+        getPaymentMonthKey,
+        formatMonthKeyLabel,
         payments,
         attendanceHistory,
         getStudentAttendanceHistory,

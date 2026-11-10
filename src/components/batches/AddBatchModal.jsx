@@ -157,7 +157,7 @@ export const AddBatchModal = ({ isOpen, onClose, initialDay }) => {
             <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
               Weekly Schedule Days *
             </label>
-            <div className="grid grid-cols-7 gap-1.5">
+            <div className="grid grid-cols-4 sm:grid-cols-7 gap-1.5">
               {DAYS_OF_WEEK.map((day) => {
                 const isSelected = formData.scheduleDays.includes(day);
                 return (
@@ -180,7 +180,7 @@ export const AddBatchModal = ({ isOpen, onClose, initialDay }) => {
           </div>
 
           {/* Timings: Start Time & Duration */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
                 Class Start Time *

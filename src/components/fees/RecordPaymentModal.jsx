@@ -21,13 +21,26 @@ import {
   ArrowRight,
   Info,
   Clock,
-  Sparkles
+  Sparkles,
+  Hash,
+  RotateCcw,
+  AlertCircle
 } from 'lucide-react';
 
 export const RecordPaymentModal = ({ isOpen, onClose, defaultStudentId = null, defaultRenewalType = null }) => {
-  const { students, dojos, feePlans, recordPayment, setModalState } = useDojo();
+  const {
+    students,
+    dojos,
+    feePlans,
+    recordPayment,
+    setModalState,
+    getNextBillNumber,
+    isBillNumberUnique
+  } = useDojo();
   
-  const [selectedStudentId, setSelectedStudentId] = useState('');
+  const [selectedStudentId, setSelectedStudentId] = useState(() => (defaultStudentId || students[0]?.id || ''));
+  const [billNumber, setBillNumber] = useState(() => (getNextBillNumber ? getNextBillNumber() : ''));
+  const [billError, setBillError] = useState('');
   const [renewalType, setRenewalType] = useState('normal'); // 'normal' | 'restart'
   const [paymentDate, setPaymentDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [restartDate, setRestartDate] = useState(() => new Date().toISOString().split('T')[0]);
@@ -42,6 +55,7 @@ export const RecordPaymentModal = ({ isOpen, onClose, defaultStudentId = null, d
 
   const handleClose = () => {
     setNotes('');
+    setBillError('');
     setActiveReceipt(null);
     onClose();
   };
@@ -51,49 +65,54 @@ export const RecordPaymentModal = ({ isOpen, onClose, defaultStudentId = null, d
     feePlans.find(p => p.id === currentStudent?.tuitionPlanId) ||
     feePlans[0];
 
+  const initializeDefaults = () => {
+    if (students.length === 0) return;
+    const targetId = defaultStudentId && students.some(s => s.id === defaultStudentId)
+      ? defaultStudentId
+      : (students.some(s => s.id === selectedStudentId) ? selectedStudentId : students[0].id);
+
+    const student = students.find(s => s.id === targetId);
+    setSelectedStudentId(targetId);
+
+    const targetPlanId = student?.tuitionPlanId || feePlans[0]?.id;
+    setSelectedPlanId(targetPlanId);
+    const plan = feePlans.find(p => p.id === targetPlanId) || feePlans[0];
+
+    const initialType = defaultRenewalType || 'normal';
+    setRenewalType(initialType);
+
+    const todayStr = new Date().toISOString().split('T')[0];
+    setPaymentDate(todayStr);
+    setRestartDate(todayStr);
+
+    let start = '';
+    if (initialType === 'restart') {
+      start = todayStr;
+    } else {
+      start = normalizeDateToISO(student?.nextDueDate || student?.lastPaidDate || student?.joinDate || todayStr);
+    }
+    setSubscriptionStartDate(start);
+
+    const due = calculateNextDueDate(start, plan);
+    setNextDueDate(due);
+
+    if (student && student.dueAmount > 0) {
+      setAmount(student.dueAmount.toString());
+    } else {
+      setAmount(plan?.tuitionFee?.toString() || '250');
+    }
+
+    setBillNumber(getNextBillNumber ? getNextBillNumber() : `BILL-${Date.now().toString().slice(-4)}`);
+    setBillError('');
+    setPaymentMethod('Card / POS');
+    setNotes('');
+    setActiveReceipt(null);
+  };
+
   // Initialize or re-sync student & renewal state when modal opens
   useEffect(() => {
     if (isOpen && students.length > 0) {
-      const targetId = defaultStudentId && students.some(s => s.id === defaultStudentId)
-        ? defaultStudentId
-        : (students.some(s => s.id === selectedStudentId) ? selectedStudentId : students[0].id);
-
-      const student = students.find(s => s.id === targetId);
-      setSelectedStudentId(targetId);
-
-      const targetPlanId = student?.tuitionPlanId || feePlans[0]?.id;
-      setSelectedPlanId(targetPlanId);
-      const plan = feePlans.find(p => p.id === targetPlanId) || feePlans[0];
-
-      const initialType = defaultRenewalType || 'normal';
-      setRenewalType(initialType);
-
-      const todayStr = new Date().toISOString().split('T')[0];
-      setPaymentDate(todayStr);
-      setRestartDate(todayStr);
-
-      // Determine initial start date:
-      // Normal: starts from previous subscription nextDueDate (or lastPaidDate/joinDate/today)
-      // Restart: starts from actual restart date (today)
-      let start = '';
-      if (initialType === 'restart') {
-        start = todayStr;
-      } else {
-        start = normalizeDateToISO(student?.nextDueDate || student?.lastPaidDate || student?.joinDate || todayStr);
-      }
-      setSubscriptionStartDate(start);
-
-      const due = calculateNextDueDate(start, plan);
-      setNextDueDate(due);
-
-      if (student && student.dueAmount > 0) {
-        setAmount(student.dueAmount.toString());
-      } else {
-        setAmount(plan?.tuitionFee?.toString() || '250');
-      }
-
-      setNotes('');
-      setActiveReceipt(null);
+      initializeDefaults();
     }
   }, [isOpen, defaultStudentId, defaultRenewalType]);
 
@@ -190,15 +209,31 @@ export const RecordPaymentModal = ({ isOpen, onClose, defaultStudentId = null, d
     if (due) setNextDueDate(due);
   };
 
+  const handleBillChange = (val) => {
+    setBillNumber(val);
+    if (isBillNumberUnique) {
+      const check = isBillNumberUnique(val);
+      setBillError(check.valid ? '' : check.error);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!selectedStudentId || !amount || Number(amount) <= 0) return;
 
+    const cleanBill = String(billNumber || '').trim() || (getNextBillNumber ? getNextBillNumber() : '');
+    if (isBillNumberUnique) {
+      const check = isBillNumberUnique(cleanBill);
+      if (!check.valid) {
+        setBillError(check.error);
+        return;
+      }
+    }
+
     const dojo = dojos.find(d => d.id === currentStudent?.dojoId);
     const remainingDue = Math.max(0, (currentStudent?.dueAmount || 0) - Number(amount));
-    const generatedReceiptNumber = `REC-${Date.now().toString().slice(-6)}`;
 
-    await recordPayment({
+    const result = await recordPayment({
       studentId: selectedStudentId,
       amount: Number(amount),
       paymentMethod,
@@ -208,11 +243,15 @@ export const RecordPaymentModal = ({ isOpen, onClose, defaultStudentId = null, d
       renewalType,
       planId: selectedPlanId,
       notes: notes || (renewalType === 'restart' ? 'Resumed classes after break' : 'Training subscription renewal'),
-      receiptNumber: generatedReceiptNumber
+      billNumber: cleanBill,
+      receiptNumber: cleanBill
     });
 
+    if (!result) return;
+
     const receipt = {
-      receiptNumber: generatedReceiptNumber,
+      billNumber: cleanBill,
+      receiptNumber: cleanBill,
       date: formatDisplayDate(paymentDate),
       studentName: currentStudent?.fullName || 'Student',
       parentName: currentStudent?.parentName,
@@ -232,7 +271,7 @@ export const RecordPaymentModal = ({ isOpen, onClose, defaultStudentId = null, d
 
     showSuccessAlert(
       'Payment Recorded! 💳',
-      `Received ${Number(amount).toLocaleString()} Dhs from ${currentStudent?.fullName || 'Student'}. Subscription covered from ${formatDisplayDate(subscriptionStartDate)} to ${formatDisplayDate(nextDueDate)}.`
+      `Bill No: ${cleanBill} — Received ${Number(amount).toLocaleString()} Dhs from ${currentStudent?.fullName || 'Student'}. Subscription covered from ${formatDisplayDate(subscriptionStartDate)} to ${formatDisplayDate(nextDueDate)}.`
     );
   };
 
@@ -241,7 +280,7 @@ export const RecordPaymentModal = ({ isOpen, onClose, defaultStudentId = null, d
       onClick={(e) => {
         if (e.target === e.currentTarget) handleClose();
       }}
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-sm animate-fade-in"
+      className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-sm animate-fade-in"
     >
       <div className="w-full sm:max-w-xl bg-dojo-card border-t sm:border border-dojo-border rounded-t-3xl sm:rounded-2xl shadow-2xl max-h-[92vh] flex flex-col overflow-hidden">
         {/* Header */}
@@ -288,6 +327,43 @@ export const RecordPaymentModal = ({ isOpen, onClose, defaultStudentId = null, d
         ) : (
           /* Form Body */
           <form onSubmit={handleSubmit} className="p-5 sm:p-6 space-y-4 overflow-y-auto">
+            {/* 0. Unique Bill / Receipt Number (Physical Bill Book Serial) */}
+            <div className="p-3.5 bg-zinc-900/90 rounded-2xl border border-amber-500/30 space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-amber-300 flex items-center gap-1.5">
+                  <Hash className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Unique Bill / Receipt Number *</span>
+                </label>
+                <button
+                  type="button"
+                  onClick={() => handleBillChange(getNextBillNumber())}
+                  className="text-[11px] font-bold text-amber-400 hover:text-amber-300 underline cursor-pointer"
+                >
+                  ⚡ Auto Next Serial
+                </button>
+              </div>
+              <input
+                type="text"
+                required
+                value={billNumber}
+                onChange={(e) => handleBillChange(e.target.value)}
+                placeholder="e.g. BILL-0001 or physical bill book serial"
+                className={`w-full bg-zinc-950 border ${
+                  billError ? 'border-red-500' : 'border-zinc-700 focus:border-amber-400'
+                } rounded-xl px-3.5 py-2 text-sm font-mono font-bold text-amber-300 placeholder-zinc-500 focus:outline-none`}
+              />
+              {billError ? (
+                <p className="text-[11px] text-red-400 font-semibold flex items-center gap-1">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                  <span>{billError}</span>
+                </p>
+              ) : (
+                <p className="text-[10px] text-zinc-400">
+                  Sequential bill book serial number. You can customize it to match your physical bill book (must be unique).
+                </p>
+              )}
+            </div>
+
             {/* 1. Select Student */}
             <div>
               <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
@@ -312,13 +388,13 @@ export const RecordPaymentModal = ({ isOpen, onClose, defaultStudentId = null, d
             {/* 2. Previous Subscription Info Card */}
             {currentStudent && (
               <div className="p-3.5 bg-zinc-900/90 rounded-2xl border border-zinc-800 space-y-2 text-xs">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-1.5">
                   <span className="text-zinc-400 text-[11px]">Previous Subscription Period:</span>
                   <span className="font-bold text-zinc-200">
                     {currentStudent.subscriptionStartDate ? formatDisplayDate(currentStudent.subscriptionStartDate) : (currentStudent.joinDate ? formatDisplayDate(currentStudent.joinDate) : 'Initial')} ➔ <strong className="text-amber-400">{currentStudent.nextDueDate ? formatDisplayDate(currentStudent.nextDueDate) : 'N/A'}</strong>
                   </span>
                 </div>
-                <div className="flex items-center justify-between pt-1 border-t border-zinc-800/80">
+                <div className="flex flex-wrap items-center justify-between gap-1.5 pt-1 border-t border-zinc-800/80">
                   <span className="text-zinc-400 text-[11px]">Outstanding Due Balance:</span>
                   <span className={`font-extrabold ${currentStudent.dueAmount > 0 ? 'text-red-400' : 'text-emerald-400'}`}>
                     AED {currentStudent.dueAmount?.toLocaleString() || 0}
@@ -485,11 +561,11 @@ export const RecordPaymentModal = ({ isOpen, onClose, defaultStudentId = null, d
               </div>
 
               {/* Visual Cycle Badge */}
-              <div className="p-2 bg-zinc-900 rounded-xl border border-zinc-800 flex items-center justify-between text-xs">
+              <div className="p-2 bg-zinc-900 rounded-xl border border-zinc-800 flex flex-wrap items-center justify-between gap-1.5 text-xs">
                 <span className="text-zinc-400 text-[11px] flex items-center gap-1">
                   <span>Cycle Coverage:</span>
                 </span>
-                <span className="font-bold text-white flex items-center gap-1.5">
+                <span className="font-bold text-white flex flex-wrap items-center gap-1.5">
                   <span className="text-blue-400">{formatDisplayDate(subscriptionStartDate)}</span>
                   <ArrowRight className="w-3.5 h-3.5 text-zinc-500" />
                   <span className="text-emerald-400">{formatDisplayDate(nextDueDate)}</span>
@@ -500,7 +576,7 @@ export const RecordPaymentModal = ({ isOpen, onClose, defaultStudentId = null, d
 
             {/* 7. Amount Collected (Dhs) */}
             <div>
-              <div className="flex items-center justify-between mb-1.5">
+              <div className="flex flex-wrap items-center justify-between gap-1.5 mb-1.5">
                 <label className="text-xs font-semibold text-zinc-300">
                   Payment Amount Received (Dhs) *
                 </label>
@@ -519,7 +595,7 @@ export const RecordPaymentModal = ({ isOpen, onClose, defaultStudentId = null, d
               />
 
               {/* Quick Package Presets */}
-              <div className="grid grid-cols-4 gap-1.5 mt-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 mt-2">
                 {[
                   { label: 'Monthly', val: '250' },
                   { label: '3-Months', val: '650' },
@@ -597,20 +673,33 @@ export const RecordPaymentModal = ({ isOpen, onClose, defaultStudentId = null, d
             </label>
 
             {/* 11. Submit Action */}
-            <div className="pt-3 border-t border-zinc-800 flex items-center justify-end gap-3">
+            <div className="pt-3 border-t border-zinc-800 flex items-center justify-between gap-2 flex-wrap">
               <button
                 type="button"
-                onClick={handleClose}
-                className="px-4 py-2.5 text-xs font-semibold text-zinc-400 hover:text-white transition-colors cursor-pointer"
+                onClick={initializeDefaults}
+                className="inline-flex items-center gap-1.5 px-3 py-2 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-700 rounded-xl text-xs font-semibold transition-all cursor-pointer"
+                title="Reset all payment form fields"
               >
-                Cancel
+                <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
+                <span>Reset Form</span>
               </button>
-              <button
-                type="submit"
-                className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-xs font-bold text-white rounded-xl shadow-lg shadow-emerald-700/30 transition-all cursor-pointer"
-              >
-                Confirm & Issue Receipt
-              </button>
+
+              <div className="flex items-center gap-2.5 ml-auto">
+                <button
+                  type="button"
+                  onClick={handleClose}
+                  className="px-4 py-2.5 text-xs font-semibold text-zinc-400 hover:text-white transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={Boolean(billError)}
+                  className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 text-xs font-bold text-white rounded-xl shadow-lg shadow-emerald-700/30 transition-all cursor-pointer"
+                >
+                  Confirm &amp; Issue Receipt
+                </button>
+              </div>
             </div>
           </form>
         )}

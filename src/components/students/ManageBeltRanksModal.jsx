@@ -169,13 +169,13 @@ export const ManageBeltRanksModal = ({ isOpen, onClose }) => {
         <div className="p-5 sm:p-6 space-y-5 overflow-y-auto">
           {/* Top Controls / Action Bar */}
           <div className="flex items-center justify-between gap-2 flex-wrap">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <span className="text-xs font-bold text-white">
                 Total: {beltRanks.length} Belts
               </span>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <button
                 type="button"
                 onClick={() => setIsAdding(!isAdding)}

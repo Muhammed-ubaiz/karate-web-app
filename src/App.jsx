@@ -27,7 +27,7 @@ const MainContent = () => {
     modalState,
     setModalState,
     isAdminLoginOpen,
-    setIsAdminLoginOpen,
+    closeAdminLoginModal,
     pendingAdminAction
   } = useDojo();
 
@@ -141,7 +141,7 @@ const MainContent = () => {
       />
       <AdminLoginModal
         isOpen={isAdminLoginOpen}
-        onClose={() => setIsAdminLoginOpen(false)}
+        onClose={closeAdminLoginModal}
         pendingAction={pendingAdminAction}
       />
 

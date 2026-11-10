@@ -227,16 +227,49 @@ export const clearAllAttendanceFromFirestore = async () => {
   }
 };
 
+// Strip undefined properties recursively before writing to Firestore
+export const sanitizeForFirestore = (obj) => {
+  if (obj === null || typeof obj !== 'object') return obj;
+  if (Array.isArray(obj)) return obj.map(sanitizeForFirestore).filter(v => v !== undefined);
+  const clean = {};
+  Object.entries(obj).forEach(([k, v]) => {
+    if (v !== undefined) {
+      clean[k] = sanitizeForFirestore(v);
+    }
+  });
+  return clean;
+};
+
 /**
  * --- PAYMENTS SERVICE ---
  */
 export const recordPaymentToFirestore = async (paymentData) => {
-  if (!isFirebaseConfigured || !db) return;
-  const docRef = await addDoc(collection(db, COL_PAYMENTS), {
-    ...paymentData,
-    createdAt: serverTimestamp()
-  });
-  return { id: docRef.id, ...paymentData };
+  if (!isFirebaseConfigured || !db) return paymentData;
+  const paymentId = paymentData.id || `pay-${Date.now()}`;
+  const docRef = doc(db, COL_PAYMENTS, paymentId);
+  const cleanData = sanitizeForFirestore(paymentData);
+  await setDoc(docRef, {
+    ...cleanData,
+    id: paymentId,
+    updatedAt: serverTimestamp()
+  }, { merge: true });
+  return { ...paymentData, id: paymentId };
+};
+
+export const updatePaymentInFirestore = async (id, data) => {
+  if (!isFirebaseConfigured || !db || !id) return;
+  const docRef = doc(db, COL_PAYMENTS, id);
+  const cleanData = sanitizeForFirestore(data);
+  await setDoc(docRef, {
+    ...cleanData,
+    updatedAt: serverTimestamp()
+  }, { merge: true });
+};
+
+export const deletePaymentFromFirestore = async (id) => {
+  if (!isFirebaseConfigured || !db || !id) return;
+  const docRef = doc(db, COL_PAYMENTS, id);
+  await deleteDoc(docRef);
 };
 
 export const fetchPaymentsFromFirestore = async () => {
@@ -250,10 +283,20 @@ export const fetchPaymentsFromFirestore = async () => {
  */
 export const logActivityToFirestore = async (activityData) => {
   if (!isFirebaseConfigured || !db) return;
-  await addDoc(collection(db, COL_ACTIVITIES), {
-    ...activityData,
-    createdAt: serverTimestamp()
+  const activityId = activityData.id || `act-${Date.now()}`;
+  const docRef = doc(db, COL_ACTIVITIES, activityId);
+  const cleanData = sanitizeForFirestore(activityData);
+  await setDoc(docRef, {
+    ...cleanData,
+    id: activityId,
+    serverCreatedAt: serverTimestamp()
   });
+};
+
+export const fetchActivitiesFromFirestore = async () => {
+  if (!isFirebaseConfigured || !db) return null;
+  const snapshot = await getDocs(collection(db, COL_ACTIVITIES));
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 };
 
 /**

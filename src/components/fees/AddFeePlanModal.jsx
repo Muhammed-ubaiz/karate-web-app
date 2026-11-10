@@ -133,7 +133,7 @@ export const AddFeePlanModal = ({ isOpen, onClose }) => {
           </div>
 
           {/* Duration & Schedule */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
                 Plan Duration (Months)
@@ -290,7 +290,7 @@ export const AddFeePlanModal = ({ isOpen, onClose }) => {
           </div>
 
           {/* Due Day of the Month */}
-          <div className="flex items-center justify-between p-3 bg-zinc-900 border border-zinc-800 rounded-xl">
+          <div className="flex flex-wrap items-center justify-between gap-2 p-3 bg-zinc-900 border border-zinc-800 rounded-xl">
             <div>
               <label className="block text-xs font-semibold text-zinc-200">
                 Billing Due Day
@@ -330,7 +330,7 @@ export const AddFeePlanModal = ({ isOpen, onClose }) => {
               </button>
             </div>
 
-            <div className="grid grid-cols-6 gap-1.5">
+            <div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5">
               {MONTHS.map((month, idx) => {
                 const monthNum = idx + 1;
                 const isSelected = formData.activeMonths.includes(monthNum);
