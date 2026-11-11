@@ -3,7 +3,8 @@ import { useDojo } from '../../context/DojoContext';
 import { MetricCard } from './MetricCard';
 import { CollectionProgress } from './CollectionProgress';
 import { ActivityFeed } from './ActivityFeed';
-import { isStudentFeeDue } from '../../utils/whatsappHelper';
+import { isStudentFeeDue, getStudentDueAmount } from '../../utils/whatsappHelper';
+import { formatCurrencyAmount, roundCurrency } from '../../utils/billingHelper';
 import {
   Users,
   CheckCircle2,
@@ -15,7 +16,6 @@ import {
   Calendar,
   Clock,
   ChevronRight,
-  Sparkles,
   Snowflake
 } from 'lucide-react';
 
@@ -27,6 +27,7 @@ export const DashboardView = () => {
     setModalState,
     students,
     dojos,
+    feePlans,
     isAdmin,
     requireAdmin
   } = useDojo();
@@ -64,7 +65,7 @@ export const DashboardView = () => {
     ? Math.round(activeStudents.reduce((acc, s) => acc + (s.attendanceRate || 100), 0) / activeStudents.length)
     : 0;
 
-  const totalOverdueDues = overdueStudents.reduce((acc, s) => acc + (s.dueAmount || 0), 0);
+  const totalOverdueDues = roundCurrency(overdueStudents.reduce((acc, s) => acc + getStudentDueAmount(s, feePlans), 0));
 
   return (
     <div className="space-y-6">
@@ -73,7 +74,7 @@ export const DashboardView = () => {
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <h1 className="text-lg sm:text-2xl font-black text-white tracking-tight">
-              Osu, Master Kenjiro! 🥋
+              Osu, Al Muharib Karate Center! 🥋
             </h1>
             <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border whitespace-nowrap ${
               isAdmin
@@ -84,7 +85,7 @@ export const DashboardView = () => {
             </span>
           </div>
           <p className="text-xs sm:text-sm text-zinc-400 mt-1">
-            Dojo Operations Snapshot & Daily Session Manager
+            Al Muharib Karate Center Operations Snapshot &amp; Daily Session Manager
           </p>
         </div>
 
@@ -141,7 +142,7 @@ export const DashboardView = () => {
         <MetricCard
           title="Overdue Fees"
           value={overdueStudents.length}
-          subtitle={`${totalOverdueDues.toLocaleString()} Dhs pending collection`}
+          subtitle={`${formatCurrencyAmount(totalOverdueDues)} Dhs pending collection`}
           icon={AlertCircle}
           isAlert={overdueStudents.length > 0}
           onClick={() => setActiveTab('fees')}

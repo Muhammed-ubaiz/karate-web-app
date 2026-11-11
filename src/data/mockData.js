@@ -1,11 +1,11 @@
 export const INITIAL_DOJOS = [
   {
     id: 'dojo-main',
-    name: 'Main Dojo Academy',
+    name: 'Al Muharib Karate Center',
     instructor: 'Chief Sensei',
-    address: 'Al Wasl Sports Complex, Dubai',
+    address: 'United Arab Emirates',
     phone: '+971 50 123 4567',
-    email: 'contact@dojoacademy.ae',
+    email: 'contact@almuharibkarate.ae',
     status: 'Active',
     studentCount: 0,
     batchesCount: 1,
@@ -112,7 +112,7 @@ export const INITIAL_STUDENTS = [];
 export const INITIAL_ACTIVITIES = [
   {
     id: 'act-init-1',
-    text: 'Dojo Academy Management System ready. Add your students to get started.',
+    text: 'Al Muharib Karate Center Management System ready. Add your students to get started.',
     type: 'general',
     icon: 'Award',
     time: 'Just now'

@@ -1,7 +1,7 @@
 {
-  "name": "SenseiBook | Martial Arts Academy Management",
-  "short_name": "SenseiBook",
-  "description": "Martial arts academy, dojo operations & fee management system",
+  "name": "Al Muharib Karate Center | Dojo Management",
+  "short_name": "Al Muharib",
+  "description": "Al Muharib Karate Center dojo operations, attendance & fee management system",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#121214",

@@ -3,6 +3,11 @@ import { useDojo } from '../../context/DojoContext';
 import { showSuccessAlert } from '../../utils/sweetAlert';
 import { calculateNextDueDate, formatDisplayDate } from '../../utils/whatsappHelper';
 import {
+  calculatePlanRenewalBreakdown,
+  calculateVatBreakdownFromTotal,
+  formatCurrencyAmount
+} from '../../utils/billingHelper';
+import {
   X,
   Pencil,
   Hash,
@@ -84,6 +89,8 @@ export const EditPaymentModal = ({ isOpen, onClose, payment, onSaved }) => {
 
   const student = students.find(s => s.id === payment.studentId);
   const selectedPlan = feePlans.find(p => p.id === planId) || feePlans[0];
+  const selectedPlanBreakdown = calculatePlanRenewalBreakdown(selectedPlan);
+  const amountVatBreakdown = calculateVatBreakdownFromTotal(amount, selectedPlanBreakdown.vatRate);
   const originalBill = payment.billNumber || payment.receiptNumber || '';
 
   const methodOptions = PAYMENT_METHOD_OPTIONS.includes(paymentMethod)
@@ -143,6 +150,9 @@ export const EditPaymentModal = ({ isOpen, onClose, payment, onSaved }) => {
         billNumber: cleanBill,
         receiptNumber: cleanBill,
         amount: numericAmount,
+        baseAmount: amountVatBreakdown.baseAmount,
+        vatAmount: amountVatBreakdown.vatAmount,
+        vatRate: amountVatBreakdown.vatRate,
         paymentDate,
         paymentMethod,
         planId,
@@ -284,11 +294,11 @@ export const EditPaymentModal = ({ isOpen, onClose, payment, onSaved }) => {
             <div>
               <div className="flex flex-wrap items-center justify-between gap-1 mb-1">
                 <label className="text-xs font-semibold text-zinc-300">
-                  Amount (Dhs) *
+                  Total Paid (Dhs Incl. {amountVatBreakdown.vatRate}% VAT) *
                 </label>
                 {Number(amount) > 0 && (
                   <span className="text-[10px] text-zinc-400">
-                    5% VAT: <strong className="text-amber-400">{(Number(amount) - Number(amount) / 1.05).toFixed(2)}</strong>
+                    Base {amountVatBreakdown.baseAmount.toFixed(2)} + VAT <strong className="text-amber-400">{amountVatBreakdown.vatAmount.toFixed(2)}</strong>
                   </span>
                 )}
               </div>
@@ -311,13 +321,13 @@ export const EditPaymentModal = ({ isOpen, onClose, payment, onSaved }) => {
                 <label className="text-xs font-semibold text-zinc-300">
                   Training Package
                 </label>
-                {selectedPlan?.tuitionFee && Number(amount) !== Number(selectedPlan.tuitionFee) && (
+                {selectedPlan && Math.abs(Number(amount) - selectedPlanBreakdown.totalWithVat) > 0.01 && (
                   <button
                     type="button"
-                    onClick={() => handleAmountChange(String(selectedPlan.tuitionFee))}
+                    onClick={() => handleAmountChange(String(selectedPlanBreakdown.totalWithVat))}
                     className="text-[10px] font-bold text-emerald-400 hover:underline cursor-pointer"
                   >
-                    Use {selectedPlan.tuitionFee} Dhs
+                    Use {formatCurrencyAmount(selectedPlanBreakdown.totalWithVat)} Dhs (Incl. VAT)
                   </button>
                 )}
               </div>
@@ -326,11 +336,14 @@ export const EditPaymentModal = ({ isOpen, onClose, payment, onSaved }) => {
                 onChange={(e) => setPlanId(e.target.value)}
                 className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2.5 text-xs text-white font-semibold focus:outline-none focus:border-amber-500 cursor-pointer"
               >
-                {feePlans.map(p => (
-                  <option key={p.id} value={p.id}>
-                    {p.name} — AED {p.tuitionFee?.toLocaleString()} ({p.billingCycle || `${p.durationMonths}M`})
-                  </option>
-                ))}
+                {feePlans.map(p => {
+                  const b = calculatePlanRenewalBreakdown(p);
+                  return (
+                    <option key={p.id} value={p.id}>
+                      {p.name} — AED {formatCurrencyAmount(b.totalWithVat)} Incl. VAT (Base {formatCurrencyAmount(b.baseAmount)} • {p.billingCycle || `${p.durationMonths}M`})
+                    </option>
+                  );
+                })}
               </select>
             </div>
           </div>

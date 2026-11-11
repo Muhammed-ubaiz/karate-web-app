@@ -1,37 +1,73 @@
 import React, { useState } from 'react';
 import { useDojo } from '../../context/DojoContext';
+import { DueNoticeModal } from './DueNoticeModal';
 import {
   isStudentFeeDue,
   getStudentDueAmount,
-  generateWhatsAppFeeReminder,
   getCleanWhatsAppPhone,
   buildStudentWhatsAppUrl,
   formatDisplayDate
 } from '../../utils/whatsappHelper';
+import { formatCurrencyAmount, roundCurrency } from '../../utils/billingHelper';
+import {
+  generateDueNoticePngBlob,
+  dispatchDocumentImageToWhatsApp
+} from '../../utils/receiptImageGenerator';
 import {
   X,
   MessageSquare,
   Phone,
   CheckCircle2,
-  AlertCircle,
-  ExternalLink,
   Send,
-  Building,
-  UserCheck,
-  Sparkles
+  Image as ImageIcon,
+  Eye,
+  FileText
 } from 'lucide-react';
 
 export const WhatsAppBroadcastModal = ({ isOpen, onClose }) => {
   const { students, dojos, feePlans, showToast } = useDojo();
   const [sentStudentIds, setSentStudentIds] = useState(new Set());
+  const [previewNoticeStudent, setPreviewNoticeStudent] = useState(null);
 
   if (!isOpen) return null;
 
-  // Filter all students who have fees due (Pending, Overdue, dueAmount > 0, or 30 days passed)
-  const dueStudents = students.filter(s => isStudentFeeDue(s));
-  const totalDues = dueStudents.reduce((acc, s) => acc + getStudentDueAmount(s, feePlans), 0);
+  // Active students who have fees due (matches active dues roster)
+  const dueStudents = students.filter(
+    s => s.status !== 'Blocked' && s.status !== 'Inactive' && s.status !== 'Stopped' && isStudentFeeDue(s)
+  );
+  const totalDues = roundCurrency(dueStudents.reduce((acc, s) => acc + getStudentDueAmount(s, feePlans), 0));
 
-  const handleSendWhatsApp = (student) => {
+  const handleMarkSent = (studentId) => {
+    setSentStudentIds(prev => new Set([...prev, studentId]));
+  };
+
+  const handleSendNoticeImage = async (student) => {
+    const rawPhone = student.whatsapp || student.phone || student.parentPhone;
+    const cleanPhone = getCleanWhatsAppPhone(rawPhone);
+
+    if (!cleanPhone || cleanPhone.length < 9) {
+      showToast(`Invalid phone number for ${student.fullName}. Please update in profile.`, 'error');
+      return;
+    }
+
+    const dojo = dojos.find(d => d.id === student.dojoId);
+    const blob = generateDueNoticePngBlob({ student, dojo, feePlans });
+    const safeSlug = String(student.fullName || 'student').replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '');
+
+    const res = await dispatchDocumentImageToWhatsApp({
+      blob,
+      filename: `Fee-Due-Notice-${safeSlug || 'Student'}.png`,
+      phone: rawPhone,
+      fallbackText: '',
+      onToast: showToast
+    });
+
+    if (res && res.method !== 'cancelled') {
+      handleMarkSent(student.id);
+    }
+  };
+
+  const handleSendTextFallback = (student) => {
     const rawPhone = student.whatsapp || student.phone || student.parentPhone;
     const cleanPhone = getCleanWhatsAppPhone(rawPhone);
 
@@ -42,30 +78,30 @@ export const WhatsAppBroadcastModal = ({ isOpen, onClose }) => {
 
     const dojo = dojos.find(d => d.id === student.dojoId);
     const url = buildStudentWhatsAppUrl(student, dojo, feePlans);
-
-    // Open WhatsApp in new tab
     window.open(url, '_blank', 'noopener,noreferrer');
 
-    // Mark as sent
-    setSentStudentIds(prev => new Set([...prev, student.id]));
-    showToast(`WhatsApp reminder opened for ${student.fullName}!`, 'success');
+    handleMarkSent(student.id);
+    showToast(`WhatsApp text reminder opened for ${student.fullName}!`, 'success');
   };
 
-  const handleSendAllSequential = () => {
+  const handleSendNextImage = async () => {
     const unsent = dueStudents.filter(s => !sentStudentIds.has(s.id));
     if (unsent.length === 0) {
-      showToast('All fee reminders have already been sent!', 'info');
+      showToast('All fee due notices have already been dispatched!', 'info');
       return;
     }
 
-    // Open first unsent student's WhatsApp
     const targetStudent = unsent[0];
-    handleSendWhatsApp(targetStudent);
+    await handleSendNoticeImage(targetStudent);
 
     if (unsent.length > 1) {
-      showToast(`${unsent.length - 1} more students remaining. Click next student to open!`, 'info');
+      showToast(`${unsent.length - 1} more student(s) remaining.`, 'info');
     }
   };
+
+  const previewDojo = previewNoticeStudent
+    ? dojos.find(d => d.id === previewNoticeStudent.dojoId) || null
+    : null;
 
   return (
     <div
@@ -74,7 +110,7 @@ export const WhatsAppBroadcastModal = ({ isOpen, onClose }) => {
       }}
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-sm animate-fade-in"
     >
-      <div className="w-full sm:max-w-xl bg-dojo-card border-t sm:border border-dojo-border rounded-t-3xl sm:rounded-2xl shadow-2xl max-h-[92vh] flex flex-col overflow-hidden">
+      <div className="w-full sm:max-w-2xl bg-dojo-card border-t sm:border border-dojo-border rounded-t-3xl sm:rounded-2xl shadow-2xl max-h-[92vh] flex flex-col overflow-hidden">
         {/* Header */}
         <div className="sticky top-0 bg-[#16161a] px-5 py-4 border-b border-zinc-800 flex items-center justify-between z-10 shrink-0">
           <div className="flex items-center gap-2.5">
@@ -83,10 +119,10 @@ export const WhatsAppBroadcastModal = ({ isOpen, onClose }) => {
             </div>
             <div>
               <h2 className="text-base font-bold text-white tracking-tight">
-                WhatsApp Fee Reminder Broadcast
+                Official Fee Due Notices — WhatsApp
               </h2>
               <p className="text-[11px] text-zinc-400">
-                Direct WhatsApp fee notices for students with unpaid monthly dues
+                Send printable Official Fee Due Notice images directly to parents on WhatsApp
               </p>
             </div>
           </div>
@@ -105,10 +141,10 @@ export const WhatsAppBroadcastModal = ({ isOpen, onClose }) => {
             <span className="text-xs text-zinc-400 font-medium">Pending Unpaid Fees:</span>
             <div className="flex items-baseline gap-2 mt-0.5">
               <span className="text-lg font-black text-red-400">
-                {dueStudents.length} Students
+                {dueStudents.length} Student{dueStudents.length === 1 ? '' : 's'}
               </span>
               <span className="text-xs text-zinc-400">
-                • Total {totalDues.toLocaleString()} Dhs
+                • Total {formatCurrencyAmount(totalDues)} Dhs
               </span>
             </div>
           </div>
@@ -131,11 +167,11 @@ export const WhatsAppBroadcastModal = ({ isOpen, onClose }) => {
             {dueStudents.length > 0 && (
               <button
                 type="button"
-                onClick={handleSendAllSequential}
+                onClick={handleSendNextImage}
                 className="inline-flex items-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-xs font-bold text-white rounded-xl shadow-lg shadow-emerald-700/30 transition-all cursor-pointer"
               >
                 <Send className="w-3.5 h-3.5" />
-                <span>Open Next WhatsApp</span>
+                <span>Send Next Notice Image</span>
               </button>
             )}
           </div>
@@ -148,7 +184,7 @@ export const WhatsAppBroadcastModal = ({ isOpen, onClose }) => {
               <CheckCircle2 className="w-10 h-10 mx-auto text-emerald-500 mb-2 stroke-[1.5]" />
               <p className="text-sm font-bold text-white">All Fees Up to Date! 🎉</p>
               <p className="text-xs text-zinc-400 mt-1">
-                There are currently no students with pending or overdue tuition fees.
+                There are currently no active students with pending or overdue tuition fees.
               </p>
             </div>
           ) : (
@@ -197,33 +233,55 @@ export const WhatsAppBroadcastModal = ({ isOpen, onClose }) => {
 
                         <div className="flex items-center gap-2 mt-1 flex-wrap">
                           <span className="text-xs font-black text-red-400">
-                            Due: {dueAmount.toLocaleString()} Dhs
+                            Due: {formatCurrencyAmount(dueAmount)} Dhs (Incl. VAT)
                           </span>
                           {student.nextDueDate && (
                             <span className="text-[11px] font-semibold text-zinc-400">
-                              • Due: <strong className="text-red-400">{formatDisplayDate(student.nextDueDate)}</strong>
+                              • Due Date: <strong className="text-red-400">{formatDisplayDate(student.nextDueDate)}</strong>
                             </span>
                           )}
                           <span className="text-[11px] text-zinc-500 truncate">
-                            • {dojo?.name?.split('-')[0] || 'Dojo'}
+                            • {dojo?.name || 'Al Muharib Karate Center'}
                           </span>
                         </div>
                       </div>
                     </div>
 
-                    {/* WhatsApp Action Button */}
-                    <button
-                      type="button"
-                      onClick={() => handleSendWhatsApp(student)}
-                      className={`inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 shrink-0 w-full sm:w-auto shadow cursor-pointer ${
-                        isSent
-                          ? 'bg-zinc-800 hover:bg-zinc-700 text-emerald-400 border border-emerald-500/40'
-                          : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-950/40 border border-emerald-500/50'
-                      }`}
-                    >
-                      <MessageSquare className="w-3.5 h-3.5" />
-                      <span>{isSent ? 'Sent ✓' : 'Send WhatsApp'}</span>
-                    </button>
+                    {/* Notice Actions: Preview/Print, Send Image (Primary), Text */}
+                    <div className="flex items-center gap-1.5 flex-wrap sm:flex-nowrap shrink-0 w-full sm:w-auto">
+                      <button
+                        type="button"
+                        onClick={() => setPreviewNoticeStudent(student)}
+                        className="inline-flex items-center justify-center gap-1 px-2.5 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-xl text-xs font-semibold border border-zinc-700 transition-all cursor-pointer"
+                        title="Preview / Print / Download Official Fee Due Notice"
+                      >
+                        <Eye className="w-3.5 h-3.5 text-amber-400" />
+                        <span>Notice</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleSendNoticeImage(student)}
+                        className={`flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 shadow cursor-pointer ${
+                          isSent
+                            ? 'bg-zinc-800 hover:bg-zinc-700 text-emerald-400 border border-emerald-500/40'
+                            : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-950/40 border border-emerald-500/50'
+                        }`}
+                        title="Copy Due Notice image & open WhatsApp chat"
+                      >
+                        <ImageIcon className="w-3.5 h-3.5" />
+                        <span>{isSent ? 'Sent ✓' : 'Send Image'}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleSendTextFallback(student)}
+                        className="p-2 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-emerald-300 rounded-xl border border-zinc-700/80 transition-all cursor-pointer"
+                        title="Send text-only WhatsApp message"
+                      >
+                        <FileText className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               );
@@ -231,6 +289,15 @@ export const WhatsAppBroadcastModal = ({ isOpen, onClose }) => {
           )}
         </div>
       </div>
+
+      {/* Printable Official Fee Due Notice Preview Modal */}
+      <DueNoticeModal
+        isOpen={Boolean(previewNoticeStudent)}
+        onClose={() => setPreviewNoticeStudent(null)}
+        student={previewNoticeStudent}
+        dojo={previewDojo}
+        onSent={handleMarkSent}
+      />
     </div>
   );
 };

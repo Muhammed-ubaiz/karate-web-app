@@ -5,14 +5,15 @@ import { StudentProfileModal } from './StudentProfileModal';
 import { ManageBeltRanksModal } from './ManageBeltRanksModal';
 import { EditStudentModal } from './EditStudentModal';
 import { WhatsAppBroadcastModal } from '../fees/WhatsAppBroadcastModal';
+import { DueNoticeModal } from '../fees/DueNoticeModal';
 import { showConfirmDialog, showSuccessAlert } from '../../utils/sweetAlert';
 import {
   isStudentFeeDue,
   getStudentDueAmount,
-  buildStudentWhatsAppUrl,
   getCleanWhatsAppPhone,
   formatDisplayDate
 } from '../../utils/whatsappHelper';
+import { formatCurrencyAmount } from '../../utils/billingHelper';
 import {
   Users,
   Search,
@@ -67,6 +68,7 @@ export const StudentListView = () => {
   const [editingStudent, setEditingStudent] = useState(null);
   const [isManageBeltsOpen, setIsManageBeltsOpen] = useState(false);
   const [isBroadcastModalOpen, setIsBroadcastModalOpen] = useState(false);
+  const [dueNoticeTarget, setDueNoticeTarget] = useState(null);
 
   // Active vs Inactive counts
   const activeStudentsCount = students.filter(s => s.status !== 'Inactive' && s.status !== 'Stopped').length;
@@ -406,7 +408,8 @@ export const StudentListView = () => {
               const batch = batches.find(b => b.id === student.batchId);
               const isDue = isStudentFeeDue(student);
               const dueAmount = getStudentDueAmount(student, feePlans);
-              const whatsappUrl = buildStudentWhatsAppUrl(student, dojo, feePlans);
+              const cleanPhone = getCleanWhatsAppPhone(student.whatsapp || student.phone || student.parentPhone || '');
+              const whatsappUrl = cleanPhone ? `https://wa.me/${cleanPhone}` : 'https://wa.me/';
               const studentTotalPaid = getStudentTotalPaid ? getStudentTotalPaid(student.id) : 0;
               const studentBills = payments.filter(p => p.studentId === student.id && p.status !== 'Reset');
               const q = searchTerm.trim().toLowerCase();
@@ -501,7 +504,7 @@ export const StudentListView = () => {
                               ? 'bg-emerald-950/80 text-emerald-400 border-emerald-500/30'
                               : 'bg-red-950/80 text-red-400 border-red-500/30'
                           }`}>
-                            {isDue ? (dueAmount > 0 ? `Due ${dueAmount.toLocaleString()}` : 'Fee Due') : (student.feeStatus || 'Paid')}
+                            {isDue ? (dueAmount > 0 ? `Due ${formatCurrencyAmount(dueAmount)}` : 'Fee Due') : (student.feeStatus || 'Paid')}
                           </span>
                           <ChevronRight className="w-4 h-4 text-zinc-500 group-hover:text-zinc-300 transition-colors" />
                         </div>
@@ -529,7 +532,7 @@ export const StudentListView = () => {
                           <>
                             <span className="text-zinc-600 hidden sm:inline">•</span>
                             <span className="text-[11px] font-bold text-emerald-400 shrink-0">
-                              Paid: AED {studentTotalPaid.toLocaleString()} ({studentBills.length})
+                              Paid: AED {formatCurrencyAmount(studentTotalPaid)} ({studentBills.length})
                             </span>
                           </>
                         )}
@@ -551,7 +554,7 @@ export const StudentListView = () => {
                     <div className="sm:hidden text-[11px] min-w-0 truncate">
                       {dueAmount > 0 ? (
                         <span className="font-bold text-red-400">
-                          Due: {dueAmount.toLocaleString()} Dhs
+                          Due: {formatCurrencyAmount(dueAmount)} Dhs
                         </span>
                       ) : student.nextDueDate ? (
                         <span className={isDue ? 'text-red-400 font-bold' : 'text-zinc-400'}>
@@ -571,7 +574,7 @@ export const StudentListView = () => {
                       </span>
                       {dueAmount > 0 && (
                         <p className="text-[11px] font-extrabold text-red-400 mt-0.5">
-                          {dueAmount.toLocaleString()} Dhs
+                          {formatCurrencyAmount(dueAmount)} Dhs
                         </p>
                       )}
                       {student.nextDueDate && (
@@ -656,20 +659,30 @@ export const StudentListView = () => {
                         <Pencil className="w-4 h-4 text-zinc-300" />
                       </button>
 
-                      <a
-                        href={whatsappUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        onClick={(e) => e.stopPropagation()}
-                        className={`p-2 rounded-xl transition-all cursor-pointer ${
-                          isDue
-                            ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-700/30 ring-1 ring-emerald-400/50'
-                            : 'bg-zinc-800 hover:bg-emerald-950/80 hover:text-emerald-400 text-zinc-400 border border-zinc-700/80'
-                        }`}
-                        title={isDue ? `Send WhatsApp Fee Reminder (${dueAmount.toLocaleString()} Dhs)` : 'Chat on WhatsApp'}
-                      >
-                        <MessageSquare className="w-4 h-4" />
-                      </a>
+                      {isDue ? (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDueNoticeTarget({ student, dojo });
+                          }}
+                          className="p-2 rounded-xl transition-all cursor-pointer bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-700/30 ring-1 ring-emerald-400/50"
+                          title={`Send Printable Fee Due Notice (${formatCurrencyAmount(dueAmount)} Dhs) on WhatsApp`}
+                        >
+                          <MessageSquare className="w-4 h-4" />
+                        </button>
+                      ) : (
+                        <a
+                          href={whatsappUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="p-2 rounded-xl transition-all cursor-pointer bg-zinc-800 hover:bg-emerald-950/80 hover:text-emerald-400 text-zinc-400 border border-zinc-700/80"
+                          title="Chat on WhatsApp"
+                        >
+                          <MessageSquare className="w-4 h-4" />
+                        </a>
+                      )}
 
                       {/* Delete Student Button (SweetAlert Confirmation, Staff Protected) */}
                       <button
@@ -741,6 +754,14 @@ export const StudentListView = () => {
         isOpen={Boolean(editingStudent)}
         onClose={() => setEditingStudent(null)}
         student={editingStudent}
+      />
+
+      {/* Official Printable Fee Due Notice Modal */}
+      <DueNoticeModal
+        isOpen={Boolean(dueNoticeTarget)}
+        onClose={() => setDueNoticeTarget(null)}
+        student={dueNoticeTarget?.student}
+        dojo={dueNoticeTarget?.dojo}
       />
     </div>
   );

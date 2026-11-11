@@ -6,12 +6,19 @@ import {
   calculateNextDueDate,
   normalizeDateToISO,
   formatDisplayDate,
-  formatDisplayDateDDMMYYYY
+  isStudentFeeDue,
+  getStudentDueAmount
 } from '../../utils/whatsappHelper';
+import {
+  roundCurrency,
+  formatCurrencyAmount,
+  calculatePlanRenewalBreakdown,
+  calculateVatBreakdownFromTotal,
+  calculateVatBreakdownFromBase
+} from '../../utils/billingHelper';
 import {
   X,
   CreditCard,
-  CheckCircle2,
   User,
   Calendar,
   MessageSquare,
@@ -19,15 +26,18 @@ import {
   RefreshCw,
   PlayCircle,
   ArrowRight,
-  Info,
-  Clock,
-  Sparkles,
   Hash,
   RotateCcw,
   AlertCircle
 } from 'lucide-react';
 
-export const RecordPaymentModal = ({ isOpen, onClose, defaultStudentId = null, defaultRenewalType = null }) => {
+export const RecordPaymentModal = ({
+  isOpen,
+  onClose,
+  defaultStudentId = null,
+  defaultRenewalType = null,
+  defaultPlanId = null
+}) => {
   const {
     students,
     dojos,
@@ -37,7 +47,7 @@ export const RecordPaymentModal = ({ isOpen, onClose, defaultStudentId = null, d
     getNextBillNumber,
     isBillNumberUnique
   } = useDojo();
-  
+
   const [selectedStudentId, setSelectedStudentId] = useState(() => (defaultStudentId || students[0]?.id || ''));
   const [billNumber, setBillNumber] = useState(() => (getNextBillNumber ? getNextBillNumber() : ''));
   const [billError, setBillError] = useState('');
@@ -47,7 +57,8 @@ export const RecordPaymentModal = ({ isOpen, onClose, defaultStudentId = null, d
   const [subscriptionStartDate, setSubscriptionStartDate] = useState('');
   const [nextDueDate, setNextDueDate] = useState('');
   const [selectedPlanId, setSelectedPlanId] = useState('');
-  const [amount, setAmount] = useState('250');
+  const [amountInput, setAmountInput] = useState('262.5');
+  const [amountEntryMode, setAmountEntryMode] = useState('total'); // 'total' (Incl. VAT) | 'base' (+ Add VAT)
   const [paymentMethod, setPaymentMethod] = useState('Card / POS');
   const [notes, setNotes] = useState('');
   const [sendWhatsAppReceipt, setSendWhatsAppReceipt] = useState(true);
@@ -65,6 +76,13 @@ export const RecordPaymentModal = ({ isOpen, onClose, defaultStudentId = null, d
     feePlans.find(p => p.id === currentStudent?.tuitionPlanId) ||
     feePlans[0];
 
+  const currentPlanBreakdown = calculatePlanRenewalBreakdown(currentPlan);
+  const currentVatRate = currentPlanBreakdown.vatRate;
+
+  const liveBreakdown = amountEntryMode === 'base'
+    ? calculateVatBreakdownFromBase(amountInput, currentVatRate)
+    : calculateVatBreakdownFromTotal(amountInput, currentVatRate);
+
   const initializeDefaults = () => {
     if (students.length === 0) return;
     const targetId = defaultStudentId && students.some(s => s.id === defaultStudentId)
@@ -74,9 +92,10 @@ export const RecordPaymentModal = ({ isOpen, onClose, defaultStudentId = null, d
     const student = students.find(s => s.id === targetId);
     setSelectedStudentId(targetId);
 
-    const targetPlanId = student?.tuitionPlanId || feePlans[0]?.id;
+    const targetPlanId = defaultPlanId || student?.tuitionPlanId || feePlans[0]?.id;
     setSelectedPlanId(targetPlanId);
     const plan = feePlans.find(p => p.id === targetPlanId) || feePlans[0];
+    const planBreakdown = calculatePlanRenewalBreakdown(plan);
 
     const initialType = defaultRenewalType || 'normal';
     setRenewalType(initialType);
@@ -96,10 +115,11 @@ export const RecordPaymentModal = ({ isOpen, onClose, defaultStudentId = null, d
     const due = calculateNextDueDate(start, plan);
     setNextDueDate(due);
 
-    if (student && student.dueAmount > 0) {
-      setAmount(student.dueAmount.toString());
+    setAmountEntryMode('total');
+    if (!defaultPlanId && student && Number(student.dueAmount) > 0) {
+      setAmountInput(String(roundCurrency(student.dueAmount)));
     } else {
-      setAmount(plan?.tuitionFee?.toString() || '250');
+      setAmountInput(String(planBreakdown.totalWithVat));
     }
 
     setBillNumber(getNextBillNumber ? getNextBillNumber() : `BILL-${Date.now().toString().slice(-4)}`);
@@ -109,16 +129,14 @@ export const RecordPaymentModal = ({ isOpen, onClose, defaultStudentId = null, d
     setActiveReceipt(null);
   };
 
-  // Initialize or re-sync student & renewal state when modal opens
   useEffect(() => {
     if (isOpen && students.length > 0) {
       initializeDefaults();
     }
-  }, [isOpen, defaultStudentId, defaultRenewalType]);
+  }, [isOpen, defaultStudentId, defaultRenewalType, defaultPlanId]);
 
   if (!isOpen) return null;
 
-  // Handle student change
   const handleStudentChange = (id) => {
     setSelectedStudentId(id);
     const s = students.find(item => item.id === id);
@@ -127,6 +145,7 @@ export const RecordPaymentModal = ({ isOpen, onClose, defaultStudentId = null, d
     const targetPlanId = s.tuitionPlanId || feePlans[0]?.id;
     setSelectedPlanId(targetPlanId);
     const plan = feePlans.find(p => p.id === targetPlanId) || feePlans[0];
+    const planBreakdown = calculatePlanRenewalBreakdown(plan);
 
     const todayStr = new Date().toISOString().split('T')[0];
     let start = '';
@@ -140,24 +159,28 @@ export const RecordPaymentModal = ({ isOpen, onClose, defaultStudentId = null, d
     const due = calculateNextDueDate(start, plan);
     setNextDueDate(due);
 
-    if (s.dueAmount > 0) {
-      setAmount(s.dueAmount.toString());
+    if (Number(s.dueAmount) > 0) {
+      if (amountEntryMode === 'base') {
+        const b = calculateVatBreakdownFromTotal(s.dueAmount, planBreakdown.vatRate);
+        setAmountInput(String(b.baseAmount));
+      } else {
+        setAmountInput(String(roundCurrency(s.dueAmount)));
+      }
     } else {
-      setAmount(plan?.tuitionFee?.toString() || '250');
+      setAmountInput(
+        String(amountEntryMode === 'base' ? planBreakdown.baseAmount : planBreakdown.totalWithVat)
+      );
     }
   };
 
-  // Handle switching Renewal Mode
   const handleModeChange = (mode) => {
     setRenewalType(mode);
     const todayStr = new Date().toISOString().split('T')[0];
 
     let start = '';
     if (mode === 'restart') {
-      // Restart after break: starts from actual resumption date
       start = restartDate || todayStr;
     } else {
-      // Normal renewal: starts from previous due date
       start = normalizeDateToISO(currentStudent?.nextDueDate || currentStudent?.lastPaidDate || currentStudent?.joinDate || todayStr);
     }
     setSubscriptionStartDate(start);
@@ -165,17 +188,16 @@ export const RecordPaymentModal = ({ isOpen, onClose, defaultStudentId = null, d
     const due = calculateNextDueDate(start, currentPlan);
     setNextDueDate(due);
 
-    // Update note hint if empty
     if (!notes || notes.includes('renewal') || notes.includes('Resumed')) {
       if (mode === 'restart') {
         setNotes(`Resumed training on ${formatDisplayDate(start)} after class break`);
       } else {
-        setNotes('Monthly training subscription renewal');
+        const cycleLabel = currentPlan?.billingCycle || `${currentPlan?.durationMonths || 1}M`;
+        setNotes(`${cycleLabel} training renewal (${currentPlan?.name || 'Package'})`);
       }
     }
   };
 
-  // Handle changing Restart Date (in Restart mode)
   const handleRestartDateChange = (val) => {
     setRestartDate(val);
     setSubscriptionStartDate(val);
@@ -186,22 +208,33 @@ export const RecordPaymentModal = ({ isOpen, onClose, defaultStudentId = null, d
     }
   };
 
-  // Handle changing Subscription Start Date directly
   const handleStartDateChange = (val) => {
     setSubscriptionStartDate(val);
     const due = calculateNextDueDate(val, currentPlan);
     setNextDueDate(due);
   };
 
-  // Handle changing Tuition Plan
   const handlePlanChange = (planId) => {
     setSelectedPlanId(planId);
     const plan = feePlans.find(p => p.id === planId) || feePlans[0];
-    if (plan?.tuitionFee) {
-      setAmount(plan.tuitionFee.toString());
+    if (plan) {
+      const planBreakdown = calculatePlanRenewalBreakdown(plan);
+      setAmountInput(
+        String(amountEntryMode === 'base' ? planBreakdown.baseAmount : planBreakdown.totalWithVat)
+      );
     }
     const due = calculateNextDueDate(subscriptionStartDate, plan);
     setNextDueDate(due);
+  };
+
+  const handleEntryModeSwitch = (nextMode) => {
+    if (nextMode === amountEntryMode) return;
+    if (nextMode === 'base') {
+      setAmountInput(String(liveBreakdown.baseAmount));
+    } else {
+      setAmountInput(String(liveBreakdown.totalWithVat));
+    }
+    setAmountEntryMode(nextMode);
   };
 
   const handleRecalculateDue = () => {
@@ -219,7 +252,8 @@ export const RecordPaymentModal = ({ isOpen, onClose, defaultStudentId = null, d
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!selectedStudentId || !amount || Number(amount) <= 0) return;
+    const finalTotal = liveBreakdown.totalWithVat;
+    if (!selectedStudentId || !finalTotal || finalTotal <= 0) return;
 
     const cleanBill = String(billNumber || '').trim() || (getNextBillNumber ? getNextBillNumber() : '');
     if (isBillNumberUnique) {
@@ -231,11 +265,14 @@ export const RecordPaymentModal = ({ isOpen, onClose, defaultStudentId = null, d
     }
 
     const dojo = dojos.find(d => d.id === currentStudent?.dojoId);
-    const remainingDue = Math.max(0, (currentStudent?.dueAmount || 0) - Number(amount));
+    const remainingDue = roundCurrency(Math.max(0, (Number(currentStudent?.dueAmount) || 0) - finalTotal));
 
     const result = await recordPayment({
       studentId: selectedStudentId,
-      amount: Number(amount),
+      amount: finalTotal,
+      baseAmount: liveBreakdown.baseAmount,
+      vatAmount: liveBreakdown.vatAmount,
+      vatRate: liveBreakdown.vatRate,
       paymentMethod,
       paymentDate,
       subscriptionStartDate,
@@ -257,8 +294,12 @@ export const RecordPaymentModal = ({ isOpen, onClose, defaultStudentId = null, d
       parentName: currentStudent?.parentName,
       phone: currentStudent?.whatsapp || currentStudent?.phone,
       beltRank: currentStudent?.beltRank,
-      dojoName: dojo?.name || 'Al Wasl Sports Complex, Dubai',
-      amount: Number(amount),
+      dojoName: dojo?.name || 'Al Muharib Karate Center',
+      amount: finalTotal,
+      baseAmount: liveBreakdown.baseAmount,
+      vatAmount: liveBreakdown.vatAmount,
+      vatRate: liveBreakdown.vatRate,
+      planName: currentPlan?.name || '',
       paymentMethod,
       subscriptionStartDate: formatDisplayDate(subscriptionStartDate),
       nextDueDate: formatDisplayDate(nextDueDate),
@@ -267,13 +308,20 @@ export const RecordPaymentModal = ({ isOpen, onClose, defaultStudentId = null, d
       remainingDue
     };
 
-    setActiveReceipt(receipt);
+    if (sendWhatsAppReceipt) {
+      setActiveReceipt(receipt);
+    } else {
+      handleClose();
+    }
 
     showSuccessAlert(
       'Payment Recorded! 💳',
-      `Bill No: ${cleanBill} — Received ${Number(amount).toLocaleString()} Dhs from ${currentStudent?.fullName || 'Student'}. Subscription covered from ${formatDisplayDate(subscriptionStartDate)} to ${formatDisplayDate(nextDueDate)}.`
+      `Bill No: ${cleanBill} — Received ${formatCurrencyAmount(finalTotal)} Dhs (incl. ${liveBreakdown.vatRate}% VAT) from ${currentStudent?.fullName || 'Student'}. Covered ${formatDisplayDate(subscriptionStartDate)} to ${formatDisplayDate(nextDueDate)}.`
     );
   };
+
+  const currentStudentEffectiveDue = currentStudent ? getStudentDueAmount(currentStudent, feePlans) : 0;
+  const currentStudentHasDue = currentStudent ? isStudentFeeDue(currentStudent) : false;
 
   return (
     <div
@@ -290,8 +338,8 @@ export const RecordPaymentModal = ({ isOpen, onClose, defaultStudentId = null, d
               <CreditCard className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-white tracking-tight">Record Student Fee & Renewal</h2>
-              <p className="text-[11px] text-zinc-400">Calculate renewal dates from previous due or resumption date</p>
+              <h2 className="text-base font-bold text-white tracking-tight">Record Student Fee &amp; Renewal</h2>
+              <p className="text-[11px] text-zinc-400">Calculate renewal dates &amp; 5% VAT consistently with Fee Structures</p>
             </div>
           </div>
           <button
@@ -325,9 +373,8 @@ export const RecordPaymentModal = ({ isOpen, onClose, defaultStudentId = null, d
             </button>
           </div>
         ) : (
-          /* Form Body */
           <form onSubmit={handleSubmit} className="p-5 sm:p-6 space-y-4 overflow-y-auto">
-            {/* 0. Unique Bill / Receipt Number (Physical Bill Book Serial) */}
+            {/* 0. Unique Bill / Receipt Number */}
             <div className="p-3.5 bg-zinc-900/90 rounded-2xl border border-amber-500/30 space-y-2">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-bold text-amber-300 flex items-center gap-1.5">
@@ -376,11 +423,14 @@ export const RecordPaymentModal = ({ isOpen, onClose, defaultStudentId = null, d
                   onChange={(e) => handleStudentChange(e.target.value)}
                   className="w-full bg-zinc-900 border border-zinc-700 rounded-xl pl-10 pr-3.5 py-2.5 text-sm text-white font-medium focus:outline-none focus:border-red-500 cursor-pointer"
                 >
-                  {students.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.fullName} ({s.beltRank}){s.status === 'Inactive' || s.status === 'Stopped' ? ` [${s.status}]` : ''} — Due: AED {s.dueAmount || 0}
-                    </option>
-                  ))}
+                  {students.map((s) => {
+                    const effectiveDue = getStudentDueAmount(s, feePlans);
+                    return (
+                      <option key={s.id} value={s.id}>
+                        {s.fullName} ({s.beltRank}){s.status === 'Inactive' || s.status === 'Stopped' ? ` [${s.status}]` : ''} — Due: AED {formatCurrencyAmount(effectiveDue)}
+                      </option>
+                    );
+                  })}
                 </select>
               </div>
             </div>
@@ -396,14 +446,17 @@ export const RecordPaymentModal = ({ isOpen, onClose, defaultStudentId = null, d
                 </div>
                 <div className="flex flex-wrap items-center justify-between gap-1.5 pt-1 border-t border-zinc-800/80">
                   <span className="text-zinc-400 text-[11px]">Outstanding Due Balance:</span>
-                  <span className={`font-extrabold ${currentStudent.dueAmount > 0 ? 'text-red-400' : 'text-emerald-400'}`}>
-                    AED {currentStudent.dueAmount?.toLocaleString() || 0}
+                  <span className={`font-extrabold ${currentStudentHasDue || currentStudentEffectiveDue > 0 ? 'text-red-400' : 'text-emerald-400'}`}>
+                    AED {formatCurrencyAmount(currentStudentEffectiveDue)}
+                    {currentStudentEffectiveDue > 0 && Number(currentStudent.dueAmount) === 0 && (
+                      <span className="text-[10px] font-semibold text-amber-400 ml-1">(Renewal Due Incl. VAT)</span>
+                    )}
                   </span>
                 </div>
               </div>
             )}
 
-            {/* 3. Renewal Type Selector (Normal Renewal vs Restart after break) */}
+            {/* 3. Renewal Type Selector */}
             <div>
               <label className="block text-xs font-bold text-zinc-300 mb-1.5 flex items-center gap-1.5">
                 <span>Subscription Renewal Mode *</span>
@@ -411,7 +464,6 @@ export const RecordPaymentModal = ({ isOpen, onClose, defaultStudentId = null, d
               </label>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                {/* Mode A: Normal Renewal */}
                 <button
                   type="button"
                   onClick={() => handleModeChange('normal')}
@@ -437,7 +489,6 @@ export const RecordPaymentModal = ({ isOpen, onClose, defaultStudentId = null, d
                   </p>
                 </button>
 
-                {/* Mode B: Restart After Break */}
                 <button
                   type="button"
                   onClick={() => handleModeChange('restart')}
@@ -465,7 +516,7 @@ export const RecordPaymentModal = ({ isOpen, onClose, defaultStudentId = null, d
               </div>
             </div>
 
-            {/* 4. Resumption Date input (Shown if Restart after break is selected) */}
+            {/* 4. Resumption Date input */}
             {renewalType === 'restart' && (
               <div className="p-3.5 bg-amber-950/20 rounded-2xl border border-amber-500/30 space-y-2">
                 <div className="flex items-center justify-between">
@@ -497,18 +548,20 @@ export const RecordPaymentModal = ({ isOpen, onClose, defaultStudentId = null, d
                 onChange={(e) => handlePlanChange(e.target.value)}
                 className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-xs text-white font-bold focus:outline-none focus:border-red-500 cursor-pointer"
               >
-                {feePlans.map(p => (
-                  <option key={p.id} value={p.id}>
-                    {p.name} — AED {p.tuitionFee?.toLocaleString()} ({p.billingCycle || `${p.durationMonths} Months`})
-                  </option>
-                ))}
+                {feePlans.map(p => {
+                  const b = calculatePlanRenewalBreakdown(p);
+                  return (
+                    <option key={p.id} value={p.id}>
+                      {p.name} — Base {formatCurrencyAmount(b.baseAmount)} + {b.vatRate}% VAT = AED {formatCurrencyAmount(b.totalWithVat)} ({p.billingCycle || `${p.durationMonths} Months`})
+                    </option>
+                  );
+                })}
               </select>
             </div>
 
-            {/* 6. Dates Confirmation Box (Payment Date, Subscription Start, Next Due Date) */}
+            {/* 6. Dates Confirmation Box */}
             <div className="p-3.5 bg-zinc-950/70 rounded-2xl border border-zinc-800 space-y-3">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {/* Payment Received Date */}
                 <div>
                   <label className="block text-[11px] font-bold text-zinc-400 mb-1">
                     💰 Payment Received
@@ -521,7 +574,6 @@ export const RecordPaymentModal = ({ isOpen, onClose, defaultStudentId = null, d
                   />
                 </div>
 
-                {/* Subscription Start Date */}
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <label className="text-[11px] font-bold text-blue-400">
@@ -536,7 +588,6 @@ export const RecordPaymentModal = ({ isOpen, onClose, defaultStudentId = null, d
                   />
                 </div>
 
-                {/* Next Bill Due / Expiry Date */}
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <label className="text-[11px] font-bold text-emerald-400">
@@ -560,7 +611,6 @@ export const RecordPaymentModal = ({ isOpen, onClose, defaultStudentId = null, d
                 </div>
               </div>
 
-              {/* Visual Cycle Badge */}
               <div className="p-2 bg-zinc-900 rounded-xl border border-zinc-800 flex flex-wrap items-center justify-between gap-1.5 text-xs">
                 <span className="text-zinc-400 text-[11px] flex items-center gap-1">
                   <span>Cycle Coverage:</span>
@@ -574,48 +624,92 @@ export const RecordPaymentModal = ({ isOpen, onClose, defaultStudentId = null, d
               </div>
             </div>
 
-            {/* 7. Amount Collected (Dhs) */}
-            <div>
-              <div className="flex flex-wrap items-center justify-between gap-1.5 mb-1.5">
+            {/* 7. Amount & Live VAT Breakdown */}
+            <div className="space-y-2.5">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <label className="text-xs font-semibold text-zinc-300">
-                  Payment Amount Received (Dhs) *
+                  {amountEntryMode === 'base'
+                    ? `Base Tuition Fee (Dhs) * (+${currentVatRate}% VAT added)`
+                    : `Payment Amount Received (Incl. ${currentVatRate}% VAT) *`}
                 </label>
-                {Number(amount) > 0 && (
-                  <span className="text-[11px] text-zinc-400">
-                    5% VAT included: <strong className="text-amber-400">{(Number(amount) - Number(amount) / 1.05).toFixed(2)} Dhs</strong>
-                  </span>
-                )}
+
+                <div className="inline-flex items-center p-0.5 bg-zinc-900 border border-zinc-700 rounded-lg text-[10px] font-bold">
+                  <button
+                    type="button"
+                    onClick={() => handleEntryModeSwitch('total')}
+                    className={`px-2 py-1 rounded-md transition-colors cursor-pointer ${
+                      amountEntryMode === 'total'
+                        ? 'bg-emerald-600 text-white'
+                        : 'text-zinc-400 hover:text-white'
+                    }`}
+                  >
+                    Total Incl. VAT
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleEntryModeSwitch('base')}
+                    className={`px-2 py-1 rounded-md transition-colors cursor-pointer ${
+                      amountEntryMode === 'base'
+                        ? 'bg-amber-600 text-white'
+                        : 'text-zinc-400 hover:text-white'
+                    }`}
+                  >
+                    Enter Base + {currentVatRate}% VAT
+                  </button>
+                </div>
               </div>
 
               <input
                 type="number"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
+                step="any"
+                min="0"
+                value={amountInput}
+                onChange={(e) => setAmountInput(e.target.value)}
                 className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3.5 py-2.5 text-lg font-bold text-emerald-400 focus:outline-none focus:border-red-500"
               />
 
-              {/* Quick Package Presets */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 mt-2">
-                {[
-                  { label: 'Monthly', val: '250' },
-                  { label: '3-Months', val: '650' },
-                  { label: '6-Months', val: '1200' },
-                  { label: '1-Year', val: '2200' }
-                ].map(pkg => (
-                  <button
-                    type="button"
-                    key={pkg.val}
-                    onClick={() => setAmount(pkg.val)}
-                    className={`py-1.5 px-1 rounded-lg text-[11px] font-bold border transition-all cursor-pointer ${
-                      amount === pkg.val
-                        ? 'bg-emerald-950 text-emerald-400 border-emerald-500/50'
-                        : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-white'
-                    }`}
-                  >
-                    <span className="block truncate">{pkg.label}</span>
-                    <span className="text-[10px] text-zinc-500">{pkg.val} Dhs</span>
-                  </button>
-                ))}
+              {/* Live VAT Breakdown Card matching Enrollment & Fee Structures */}
+              <div className="p-3 bg-zinc-950/80 rounded-xl border border-zinc-800 space-y-1 text-xs">
+                <div className="flex items-center justify-between text-zinc-400">
+                  <span>Base Fee Amount:</span>
+                  <span className="font-semibold text-zinc-200">{liveBreakdown.baseAmount.toFixed(2)} Dhs</span>
+                </div>
+                <div className="flex items-center justify-between text-zinc-400">
+                  <span>{liveBreakdown.vatRate}% UAE VAT:</span>
+                  <span className="font-semibold text-amber-400">+{liveBreakdown.vatAmount.toFixed(2)} Dhs</span>
+                </div>
+                <div className="flex items-center justify-between pt-1 border-t border-zinc-800 font-bold">
+                  <span className="text-white">Total Payment Recorded (Incl. {liveBreakdown.vatRate}% VAT):</span>
+                  <span className="text-sm font-black text-emerald-400">{liveBreakdown.totalWithVat.toFixed(2)} Dhs</span>
+                </div>
+              </div>
+
+              {/* Dynamic Package Presets from Active Fee Plans */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                {feePlans.map(p => {
+                  const b = calculatePlanRenewalBreakdown(p);
+                  const isActivePlan = selectedPlanId === p.id && Math.abs(liveBreakdown.totalWithVat - b.totalWithVat) < 0.01;
+                  return (
+                    <button
+                      type="button"
+                      key={p.id}
+                      onClick={() => handlePlanChange(p.id)}
+                      className={`py-1.5 px-2 rounded-lg text-[11px] font-bold border transition-all cursor-pointer text-center ${
+                        isActivePlan
+                          ? 'bg-emerald-950 text-emerald-400 border-emerald-500/50'
+                          : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-white'
+                      }`}
+                    >
+                      <span className="block truncate">{p.name}</span>
+                      <span className="text-[10px] text-emerald-400 font-extrabold block">
+                        {formatCurrencyAmount(b.totalWithVat)} Dhs
+                      </span>
+                      <span className="text-[9px] text-zinc-500 block truncate">
+                        Base {formatCurrencyAmount(b.baseAmount)} + {b.vatRate}% VAT
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -667,7 +761,7 @@ export const RecordPaymentModal = ({ isOpen, onClose, defaultStudentId = null, d
               <div className="flex items-center gap-2">
                 <MessageSquare className="w-4 h-4 text-emerald-400" />
                 <span className="text-xs font-medium text-zinc-200">
-                  Dispatch official receipt & dates to parent on WhatsApp
+                  Open printable Official Receipt &amp; WhatsApp image share after recording
                 </span>
               </div>
             </label>
@@ -694,10 +788,10 @@ export const RecordPaymentModal = ({ isOpen, onClose, defaultStudentId = null, d
                 </button>
                 <button
                   type="submit"
-                  disabled={Boolean(billError)}
+                  disabled={Boolean(billError) || liveBreakdown.totalWithVat <= 0}
                   className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 text-xs font-bold text-white rounded-xl shadow-lg shadow-emerald-700/30 transition-all cursor-pointer"
                 >
-                  Confirm &amp; Issue Receipt
+                  Confirm &amp; Issue Receipt ({formatCurrencyAmount(liveBreakdown.totalWithVat)} Dhs)
                 </button>
               </div>
             </div>

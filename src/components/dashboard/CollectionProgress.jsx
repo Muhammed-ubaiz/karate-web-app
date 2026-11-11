@@ -11,7 +11,8 @@ import {
 import { WhatsAppBroadcastModal } from '../fees/WhatsAppBroadcastModal';
 import { PaymentReceiptModal } from '../fees/PaymentReceiptModal';
 import { StudentProfileModal } from '../students/StudentProfileModal';
-import { isStudentFeeDue, formatDisplayDate } from '../../utils/whatsappHelper';
+import { isStudentFeeDue, getStudentDueAmount, formatDisplayDate } from '../../utils/whatsappHelper';
+import { calculatePlanRenewalBreakdown, roundCurrency, formatCurrencyAmount } from '../../utils/billingHelper';
 import {
   MessageSquare,
   TrendingUp,
@@ -82,16 +83,16 @@ export const CollectionProgress = ({ initialMonth = null }) => {
   );
 
   const estimatedTarget = useMemo(
-    () => activeStudents.reduce((acc, s) => {
-      const plan = feePlans.find(p => p.id === s.tuitionPlanId);
-      return acc + (plan ? Number(plan.tuitionFee || 250) : 250);
-    }, 0),
+    () => roundCurrency(activeStudents.reduce((acc, s) => {
+      const plan = feePlans.find(p => p.id === s.tuitionPlanId) || feePlans[0];
+      return acc + calculatePlanRenewalBreakdown(plan).totalWithVat;
+    }, 0)),
     [activeStudents, feePlans]
   );
 
   const overdueTotal = useMemo(
-    () => activeStudents.reduce((acc, s) => acc + (Number(s.dueAmount) || 0), 0),
-    [activeStudents]
+    () => roundCurrency(activeStudents.reduce((acc, s) => acc + getStudentDueAmount(s, feePlans), 0)),
+    [activeStudents, feePlans]
   );
 
   // Branch-filtered, normalized, newest-first payments
@@ -229,6 +230,7 @@ export const CollectionProgress = ({ initialMonth = null }) => {
   const handleOpenReceipt = (payment) => {
     const studentObj = studentLookup.get(payment.studentId);
     const dojoObj = dojos.find(d => d.id === (payment.dojoId || studentObj?.dojoId));
+    const planObj = feePlans.find(p => p.id === (payment.planId || studentObj?.tuitionPlanId));
     const billNo = payment.billNumber || payment.receiptNumber || `BILL-${payment.id?.slice(-4) || '0000'}`;
 
     setViewReceiptData({
@@ -240,8 +242,12 @@ export const CollectionProgress = ({ initialMonth = null }) => {
       parentName: payment.parentName || studentObj?.parentName || '',
       phone: payment.phone || studentObj?.whatsapp || studentObj?.phone || '',
       beltRank: payment.beltRank || studentObj?.beltRank || '',
-      dojoName: dojoObj?.name || 'SenseiBook Martial Arts Academy',
+      dojoName: dojoObj?.name || 'Al Muharib Karate Center',
       amount: payment.amount,
+      baseAmount: payment.baseAmount,
+      vatAmount: payment.vatAmount,
+      vatRate: payment.vatRate ?? planObj?.vatRate ?? 5,
+      planName: payment.planName || planObj?.name || '',
       paymentMethod: payment.paymentMethod,
       subscriptionStartDate: formatDisplayDate(payment.subscriptionStartDate),
       nextDueDate: formatDisplayDate(payment.nextDueDate),
@@ -278,7 +284,7 @@ export const CollectionProgress = ({ initialMonth = null }) => {
 
           {/* Mobile amount badge on right of first line */}
           <span className={`md:hidden text-sm font-black ${isReset ? 'text-zinc-500 line-through' : 'text-emerald-400'}`}>
-            AED {Number(payment.amount).toLocaleString()}
+            AED {formatCurrencyAmount(payment.amount)}
           </span>
         </div>
 
@@ -328,7 +334,7 @@ export const CollectionProgress = ({ initialMonth = null }) => {
         {/* 5. Amount (Desktop Column) */}
         <div className="hidden md:block md:col-span-2 text-right">
           <span className={`text-sm font-black ${isReset ? 'text-zinc-500 line-through' : 'text-emerald-400'}`}>
-            AED {Number(payment.amount).toLocaleString()}
+            AED {formatCurrencyAmount(payment.amount)}
           </span>
           {isReset && (
             <span className="block text-[9px] text-orange-400 font-semibold">Excluded (Reset)</span>
@@ -369,7 +375,7 @@ export const CollectionProgress = ({ initialMonth = null }) => {
           <p className="text-xs text-zinc-400 mt-0.5">
             {isAllMonthsMode
               ? `Showing all recorded monthly transactions across ${allMonthGroups.length} month(s) • ${activeStudents.length} active students`
-              : `Target: ${estimatedTarget.toLocaleString()} Dhs across ${activeStudents.length} active students • ${selectedMonthSummary.validCount} transaction(s) in ${selectedMonthSummary.monthLabel}`}
+              : `Target: ${formatCurrencyAmount(estimatedTarget)} Dhs across ${activeStudents.length} active students • ${selectedMonthSummary.validCount} transaction(s) in ${selectedMonthSummary.monthLabel}`}
           </p>
         </div>
 
@@ -401,7 +407,7 @@ export const CollectionProgress = ({ initialMonth = null }) => {
                 const sum = grp?.totalCollected || 0;
                 return (
                   <option key={mKey} value={mKey} className="bg-zinc-900 text-white">
-                    {formatMonthKeyLabel(mKey)} ({count} bill{count === 1 ? '' : 's'} • AED {sum.toLocaleString()})
+                    {formatMonthKeyLabel(mKey)} ({count} bill{count === 1 ? '' : 's'} • AED {formatCurrencyAmount(sum)})
                   </option>
                 );
               })}
@@ -458,7 +464,7 @@ export const CollectionProgress = ({ initialMonth = null }) => {
           <span className="font-semibold text-zinc-300">
             {isAllMonthsMode ? 'All-Time Total Collected' : `${selectedMonthSummary.monthLabel} Total Collected`}:{' '}
             <span className="text-emerald-400 font-black text-sm sm:text-base">
-              AED {selectedMonthSummary.totalCollected.toLocaleString()}
+              AED {formatCurrencyAmount(selectedMonthSummary.totalCollected)}
             </span>
             {selectedMonthSummary.resetCount > 0 && (
               <span className="ml-2 text-[11px] text-orange-400 font-semibold">
@@ -468,7 +474,7 @@ export const CollectionProgress = ({ initialMonth = null }) => {
           </span>
 
           <span className="text-zinc-400 shrink-0">
-            Active Pending Dues: <span className="text-red-400 font-bold text-sm">{overdueTotal.toLocaleString()} Dhs</span>
+            Active Pending Dues: <span className="text-red-400 font-bold text-sm">{formatCurrencyAmount(overdueTotal)} Dhs</span>
           </span>
         </div>
 
@@ -488,7 +494,7 @@ export const CollectionProgress = ({ initialMonth = null }) => {
               </span>
             ) : (
               <span>
-                {percentAchieved}% of Active Target ({estimatedTarget.toLocaleString()} Dhs) Collected in {selectedMonthSummary.monthLabel}
+                {percentAchieved}% of Active Target ({formatCurrencyAmount(estimatedTarget)} Dhs) Collected in {selectedMonthSummary.monthLabel}
               </span>
             )}
           </span>
@@ -587,7 +593,7 @@ export const CollectionProgress = ({ initialMonth = null }) => {
                     Matching ({filteredValidStats.count} bill{filteredValidStats.count === 1 ? '' : 's'}):
                   </span>
                   <span className="font-black text-amber-400">
-                    AED {filteredValidStats.total.toLocaleString()}
+                    AED {formatCurrencyAmount(filteredValidStats.total)}
                   </span>
                   <button
                     type="button"
@@ -608,7 +614,7 @@ export const CollectionProgress = ({ initialMonth = null }) => {
                     {isAllMonthsMode ? 'Total Collected:' : 'Monthly Total Collected:'}
                   </span>
                   <span className="font-black text-emerald-400 text-sm">
-                    AED {selectedMonthSummary.totalCollected.toLocaleString()}
+                    AED {formatCurrencyAmount(selectedMonthSummary.totalCollected)}
                   </span>
                 </div>
               )}
@@ -646,7 +652,7 @@ export const CollectionProgress = ({ initialMonth = null }) => {
                       onClick={() => setSelectedMonth(g.monthKey)}
                       className="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 rounded-lg text-[11px] font-semibold cursor-pointer"
                     >
-                      {g.monthLabel} ({g.validCount} bill{g.validCount === 1 ? '' : 's'} • AED {g.totalCollected.toLocaleString()})
+                      {g.monthLabel} ({g.validCount} bill{g.validCount === 1 ? '' : 's'} • AED {formatCurrencyAmount(g.totalCollected)})
                     </button>
                   ))}
 
@@ -708,7 +714,7 @@ export const CollectionProgress = ({ initialMonth = null }) => {
                     <div className="text-xs font-semibold text-zinc-300">
                       Monthly Total Collected:{' '}
                       <span className="text-emerald-400 font-black text-sm">
-                        AED {group.totalCollected.toLocaleString()}
+                        AED {formatCurrencyAmount(group.totalCollected)}
                       </span>
                     </div>
                   </div>
@@ -741,7 +747,7 @@ export const CollectionProgress = ({ initialMonth = null }) => {
                 <span className="font-semibold text-zinc-300">
                   Monthly Total Collected:{' '}
                   <strong className="text-emerald-400 font-black">
-                    AED {selectedMonthSummary.totalCollected.toLocaleString()}
+                    AED {formatCurrencyAmount(selectedMonthSummary.totalCollected)}
                   </strong>
                 </span>
               </div>

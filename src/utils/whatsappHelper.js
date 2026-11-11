@@ -1,5 +1,12 @@
+import {
+  roundCurrency,
+  formatCurrencyAmount,
+  calculatePlanRenewalBreakdown,
+  calculateVatBreakdownFromTotal
+} from './billingHelper.js';
+
 /**
- * WhatsApp Helper Utilities for Karate Dojo App
+ * WhatsApp Helper Utilities for Al Muharib Karate Center
  */
 
 // Clean any phone number to international WhatsApp format (handles both UAE +971 and India +91)
@@ -190,51 +197,78 @@ export const isStudentFeeDue = (student) => {
 export const getStudentDueAmount = (student, feePlans = []) => {
   if (!student) return 0;
   if (Number(student.dueAmount) > 0) {
-    return Number(student.dueAmount);
+    return roundCurrency(Number(student.dueAmount));
   }
 
-  // If due condition is met (e.g. nextDueDate arrived), calculate plan amount automatically
+  // If due condition is met (e.g. nextDueDate arrived), calculate plan amount automatically (Base + VAT)
   if (isStudentFeeDue(student)) {
     const plan = feePlans.find(p => p.id === student.tuitionPlanId) || feePlans[0];
-    const tuition = Number(plan?.tuitionFee || 250);
-    const vatRate = Number(plan?.vatRate ?? 5);
-    const vat = (tuition * vatRate) / 100;
-    return Math.round(tuition + vat);
+    return calculatePlanRenewalBreakdown(plan).totalWithVat;
   }
 
   return 0;
 };
 
+// Detailed fee due breakdown (base fee, VAT rate, VAT amount, total due) for notices & receipts
+export const getStudentDueBreakdown = (student, feePlans = []) => {
+  const plan = feePlans.find(p => p.id === student?.tuitionPlanId) || feePlans[0] || null;
+  const planBreakdown = calculatePlanRenewalBreakdown(plan);
+  const dueAmount = getStudentDueAmount(student, feePlans);
+  const targetAmount = dueAmount > 0 ? dueAmount : planBreakdown.totalWithVat;
+
+  // Use exact plan base+VAT when due matches plan total; otherwise derive cleanly from total
+  if (Math.abs(targetAmount - planBreakdown.totalWithVat) < 0.01) {
+    return {
+      plan,
+      baseAmount: planBreakdown.baseAmount,
+      vatRate: planBreakdown.vatRate,
+      vatAmount: planBreakdown.vatAmount,
+      totalDue: planBreakdown.totalWithVat
+    };
+  }
+
+  const derived = calculateVatBreakdownFromTotal(targetAmount, planBreakdown.vatRate);
+  return {
+    plan,
+    baseAmount: derived.baseAmount,
+    vatRate: derived.vatRate,
+    vatAmount: derived.vatAmount,
+    totalDue: derived.totalWithVat
+  };
+};
+
 // Generate polite, personalized WhatsApp fee reminder message
 export const generateWhatsAppFeeReminder = (student, dojo, feePlans = []) => {
-  const dojoName = dojo ? dojo.name : 'Karate Academy';
+  const dojoName = dojo ? dojo.name : 'Al Muharib Karate Center';
   const recipientName = student.parentName && student.parentName !== 'Self'
     ? student.parentName
     : student.fullName;
 
-  const dueAmount = getStudentDueAmount(student, feePlans);
-  const formattedAmount = dueAmount > 0 ? dueAmount.toLocaleString() : '250';
+  const breakdown = getStudentDueBreakdown(student, feePlans);
+  const formattedAmount = breakdown.totalDue > 0 ? formatCurrencyAmount(breakdown.totalDue) : '262.50';
   const dojoPhone = dojo?.phone || '+971 50 123 4567';
 
-  const plan = feePlans.find(p => p.id === student.tuitionPlanId);
+  const plan = breakdown.plan;
   const planName = plan ? plan.name : 'Karate Training Package';
   const dueDateFormatted = student.nextDueDate ? formatDisplayDate(student.nextDueDate) : 'Immediate';
   const lastPaidFormatted = student.lastPaidDate ? formatDisplayDate(student.lastPaidDate) : null;
 
   let feeDetailsText = `📌 *Fee Renewal Details:*\n` +
     `• Package: *${planName}*\n` +
-    `• Outstanding Due: *${formattedAmount} Dhs* (Includes 5% UAE VAT)\n` +
+    `• Base Tuition: ${breakdown.baseAmount.toFixed(2)} Dhs\n` +
+    `• ${breakdown.vatRate}% UAE VAT: ${breakdown.vatAmount.toFixed(2)} Dhs\n` +
+    `• *Outstanding Due: ${formattedAmount} Dhs* (Includes ${breakdown.vatRate}% UAE VAT)\n` +
     `• Payment Due Date: *${dueDateFormatted}*\n`;
 
   if (lastPaidFormatted) {
-    feeDetailsText += `• Last Covered Period Paid: *${lastPaidFormatted}*\n`;
+    feeDetailsText += `• Last Payment Date: *${lastPaidFormatted}*\n`;
   }
 
   feeDetailsText += `• Branch: ${dojoName}\n\n`;
 
-  return `🥋 *${dojoName.toUpperCase()} - FEE REMINDER*\n\n` +
+  return `🥋 *AL MUHARIB KARATE CENTER - OFFICIAL FEE DUE NOTICE*\n\n` +
     `Dear ${recipientName},\n\n` +
-    `This is a friendly reminder that the karate tuition fee for *${student.fullName}* (${student.beltRank}) is due for renewal.\n\n` +
+    `This is a friendly reminder that the karate tuition fee for *${student.fullName}* (${student.beltRank || 'Student'}) is due for renewal.\n\n` +
     feeDetailsText +
     `Kindly remit the fee at your earliest convenience via:\n` +
     `💳 Card / POS Machine\n` +
@@ -242,7 +276,7 @@ export const generateWhatsAppFeeReminder = (student, dojo, feePlans = []) => {
     `📱 Apple Pay / Online Link\n` +
     `🥋 Cash at Dojo Reception\n\n` +
     `Thank you for your continuous support!\n\n` +
-    `_Sensei Administration Desk - ${dojoName}_\n` +
+    `_Al Muharib Karate Center Administration_\n` +
     `📞 ${dojoPhone} 🥋`;
 };
 

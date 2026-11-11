@@ -26,6 +26,7 @@ import {
   getStudentDueAmount,
   formatDisplayDate
 } from '../../utils/whatsappHelper';
+import { roundCurrency, formatCurrencyAmount } from '../../utils/billingHelper';
 import {
   CreditCard,
   Plus,
@@ -82,6 +83,7 @@ export const FeePlansView = () => {
   const [isAddPlanModalOpen, setIsAddPlanModalOpen] = useState(false);
   const [editingPlan, setEditingPlan] = useState(null);
   const [isRecordModalOpen, setIsRecordModalOpen] = useState(false);
+  const [recordPlanId, setRecordPlanId] = useState(null);
   const [isBroadcastModalOpen, setIsBroadcastModalOpen] = useState(false);
   const [isInactiveDuesExpanded, setIsInactiveDuesExpanded] = useState(false);
 
@@ -105,17 +107,17 @@ export const FeePlansView = () => {
   const unpaidActiveStudents = students.filter(
     s => s.status !== 'Inactive' && s.status !== 'Stopped' && isStudentFeeDue(s)
   );
-  const totalPendingActiveDues = unpaidActiveStudents.reduce(
+  const totalPendingActiveDues = roundCurrency(unpaidActiveStudents.reduce(
     (acc, s) => acc + getStudentDueAmount(s, feePlans), 0
-  );
+  ));
 
   // 2. Inactive / Stopped students with outstanding dues (Requirement 3: Maintained & accessible separately)
   const unpaidInactiveStudents = students.filter(
     s => (s.status === 'Inactive' || s.status === 'Stopped') && isStudentFeeDue(s)
   );
-  const totalPendingInactiveDues = unpaidInactiveStudents.reduce(
+  const totalPendingInactiveDues = roundCurrency(unpaidInactiveStudents.reduce(
     (acc, s) => acc + getStudentDueAmount(s, feePlans), 0
-  );
+  ));
 
   // Normalized & sorted payment transactions
   const normalizedPayments = useMemo(
@@ -257,6 +259,7 @@ export const FeePlansView = () => {
   const handleOpenReceipt = (payment) => {
     const studentObj = students.find(s => s.id === payment.studentId);
     const dojoObj = dojos.find(d => d.id === (payment.dojoId || studentObj?.dojoId));
+    const planObj = feePlans.find(p => p.id === (payment.planId || studentObj?.tuitionPlanId));
     const billNo = payment.billNumber || payment.receiptNumber || `BILL-${payment.id?.slice(-4) || '0000'}`;
 
     setViewReceiptData({
@@ -268,8 +271,12 @@ export const FeePlansView = () => {
       parentName: payment.parentName || studentObj?.parentName || '',
       phone: payment.phone || studentObj?.whatsapp || studentObj?.phone || '',
       beltRank: payment.beltRank || studentObj?.beltRank || '',
-      dojoName: dojoObj?.name || 'SenseiBook Martial Arts Academy',
+      dojoName: dojoObj?.name || 'Al Muharib Karate Center',
       amount: payment.amount,
+      baseAmount: payment.baseAmount,
+      vatAmount: payment.vatAmount,
+      vatRate: payment.vatRate ?? planObj?.vatRate ?? 5,
+      planName: payment.planName || planObj?.name || '',
       paymentMethod: payment.paymentMethod,
       subscriptionStartDate: formatDisplayDate(payment.subscriptionStartDate),
       nextDueDate: formatDisplayDate(payment.nextDueDate),
@@ -422,7 +429,7 @@ export const FeePlansView = () => {
             <span className={`text-base font-black block ${
               isReset ? 'text-zinc-500 line-through' : 'text-emerald-400'
             }`}>
-              AED {Number(payment.amount).toLocaleString()}
+              AED {formatCurrencyAmount(payment.amount)}
             </span>
             <span className="text-[10px] text-zinc-500">
               {isReset ? 'Reverted' : 'Paid'}
@@ -642,7 +649,7 @@ export const FeePlansView = () => {
                         </div>
                         <div className="flex items-center gap-2">
                           <span className={`font-black ${p.status === 'Reset' ? 'text-zinc-500 line-through' : 'text-emerald-400'}`}>
-                            AED {Number(p.amount).toLocaleString()}
+                            AED {formatCurrencyAmount(p.amount)}
                           </span>
                           <button
                             type="button"
@@ -711,7 +718,7 @@ export const FeePlansView = () => {
                       </span>
                     </h4>
                     <p className="text-xs text-zinc-400 mt-0.5">
-                      Total active pending collection: <strong className="text-red-400">{totalPendingActiveDues.toLocaleString()} Dhs</strong>
+                      Total active pending collection: <strong className="text-red-400">{formatCurrencyAmount(totalPendingActiveDues)} Dhs</strong>
                     </p>
                   </div>
                 </div>
@@ -749,7 +756,7 @@ export const FeePlansView = () => {
                       </span>
                     </h4>
                     <p className="text-xs text-zinc-400 mt-0.5">
-                      Total outstanding balance: <strong className="text-amber-400">{totalPendingInactiveDues.toLocaleString()} Dhs</strong> (Excluded from active students' Due Fees).
+                      Total outstanding balance: <strong className="text-amber-400">{formatCurrencyAmount(totalPendingInactiveDues)} Dhs</strong> (Excluded from active students' Due Fees).
                     </p>
                   </div>
                 </div>
@@ -789,7 +796,7 @@ export const FeePlansView = () => {
                               Belt: {s.beltRank} • Phone: {s.phone}
                             </p>
                             <p className="text-[11px] font-bold text-red-400 mt-0.5">
-                              Outstanding: AED {studentDue.toLocaleString()}
+                              Outstanding: AED {formatCurrencyAmount(studentDue)}
                             </p>
                           </div>
 
@@ -846,14 +853,14 @@ export const FeePlansView = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6">
             {feePlans.map((plan) => {
               const enrolledStudentsCount = students.filter(s => s.tuitionPlanId === plan.id).length;
-              const tuition = Number(plan.tuitionFee) || 0;
-              const admission = Number(plan.registrationFee) || 0;
-              const uniform = Number(plan.uniformFee) || 0;
+              const tuition = roundCurrency(plan.tuitionFee || 0);
+              const admission = roundCurrency(plan.registrationFee || 0);
+              const uniform = roundCurrency(plan.uniformFee || 0);
               const isUniformFree = uniform === 0;
-              const subtotal = tuition + admission + uniform;
-              const vatRate = plan.vatRate ?? 5;
-              const vatAmount = (subtotal * vatRate) / 100;
-              const totalWithVat = subtotal + vatAmount;
+              const subtotal = roundCurrency(tuition + admission + uniform);
+              const vatRate = Number(plan.vatRate ?? 5);
+              const vatAmount = roundCurrency((subtotal * vatRate) / 100);
+              const totalWithVat = roundCurrency(subtotal + vatAmount);
 
               return (
                 <div
@@ -928,7 +935,7 @@ export const FeePlansView = () => {
                       <div className="flex items-baseline justify-between">
                         <span className="text-zinc-400">Tuition Fee:</span>
                         <span className="text-base font-extrabold text-emerald-400">
-                          {tuition.toLocaleString()} Dhs
+                          {formatCurrencyAmount(tuition)} Dhs
                         </span>
                       </div>
 
@@ -936,7 +943,7 @@ export const FeePlansView = () => {
                       <div className="flex items-center justify-between text-zinc-400 pt-1.5 border-t border-zinc-800/80">
                         <span>Admission Fee:</span>
                         <span className="font-semibold text-zinc-200">
-                          {admission > 0 ? `${admission.toLocaleString()} Dhs` : 'Included'}
+                          {admission > 0 ? `${formatCurrencyAmount(admission)} Dhs` : 'Included'}
                         </span>
                       </div>
 
@@ -950,14 +957,14 @@ export const FeePlansView = () => {
                           </span>
                         ) : (
                           <span className="font-semibold text-zinc-200">
-                            {uniform.toLocaleString()} Dhs
+                            {formatCurrencyAmount(uniform)} Dhs
                           </span>
                         )}
                       </div>
 
                       {/* 5% VAT Line */}
                       <div className="flex items-center justify-between text-[11px] text-zinc-400 pt-1.5 border-t border-zinc-800/80">
-                        <span>5% UAE VAT:</span>
+                        <span>{vatRate}% UAE VAT:</span>
                         <span className="font-semibold text-amber-400">
                           +{vatAmount.toFixed(2)} Dhs
                         </span>
@@ -965,7 +972,7 @@ export const FeePlansView = () => {
 
                       {/* Total Bill Amount */}
                       <div className="flex items-center justify-between pt-2 border-t border-zinc-700/60">
-                        <span className="font-bold text-white text-xs">Total with 5% VAT:</span>
+                        <span className="font-bold text-white text-xs">Total with {vatRate}% VAT:</span>
                         <span className="font-black text-emerald-400 text-sm">
                           {totalWithVat.toFixed(2)} Dhs
                         </span>
@@ -994,7 +1001,10 @@ export const FeePlansView = () => {
                       </button>
                       <span className="text-zinc-700">•</span>
                       <button
-                        onClick={() => requireAdmin(() => setIsRecordModalOpen(true), 'Authorized staff verification required to record fee payments.')}
+                        onClick={() => requireAdmin(() => {
+                          setRecordPlanId(plan.id);
+                          setIsRecordModalOpen(true);
+                        }, 'Authorized staff verification required to record fee payments.')}
                         className="text-xs font-semibold text-dojo-red hover:text-red-400 transition-colors cursor-pointer"
                       >
                         Record Fee →
@@ -1016,7 +1026,7 @@ export const FeePlansView = () => {
             <div className="p-3.5 bg-dojo-card border border-dojo-border rounded-2xl">
               <span className="text-[11px] text-zinc-400 font-semibold block">Total Valid Collected</span>
               <span className="text-lg font-black text-emerald-400 mt-0.5 block">
-                AED {totalCollectedAllTime.toLocaleString()}
+                AED {formatCurrencyAmount(totalCollectedAllTime)}
               </span>
             </div>
             <div className="p-3.5 bg-dojo-card border border-dojo-border rounded-2xl">
@@ -1032,7 +1042,7 @@ export const FeePlansView = () => {
                   : 'Filtered Sum'}
               </span>
               <span className="text-lg font-black text-amber-400 mt-0.5 block">
-                AED {filteredValidTotal.toLocaleString()}
+                AED {formatCurrencyAmount(filteredValidTotal)}
               </span>
             </div>
             <div className="p-3.5 bg-dojo-card border border-dojo-border rounded-2xl">
@@ -1079,7 +1089,7 @@ export const FeePlansView = () => {
                   <option value="all">📅 All Months (Month-by-Month • {ledgerMonthGroups.length})</option>
                   {ledgerMonthGroups.map(g => (
                     <option key={g.monthKey} value={g.monthKey}>
-                      {g.monthLabel} ({g.validCount} bill{g.validCount === 1 ? '' : 's'} • AED {g.totalCollected.toLocaleString()})
+                      {g.monthLabel} ({g.validCount} bill{g.validCount === 1 ? '' : 's'} • AED {formatCurrencyAmount(g.totalCollected)})
                     </option>
                   ))}
                 </select>
@@ -1233,13 +1243,13 @@ export const FeePlansView = () => {
                 <div className="p-2.5 bg-zinc-950/70 rounded-xl border border-zinc-800">
                   <span className="text-[10px] text-zinc-400 uppercase block">Total Amount Paid</span>
                   <span className="text-sm font-black text-emerald-400">
-                    AED {(getStudentTotalPaid ? getStudentTotalPaid(selectedLedgerStudent.id) : 0).toLocaleString()}
+                    AED {formatCurrencyAmount(getStudentTotalPaid ? getStudentTotalPaid(selectedLedgerStudent.id) : 0)}
                   </span>
                 </div>
                 <div className="p-2.5 bg-zinc-950/70 rounded-xl border border-zinc-800">
                   <span className="text-[10px] text-zinc-400 uppercase block">Current Due</span>
                   <span className={`text-sm font-black ${getStudentDueAmount(selectedLedgerStudent, feePlans) > 0 ? 'text-red-400' : 'text-zinc-200'}`}>
-                    AED {getStudentDueAmount(selectedLedgerStudent, feePlans).toLocaleString()}
+                    AED {formatCurrencyAmount(getStudentDueAmount(selectedLedgerStudent, feePlans))}
                   </span>
                 </div>
                 <div className="p-2.5 bg-zinc-950/70 rounded-xl border border-zinc-800">
@@ -1302,7 +1312,7 @@ export const FeePlansView = () => {
                     <div className="text-xs font-semibold text-zinc-300">
                       Monthly Total Collected:{' '}
                       <span className="text-sm font-black text-emerald-400">
-                        AED {group.totalCollected.toLocaleString()}
+                        AED {formatCurrencyAmount(group.totalCollected)}
                       </span>
                     </div>
                   </div>
@@ -1325,7 +1335,7 @@ export const FeePlansView = () => {
                     <div className="text-xs font-semibold text-zinc-300">
                       Monthly Total Collected:{' '}
                       <span className="text-sm font-black text-emerald-400">
-                        AED {filteredValidTotal.toLocaleString()}
+                        AED {formatCurrencyAmount(filteredValidTotal)}
                       </span>
                     </div>
                   </div>
@@ -1443,7 +1453,7 @@ export const FeePlansView = () => {
                         )}
                         {log.amount !== undefined && (
                           <span className="text-xs font-bold text-emerald-400">
-                            AED {Number(log.amount).toLocaleString()}
+                            AED {formatCurrencyAmount(log.amount)}
                           </span>
                         )}
                       </div>
@@ -1500,8 +1510,12 @@ export const FeePlansView = () => {
       {/* Record Payment Modal */}
       <RecordPaymentModal
         isOpen={isRecordModalOpen}
-        onClose={() => setIsRecordModalOpen(false)}
+        onClose={() => {
+          setIsRecordModalOpen(false);
+          setRecordPlanId(null);
+        }}
         defaultStudentId={selectedLedgerStudent?.id || null}
+        defaultPlanId={recordPlanId}
       />
 
       {/* Edit Payment Modal (Authorized Staff Only) */}

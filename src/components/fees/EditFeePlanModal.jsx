@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useDojo } from '../../context/DojoContext';
+import { roundCurrency, formatCurrencyAmount } from '../../utils/billingHelper';
 import { X, CreditCard, Sparkles, Check, Star, ShieldCheck, Tag, Clock } from 'lucide-react';
 
 const MONTHS = [
@@ -87,12 +88,13 @@ export const EditFeePlanModal = ({ isOpen, onClose, plan }) => {
   };
 
   // Calculations for live preview
-  const tuition = Number(formData.tuitionFee) || 0;
-  const regFee = Number(formData.registrationFee) || 0;
-  const uniform = Number(formData.uniformFee) || 0;
-  const subtotal = tuition + regFee + uniform;
-  const vatAmount = (subtotal * (Number(formData.vatRate) || 0)) / 100;
-  const grandTotal = subtotal + vatAmount;
+  const tuition = roundCurrency(formData.tuitionFee || 0);
+  const regFee = roundCurrency(formData.registrationFee || 0);
+  const uniform = roundCurrency(formData.uniformFee || 0);
+  const subtotal = roundCurrency(tuition + regFee + uniform);
+  const vatRate = Number(formData.vatRate || 0);
+  const vatAmount = roundCurrency((subtotal * vatRate) / 100);
+  const grandTotal = roundCurrency(subtotal + vatAmount);
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
@@ -197,6 +199,8 @@ export const EditFeePlanModal = ({ isOpen, onClose, plan }) => {
                 </label>
                 <input
                   type="number"
+                  step="any"
+                  min="0"
                   placeholder="250"
                   value={formData.tuitionFee}
                   onChange={(e) => setFormData({ ...formData, tuitionFee: e.target.value })}
@@ -211,6 +215,8 @@ export const EditFeePlanModal = ({ isOpen, onClose, plan }) => {
                 </label>
                 <input
                   type="number"
+                  step="any"
+                  min="0"
                   placeholder="100"
                   value={formData.registrationFee}
                   onChange={(e) => setFormData({ ...formData, registrationFee: e.target.value })}
@@ -231,6 +237,8 @@ export const EditFeePlanModal = ({ isOpen, onClose, plan }) => {
                 </div>
                 <input
                   type="number"
+                  step="any"
+                  min="0"
                   placeholder="125"
                   value={formData.uniformFee}
                   onChange={(e) => setFormData({ ...formData, uniformFee: e.target.value })}
@@ -279,7 +287,7 @@ export const EditFeePlanModal = ({ isOpen, onClose, plan }) => {
             <div className="pt-2 border-t border-zinc-800 space-y-1.5 text-xs">
               <div className="flex items-center justify-between text-zinc-400">
                 <span>Subtotal (Tuition + Admission + Uniform):</span>
-                <span className="font-semibold text-zinc-200">{subtotal.toLocaleString()} Dhs</span>
+                <span className="font-semibold text-zinc-200">{formatCurrencyAmount(subtotal)} Dhs</span>
               </div>
 
               <div className="flex items-center justify-between text-zinc-400">
@@ -290,7 +298,7 @@ export const EditFeePlanModal = ({ isOpen, onClose, plan }) => {
               </div>
 
               <div className="flex items-center justify-between pt-1 border-t border-zinc-800/80">
-                <span className="font-bold text-white">Total Bill Amount (Incl. 5% VAT):</span>
+                <span className="font-bold text-white">Total Bill Amount (Incl. {vatRate}% VAT):</span>
                 <span className="text-base font-black text-emerald-400">
                   {grandTotal.toFixed(2)} Dhs
                 </span>

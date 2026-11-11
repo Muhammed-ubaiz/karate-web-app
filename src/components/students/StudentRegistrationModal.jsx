@@ -2,6 +2,11 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useDojo } from '../../context/DojoContext';
 import { showSuccessAlert } from '../../utils/sweetAlert';
 import { calculateNextDueDate } from '../../utils/whatsappHelper';
+import {
+  calculateEnrollmentBreakdown,
+  calculatePlanRenewalBreakdown,
+  formatCurrencyAmount
+} from '../../utils/billingHelper';
 import { ManageBeltRanksModal } from './ManageBeltRanksModal';
 import {
   X,
@@ -168,12 +173,16 @@ export const StudentRegistrationModal = ({ isOpen, onClose }) => {
   };
 
   const selectedPlan = feePlans.find(p => p.id === formData.tuitionPlanId) || feePlans[0];
-  const planTuition = Number(selectedPlan?.tuitionFee || 0);
-  const planAdmission = formData.hasRegistrationFee ? Number(selectedPlan?.registrationFee ?? 100) : 0;
-  const planUniform = formData.includeUniform ? Number(selectedPlan?.uniformFee ?? 0) : 0;
-  const subtotalBeforeVat = planTuition + planAdmission + planUniform;
-  const currentVatAmount = (subtotalBeforeVat * (selectedPlan?.vatRate ?? 5)) / 100;
-  const currentGrandTotal = subtotalBeforeVat + currentVatAmount;
+  const enrollmentBreakdown = calculateEnrollmentBreakdown(selectedPlan, {
+    includeRegistrationFee: formData.hasRegistrationFee,
+    includeUniform: formData.includeUniform
+  });
+  const planTuition = enrollmentBreakdown.tuition;
+  const planAdmission = enrollmentBreakdown.admission;
+  const planUniform = enrollmentBreakdown.uniform;
+  const subtotalBeforeVat = enrollmentBreakdown.baseAmount;
+  const currentVatAmount = enrollmentBreakdown.vatAmount;
+  const currentGrandTotal = enrollmentBreakdown.totalWithVat;
 
   const validate = () => {
     const errs = {};
@@ -203,12 +212,12 @@ export const StudentRegistrationModal = ({ isOpen, onClose }) => {
     addStudent({
       ...formData,
       billNumber: savedPaid ? savedBill : '',
-      initialDueAmount: savedPaid ? 0 : Math.round(currentGrandTotal)
+      initialDueAmount: savedPaid ? 0 : currentGrandTotal
     });
     handleClose();
     showSuccessAlert(
       'Student Registered! 🥋',
-      `Welcome ${savedName} to the dojo! Starting Rank: ${savedBelt}. ${savedPaid ? `Payment recorded as Paid (Bill No: ${savedBill}).` : `Initial invoice: ${Math.round(currentGrandTotal)} Dhs.`}`
+      `Welcome ${savedName} to the dojo! Starting Rank: ${savedBelt}. ${savedPaid ? `Payment recorded as Paid (Bill No: ${savedBill}).` : `Initial invoice: ${formatCurrencyAmount(currentGrandTotal)} Dhs.`}`
     );
   };
 
@@ -587,11 +596,14 @@ export const StudentRegistrationModal = ({ isOpen, onClose }) => {
                   }}
                   className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-red-500 font-bold"
                 >
-                  {feePlans.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name} — {p.tuitionFee?.toLocaleString()} Dhs ({p.billingCycle}) {p.specialOffer ? `• 🎁 ${p.specialOffer}` : ''}
-                    </option>
-                  ))}
+                  {feePlans.map((p) => {
+                    const b = calculatePlanRenewalBreakdown(p);
+                    return (
+                      <option key={p.id} value={p.id}>
+                        {p.name} — {formatCurrencyAmount(b.baseAmount)} Dhs (+{b.vatRate}% VAT = {formatCurrencyAmount(b.totalWithVat)} Dhs • {p.billingCycle}) {p.specialOffer ? `• 🎁 ${p.specialOffer}` : ''}
+                      </option>
+                    );
+                  })}
                 </select>
               </div>
 
@@ -606,7 +618,11 @@ export const StudentRegistrationModal = ({ isOpen, onClose }) => {
                   />
                   <div>
                     <span className="text-xs font-bold text-white block">Admission Fee</span>
-                    <span className="text-[11px] text-zinc-400 block">+ {selectedPlan?.registrationFee || 100} Dhs one-time</span>
+                    <span className="text-[11px] text-zinc-400 block">
+                      {(selectedPlan?.registrationFee ?? 100) === 0
+                        ? 'Included (0 Dhs)'
+                        : `+ ${selectedPlan?.registrationFee ?? 100} Dhs one-time`}
+                    </span>
                   </div>
                 </label>
 
@@ -627,38 +643,40 @@ export const StudentRegistrationModal = ({ isOpen, onClose }) => {
                       )}
                     </div>
                     <span className="text-[11px] text-zinc-400 block">
-                      {selectedPlan?.uniformFee === 0 ? 'Free Package Offer (0 Dhs)' : `+ ${selectedPlan?.uniformFee || 125} Dhs`}
+                      {selectedPlan?.uniformFee === 0 ? 'Free Package Offer (0 Dhs)' : `+ ${selectedPlan?.uniformFee ?? 125} Dhs`}
                     </span>
                   </div>
                 </label>
               </div>
 
-              {/* Live Invoice Breakdown with 5% VAT */}
+              {/* Live Invoice Breakdown with VAT */}
               <div className="p-3 bg-zinc-950/80 rounded-xl border border-zinc-800 space-y-1.5 text-xs">
                 <div className="flex items-center justify-between text-zinc-400">
                   <span>Tuition Fee ({selectedPlan?.name || 'Selected Plan'}):</span>
-                  <span className="font-semibold text-zinc-200">{(selectedPlan?.tuitionFee || 0).toLocaleString()} Dhs</span>
+                  <span className="font-semibold text-zinc-200">{formatCurrencyAmount(planTuition)} Dhs</span>
                 </div>
                 {formData.hasRegistrationFee && (
                   <div className="flex items-center justify-between text-zinc-400">
                     <span>Admission Fee:</span>
-                    <span className="font-semibold text-zinc-200">+{selectedPlan?.registrationFee || 100} Dhs</span>
+                    <span className="font-semibold text-zinc-200">
+                      {planAdmission === 0 ? 'Included (0 Dhs)' : `+${formatCurrencyAmount(planAdmission)} Dhs`}
+                    </span>
                   </div>
                 )}
                 {formData.includeUniform && (
                   <div className="flex items-center justify-between text-zinc-400">
                     <span>Karate Uniform:</span>
                     <span className="font-semibold text-zinc-200">
-                      {selectedPlan?.uniformFee === 0 ? 'FREE (0 Dhs)' : `+${selectedPlan?.uniformFee || 125} Dhs`}
+                      {planUniform === 0 ? 'FREE (0 Dhs)' : `+${formatCurrencyAmount(planUniform)} Dhs`}
                     </span>
                   </div>
                 )}
                 <div className="flex items-center justify-between text-zinc-400 pt-1 border-t border-zinc-800/80">
-                  <span>UAE VAT (5%):</span>
+                  <span>UAE VAT ({enrollmentBreakdown.vatRate}%):</span>
                   <span className="font-semibold text-amber-400">+{currentVatAmount.toFixed(2)} Dhs</span>
                 </div>
                 <div className="flex items-center justify-between pt-1 border-t border-zinc-800 font-bold">
-                  <span className="text-white">Net Initial Invoice (Incl. 5% VAT):</span>
+                  <span className="text-white">Net Initial Invoice (Incl. {enrollmentBreakdown.vatRate}% VAT):</span>
                   <span className="text-sm font-black text-emerald-400">{currentGrandTotal.toFixed(2)} Dhs</span>
                 </div>
               </div>

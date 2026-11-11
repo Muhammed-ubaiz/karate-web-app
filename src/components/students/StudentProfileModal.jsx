@@ -9,14 +9,16 @@ import { showConfirmDialog, showConfirmWithReasonDialog, showSuccessAlert } from
 import { EditStudentModal } from './EditStudentModal';
 import { FreezeSubscriptionModal } from './FreezeSubscriptionModal';
 import { PaymentReceiptModal } from '../fees/PaymentReceiptModal';
+import { DueNoticeModal } from '../fees/DueNoticeModal';
 import { EditPaymentModal } from '../fees/EditPaymentModal';
 import {
   isStudentFeeDue,
   getStudentDueAmount,
-  buildStudentWhatsAppUrl,
+  getCleanWhatsAppPhone,
   formatDisplayDate,
   formatDisplayDateDDMMYYYY
 } from '../../utils/whatsappHelper';
+import { formatCurrencyAmount } from '../../utils/billingHelper';
 import {
   X,
   Phone,
@@ -89,6 +91,7 @@ export const StudentProfileModal = ({ student, onClose, initialTab = 'overview' 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isFreezeModalOpen, setIsFreezeModalOpen] = useState(false);
   const [viewReceiptData, setViewReceiptData] = useState(null);
+  const [isDueNoticeOpen, setIsDueNoticeOpen] = useState(false);
   const [editingPayment, setEditingPayment] = useState(null);
   const [paymentSearch, setPaymentSearch] = useState('');
   const [paymentMethodFilter, setPaymentMethodFilter] = useState('all');
@@ -111,6 +114,7 @@ export const StudentProfileModal = ({ student, onClose, initialTab = 'overview' 
       setAttendanceFilter('all');
       setAttendanceMonthFilter('all');
       setIsLoggingAttendance(false);
+      setIsDueNoticeOpen(false);
       setEditingPayment(null);
       setShowStudentAuditLogs(false);
       setAvatarError(false);
@@ -222,7 +226,8 @@ export const StudentProfileModal = ({ student, onClose, initialTab = 'overview' 
 
   const isDue = isStudentFeeDue(currentStudent);
   const dueAmount = getStudentDueAmount(currentStudent, feePlans);
-  const whatsappUrl = buildStudentWhatsAppUrl(currentStudent, dojo, feePlans);
+  const cleanPhone = getCleanWhatsAppPhone(currentStudent.whatsapp || currentStudent.phone || currentStudent.parentPhone || '');
+  const whatsappChatUrl = cleanPhone ? `https://wa.me/${cleanPhone}` : '';
 
   // Payment queries
   const studentPaymentsList = getStudentPaymentHistory ? getStudentPaymentHistory(currentStudent.id) : [];
@@ -293,6 +298,7 @@ export const StudentProfileModal = ({ student, onClose, initialTab = 'overview' 
 
   const handleOpenReceipt = (payment) => {
     const billNo = payment.billNumber || payment.receiptNumber || `BILL-${String(payment.id || '').slice(-4) || '0000'}`;
+    const paymentPlan = feePlans.find(p => p.id === (payment.planId || currentStudent.tuitionPlanId));
     setViewReceiptData({
       billNumber: billNo,
       receiptNumber: billNo,
@@ -302,8 +308,12 @@ export const StudentProfileModal = ({ student, onClose, initialTab = 'overview' 
       parentName: currentStudent.parentName || '',
       phone: currentStudent.whatsapp || currentStudent.phone || '',
       beltRank: currentStudent.beltRank || 'Unassigned',
-      dojoName: dojo?.name || 'SenseiBook Martial Arts Academy',
+      dojoName: dojo?.name || 'Al Muharib Karate Center',
       amount: payment.amount,
+      baseAmount: payment.baseAmount,
+      vatAmount: payment.vatAmount,
+      vatRate: payment.vatRate ?? paymentPlan?.vatRate ?? 5,
+      planName: payment.planName || paymentPlan?.name || '',
       paymentMethod: payment.paymentMethod,
       subscriptionStartDate: formatDisplayDate(payment.subscriptionStartDate),
       nextDueDate: formatDisplayDate(payment.nextDueDate),
@@ -454,22 +464,28 @@ export const StudentProfileModal = ({ student, onClose, initialTab = 'overview' 
                   <span>Edit Profile</span>
                 </button>
 
-                {whatsappUrl && (
-                  <a
-                    href={whatsappUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-white text-xs font-bold transition-all shadow ${
-                      isDue
-                        ? 'bg-emerald-600 hover:bg-emerald-500 ring-2 ring-emerald-400/40'
-                        : 'bg-emerald-600 hover:bg-emerald-500'
-                    }`}
-                    title={isDue ? `Send WhatsApp Fee Notice (${dueAmount.toLocaleString()} Dhs)` : 'Chat on WhatsApp'}
+                {isDue ? (
+                  <button
+                    type="button"
+                    onClick={() => setIsDueNoticeOpen(true)}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-white text-xs font-bold transition-all shadow bg-emerald-600 hover:bg-emerald-500 ring-2 ring-emerald-400/40 cursor-pointer"
+                    title={`Open Printable Fee Notice (${formatCurrencyAmount(dueAmount)} Dhs) for WhatsApp`}
                   >
                     <MessageSquare className="w-3.5 h-3.5" />
-                    <span>{isDue ? `Fee Notice (${dueAmount.toLocaleString()} Dhs)` : 'WhatsApp'}</span>
+                    <span>Fee Notice ({formatCurrencyAmount(dueAmount)} Dhs)</span>
+                  </button>
+                ) : whatsappChatUrl ? (
+                  <a
+                    href={whatsappChatUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-white text-xs font-bold transition-all shadow bg-emerald-600 hover:bg-emerald-500"
+                    title="Chat on WhatsApp"
+                  >
+                    <MessageSquare className="w-3.5 h-3.5" />
+                    <span>WhatsApp</span>
                   </a>
-                )}
+                ) : null}
 
                 {(currentStudent.phone || currentStudent.parentPhone) && (
                   <a
@@ -652,7 +668,7 @@ export const StudentProfileModal = ({ student, onClose, initialTab = 'overview' 
                   </div>
                   <div className="flex items-baseline gap-2 mt-1">
                     <span className={`text-xl font-black ${isDue ? 'text-red-400' : 'text-zinc-200'}`}>
-                      {dueAmount > 0 ? `${dueAmount.toLocaleString()} Dhs` : '0 Dhs'}
+                      {dueAmount > 0 ? `${formatCurrencyAmount(dueAmount)} Dhs` : '0 Dhs'}
                     </span>
                     <span className="text-[10px] text-zinc-500">{isDue ? 'Due Now' : 'Settled'}</span>
                   </div>
@@ -663,7 +679,7 @@ export const StudentProfileModal = ({ student, onClose, initialTab = 'overview' 
                       </strong>
                     </span>
                     <span className="text-emerald-400 font-bold block truncate">
-                      Total Paid: AED {studentTotalPaid.toLocaleString()} ({activeStudentPayments.length} bill{activeStudentPayments.length === 1 ? '' : 's'}) →
+                      Total Paid: AED {formatCurrencyAmount(studentTotalPaid)} ({activeStudentPayments.length} bill{activeStudentPayments.length === 1 ? '' : 's'}) →
                     </span>
                   </div>
                 </div>
@@ -732,7 +748,7 @@ export const StudentProfileModal = ({ student, onClose, initialTab = 'overview' 
               <div className="bg-zinc-900/60 rounded-2xl p-3.5 border border-zinc-800 space-y-2 text-xs">
                 <div className="flex items-start justify-between gap-2">
                   <span className="text-zinc-400 shrink-0">Assigned Branch:</span>
-                  <span className="font-semibold text-white text-right break-words min-w-0">{dojo?.name || 'Main Dojo'}</span>
+                  <span className="font-semibold text-white text-right break-words min-w-0">{dojo?.name || 'Al Muharib Karate Center'}</span>
                 </div>
                 <div className="flex items-start justify-between gap-2">
                   <span className="text-zinc-400 shrink-0">Class Batch:</span>
@@ -1144,7 +1160,7 @@ export const StudentProfileModal = ({ student, onClose, initialTab = 'overview' 
                 <div className="p-2.5 bg-emerald-950/30 rounded-xl border border-emerald-500/30">
                   <span className="text-[10px] text-emerald-400 block uppercase font-semibold">Total Paid</span>
                   <span className="text-sm font-black text-emerald-400">
-                    AED {studentTotalPaid.toLocaleString()}
+                    AED {formatCurrencyAmount(studentTotalPaid)}
                   </span>
                 </div>
                 <div className="p-2.5 bg-zinc-950/70 rounded-xl border border-zinc-800">
@@ -1165,7 +1181,7 @@ export const StudentProfileModal = ({ student, onClose, initialTab = 'overview' 
                     Current Due
                   </span>
                   <span className={`text-sm font-black ${isDue ? 'text-red-400' : 'text-zinc-200'}`}>
-                    AED {dueAmount.toLocaleString()}
+                    AED {formatCurrencyAmount(dueAmount)}
                   </span>
                 </div>
                 <div className="p-2.5 bg-zinc-950/70 rounded-xl border border-zinc-800">
@@ -1318,7 +1334,7 @@ export const StudentProfileModal = ({ student, onClose, initialTab = 'overview' 
                             <span className={`text-sm font-black block ${
                               isReset ? 'text-zinc-500 line-through' : 'text-emerald-400'
                             }`}>
-                              AED {Number(payment.amount).toLocaleString()}
+                              AED {formatCurrencyAmount(payment.amount)}
                             </span>
                             <span className="text-[10px] text-zinc-500">
                               {isReset ? 'Reverted' : 'VAT Incl.'}
@@ -1539,6 +1555,14 @@ export const StudentProfileModal = ({ student, onClose, initialTab = 'overview' 
         isOpen={Boolean(viewReceiptData)}
         onClose={() => setViewReceiptData(null)}
         receiptData={viewReceiptData}
+      />
+
+      {/* Official Fee Due Notice Modal */}
+      <DueNoticeModal
+        isOpen={isDueNoticeOpen}
+        onClose={() => setIsDueNoticeOpen(false)}
+        student={currentStudent}
+        dojo={dojo}
       />
     </div>
   );

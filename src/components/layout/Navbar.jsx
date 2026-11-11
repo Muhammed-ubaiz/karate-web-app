@@ -44,20 +44,17 @@ export const Navbar = () => {
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-14 sm:h-16 gap-2">
           {/* Brand Logo & Name */}
-          <div className="flex items-center gap-2 shrink-0 min-w-0">
+          <div className="flex items-center gap-2 min-w-0 flex-1 sm:flex-initial mr-2">
             <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-red-600 to-red-800 flex items-center justify-center shadow-lg shadow-red-900/30 ring-1 ring-red-500/40 shrink-0">
               <span className="text-base sm:text-xl font-bold select-none">🥋</span>
             </div>
             <div className="min-w-0">
-              <div className="flex items-center gap-1 sm:gap-1.5">
-                <span className="text-sm sm:text-lg font-black tracking-tight text-white whitespace-nowrap">
-                  Sensei<span className="text-dojo-red">Book</span>
-                </span>
-                <span className="text-[8px] sm:text-[10px] font-bold px-1 sm:px-1.5 py-0.2 sm:py-0.5 rounded bg-zinc-800 text-zinc-400 border border-zinc-700/60 uppercase">
-                  PRO
+              <div className="flex items-center gap-1 sm:gap-1.5 min-w-0">
+                <span className="text-xs sm:text-base font-black tracking-tight text-white truncate">
+                  Al Muharib <span className="text-dojo-red">Karate Center</span>
                 </span>
               </div>
-              <p className="text-[10px] text-zinc-400 hidden sm:block font-medium">Martial Arts Academy OS</p>
+              <p className="text-[10px] text-zinc-400 hidden sm:block font-medium">Dojo &amp; Fee Management System</p>
             </div>
           </div>
 
@@ -118,7 +115,7 @@ export const Navbar = () => {
               }`}
               title={isAdmin ? 'Administrator (Full Access)' : 'Guest (View-Only)'}
             >
-              {isAdmin ? 'AD' : 'KS'}
+              {isAdmin ? 'AD' : 'AM'}
             </div>
           </div>
 

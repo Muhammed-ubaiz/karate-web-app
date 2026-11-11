@@ -2,6 +2,10 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useDojo } from '../../context/DojoContext';
 import { showSuccessAlert } from '../../utils/sweetAlert';
 import { calculateNextDueDate } from '../../utils/whatsappHelper';
+import {
+  calculatePlanRenewalBreakdown,
+  formatCurrencyAmount
+} from '../../utils/billingHelper';
 import { ManageBeltRanksModal } from './ManageBeltRanksModal';
 import {
   X,
@@ -559,11 +563,14 @@ export const EditStudentModal = ({ isOpen, onClose, student }) => {
                   }}
                   className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-red-500 font-bold"
                 >
-                  {feePlans.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name} ({p.tuitionFee} Dhs)
-                    </option>
-                  ))}
+                  {feePlans.map((p) => {
+                    const b = calculatePlanRenewalBreakdown(p);
+                    return (
+                      <option key={p.id} value={p.id}>
+                        {p.name} ({formatCurrencyAmount(b.totalWithVat)} Dhs Incl. VAT • Base {formatCurrencyAmount(b.baseAmount)})
+                      </option>
+                    );
+                  })}
                 </select>
               </div>
 
@@ -573,6 +580,7 @@ export const EditStudentModal = ({ isOpen, onClose, student }) => {
                 </label>
                 <input
                   type="number"
+                  step="any"
                   min="0"
                   value={formData.dueAmount}
                   onChange={(e) => {

@@ -1,7 +1,7 @@
 import Swal from 'sweetalert2';
 import 'sweetalert2/dist/sweetalert2.min.css';
 
-// SenseiBook Crimson & Charcoal Dark Theme for SweetAlert2
+// Al Muharib Karate Center Crimson & Charcoal Dark Theme for SweetAlert2
 export const DojoSwal = Swal.mixin({
   background: '#1a1a1e',
   color: '#f3f4f6',

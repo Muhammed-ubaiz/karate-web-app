@@ -48,6 +48,11 @@ import {
 } from '../services/firebaseService';
 import { calculateNextDueDate, formatDisplayDate, normalizeDateToISO } from '../utils/whatsappHelper';
 import {
+  roundCurrency,
+  calculateEnrollmentBreakdown,
+  calculateVatBreakdownFromTotal
+} from '../utils/billingHelper';
+import {
   showToastAlert,
   showSuccessAlert,
   showConfirmDialog,
@@ -1153,12 +1158,14 @@ export const DojoProvider = ({ children, initialFeesSubTab = 'plans' }) => {
   // Add Student
   const addStudent = async (studentData) => {
     const selectedPlan = feePlans.find(p => p.id === studentData.tuitionPlanId) || feePlans[0];
-    const tuition = Number(selectedPlan?.tuitionFee || 0);
-    const admission = studentData.hasRegistrationFee ? Number(selectedPlan?.registrationFee ?? 100) : 0;
-    const uniform = studentData.includeUniform !== false ? Number(selectedPlan?.uniformFee ?? 0) : 0;
-    const subtotal = tuition + admission + uniform;
-    const vatRate = selectedPlan?.vatRate ?? 5;
-    const totalFirstBill = Math.round(subtotal + (subtotal * vatRate) / 100);
+    const enrollmentBreakdown = calculateEnrollmentBreakdown(selectedPlan, {
+      includeRegistrationFee: Boolean(studentData.hasRegistrationFee),
+      includeUniform: studentData.includeUniform !== false
+    });
+    const subtotal = enrollmentBreakdown.baseAmount;
+    const vatRate = enrollmentBreakdown.vatRate;
+    const vatAmount = enrollmentBreakdown.vatAmount;
+    const totalFirstBill = enrollmentBreakdown.totalWithVat;
 
     const isPaid = Boolean(studentData.paidAtRegistration);
     const paymentMethod = studentData.paymentMethod || 'Cash';
@@ -1213,6 +1220,9 @@ export const DojoProvider = ({ children, initialFeesSubTab = 'plans' }) => {
         beltRank: newStudent.beltRank || '',
         dojoId: newStudent.dojoId || '',
         amount: totalFirstBill,
+        baseAmount: subtotal,
+        vatAmount,
+        vatRate,
         paymentMethod,
         paymentDate: lastPaidDate || todayStr,
         subscriptionStartDate,
@@ -1624,7 +1634,7 @@ export const DojoProvider = ({ children, initialFeesSubTab = 'plans' }) => {
         ...(snap.tuitionPlanId ? { tuitionPlanId: snap.tuitionPlanId } : {})
       };
     } else if (isLatest) {
-      const restoredDue = (Number(student.dueAmount) || 0) + (Number(payment.amount) || 0);
+      const restoredDue = roundCurrency((Number(student.dueAmount) || 0) + (Number(payment.amount) || 0));
       updatedFields = {
         dueAmount: restoredDue,
         feeStatus: restoredDue > 0 ? 'Pending' : 'Paid',
@@ -1635,7 +1645,7 @@ export const DojoProvider = ({ children, initialFeesSubTab = 'plans' }) => {
       };
     } else {
       // Older payment was reset/deleted while a newer payment remains active
-      const restoredDue = (Number(student.dueAmount) || 0) + (Number(payment.amount) || 0);
+      const restoredDue = roundCurrency((Number(student.dueAmount) || 0) + (Number(payment.amount) || 0));
       updatedFields = {
         dueAmount: restoredDue,
         feeStatus: restoredDue > 0 ? 'Pending' : 'Paid'
@@ -1653,6 +1663,9 @@ export const DojoProvider = ({ children, initialFeesSubTab = 'plans' }) => {
   const recordPayment = async ({
     studentId,
     amount,
+    baseAmount,
+    vatAmount,
+    vatRate,
     paymentMethod,
     paymentDate,
     subscriptionStartDate,
@@ -1692,13 +1705,17 @@ export const DojoProvider = ({ children, initialFeesSubTab = 'plans' }) => {
       tuitionPlanId: student.tuitionPlanId || ''
     };
 
-    const remaining = Math.max(0, (student.dueAmount || 0) - Number(amount));
+    const remaining = roundCurrency(Math.max(0, (Number(student.dueAmount) || 0) - Number(amount)));
     const updatedFeeStatus = remaining === 0 ? 'Paid' : 'Pending';
     const todayStr = new Date().toISOString().split('T')[0];
     const actualPaymentDate = paymentDate || todayStr;
 
     const targetPlanId = planId || student.tuitionPlanId;
     const plan = feePlans.find(p => p.id === targetPlanId) || feePlans[0];
+    const resolvedVatRate = Number(vatRate ?? plan?.vatRate ?? 5);
+    const vatCalc = calculateVatBreakdownFromTotal(amount, resolvedVatRate);
+    const resolvedBaseAmount = baseAmount !== undefined ? roundCurrency(baseAmount) : vatCalc.baseAmount;
+    const resolvedVatAmount = vatAmount !== undefined ? roundCurrency(vatAmount) : vatCalc.vatAmount;
 
     // Determine accurate subscription cycle:
     // 1. Normal Renewal: Starts from previous subscription due date (not payment received date!)
@@ -1738,7 +1755,10 @@ export const DojoProvider = ({ children, initialFeesSubTab = 'plans' }) => {
       phone: student.whatsapp || student.phone || '',
       beltRank: student.beltRank || '',
       dojoId: student.dojoId || '',
-      amount: Number(amount),
+      amount: roundCurrency(Number(amount)),
+      baseAmount: resolvedBaseAmount,
+      vatAmount: resolvedVatAmount,
+      vatRate: resolvedVatRate,
       paymentMethod: paymentMethod || 'Cash',
       paymentDate: actualPaymentDate,
       subscriptionStartDate: finalSubscriptionStart,
@@ -1894,10 +1914,10 @@ export const DojoProvider = ({ children, initialFeesSubTab = 'plans' }) => {
 
       let newDue;
       if (isLatest && existing.previousStudentSnapshot) {
-        newDue = Math.max(0, (Number(existing.previousStudentSnapshot.dueAmount) || 0) - newAmount);
+        newDue = roundCurrency(Math.max(0, (Number(existing.previousStudentSnapshot.dueAmount) || 0) - newAmount));
       } else {
         const delta = newAmount - (Number(existing.amount) || 0);
-        newDue = Math.max(0, (Number(student.dueAmount) || 0) - delta);
+        newDue = roundCurrency(Math.max(0, (Number(student.dueAmount) || 0) - delta));
       }
       updatedRemainingDue = newDue;
       const newFeeStatus = newDue === 0 ? 'Paid' : 'Pending';
@@ -1953,11 +1973,17 @@ export const DojoProvider = ({ children, initialFeesSubTab = 'plans' }) => {
       }
     };
 
+    const resolvedEditVatRate = Number(updatedData.vatRate ?? plan?.vatRate ?? existing.vatRate ?? 5);
+    const resolvedEditBreakdown = calculateVatBreakdownFromTotal(newAmount, resolvedEditVatRate);
+
     const updatedPayment = {
       ...existing,
       billNumber: cleanBill,
       receiptNumber: cleanBill,
-      amount: newAmount,
+      amount: roundCurrency(newAmount),
+      baseAmount: updatedData.baseAmount !== undefined ? roundCurrency(updatedData.baseAmount) : resolvedEditBreakdown.baseAmount,
+      vatAmount: updatedData.vatAmount !== undefined ? roundCurrency(updatedData.vatAmount) : resolvedEditBreakdown.vatAmount,
+      vatRate: resolvedEditVatRate,
       paymentMethod: newMethod,
       paymentDate: newPaymentDate,
       subscriptionStartDate: newSubStart,

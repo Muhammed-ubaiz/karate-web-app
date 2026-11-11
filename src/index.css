@@ -160,3 +160,52 @@ div.swal2-popup .swal2-input {
 div.swal2-popup .swal2-input:focus {
   border-color: #E50914 !important;
 }
+
+/* Isolated Clean Print Mode for Official Receipts & Fee Due Notices */
+@media print {
+  @page {
+    margin: 12mm;
+  }
+
+  html,
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    overflow: visible !important;
+    height: auto !important;
+  }
+
+  body > *:not(.printable-portal-root) {
+    display: none !important;
+  }
+
+  .printable-portal-root {
+    position: static !important;
+    inset: auto !important;
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    background: #ffffff !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .printable-portal-card {
+    max-width: 100% !important;
+    max-height: none !important;
+    overflow: visible !important;
+    box-shadow: none !important;
+    border: none !important;
+    background: #ffffff !important;
+    border-radius: 0 !important;
+  }
+
+  .printable-paper {
+    box-shadow: none !important;
+    border: 1px solid #cbd5e1 !important;
+    overflow: visible !important;
+    max-height: none !important;
+  }
+}
