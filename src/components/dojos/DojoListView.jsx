@@ -42,36 +42,36 @@ export const DojoListView = () => {
 
         <button
           onClick={() => requireAdmin(() => setIsAddModalOpen(true))}
-          className={`inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold shadow-lg transition-all cursor-pointer ${
+          className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold shadow-lg transition-all cursor-pointer ${
             isAdmin
               ? 'bg-dojo-red hover:bg-dojo-redHover active:scale-95 text-white shadow-red-600/30'
               : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700'
           }`}
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-4 h-4 shrink-0" />
           <span>{isAdmin ? 'Add Dojo Branch' : 'Add Branch 🔒'}</span>
         </button>
       </div>
 
       {/* Dojo Branches Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
         {dojos.map((dojo) => {
           const isActive = dojo.status === 'Active';
 
           return (
             <div
               key={dojo.id}
-              className="bg-dojo-card border border-dojo-border rounded-2xl p-5 hover:border-zinc-700 transition-all flex flex-col justify-between group"
+              className="bg-dojo-card border border-dojo-border rounded-2xl p-4 sm:p-5 hover:border-zinc-700 transition-all flex flex-col justify-between group min-w-0"
             >
-              <div>
+              <div className="min-w-0">
                 {/* Branch Header & Status Badge */}
                 <div className="flex items-start justify-between gap-3 mb-3">
-                  <div className="w-12 h-12 rounded-xl bg-zinc-800 border border-zinc-700/80 flex items-center justify-center text-2xl shadow">
+                  <div className="w-12 h-12 rounded-xl bg-zinc-800 border border-zinc-700/80 flex items-center justify-center text-2xl shadow shrink-0">
                     {dojo.logo || '🥋'}
                   </div>
                   <button
                     onClick={() => toggleStatus(dojo)}
-                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border transition-colors ${
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border transition-colors shrink-0 ${
                       isActive
                         ? 'bg-emerald-950/60 text-emerald-400 border-emerald-500/40 hover:bg-emerald-900/60'
                         : 'bg-zinc-800 text-zinc-400 border-zinc-700 hover:bg-zinc-700'
@@ -92,26 +92,26 @@ export const DojoListView = () => {
                 </div>
 
                 {/* Dojo Name */}
-                <h3 className="text-base font-extrabold text-white group-hover:text-red-400 transition-colors leading-snug">
+                <h3 className="text-base font-extrabold text-white group-hover:text-red-400 transition-colors leading-snug break-words">
                   {dojo.name}
                 </h3>
 
                 {/* Instructor */}
-                <div className="mt-2.5 flex items-center gap-2 text-xs text-zinc-300 font-medium">
+                <div className="mt-2.5 flex items-center gap-2 text-xs text-zinc-300 font-medium min-w-0">
                   <User className="w-3.5 h-3.5 text-red-500 shrink-0" />
-                  <span>{dojo.instructor}</span>
+                  <span className="break-words min-w-0">{dojo.instructor}</span>
                 </div>
 
                 {/* Location */}
-                <div className="mt-2 flex items-start gap-2 text-xs text-zinc-400">
+                <div className="mt-2 flex items-start gap-2 text-xs text-zinc-400 min-w-0">
                   <MapPin className="w-3.5 h-3.5 text-zinc-500 shrink-0 mt-0.5" />
-                  <span className="line-clamp-2">{dojo.address}</span>
+                  <span className="line-clamp-2 break-words min-w-0">{dojo.address}</span>
                 </div>
 
                 {/* Contact Phone */}
-                <div className="mt-2 flex items-center gap-2 text-xs text-zinc-400">
+                <div className="mt-2 flex items-center gap-2 text-xs text-zinc-400 min-w-0">
                   <Phone className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
-                  <span>{dojo.phone}</span>
+                  <span className="break-words min-w-0">{dojo.phone}</span>
                 </div>
               </div>
 

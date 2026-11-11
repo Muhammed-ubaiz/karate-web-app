@@ -58,29 +58,29 @@ export const AddDojoModal = ({ isOpen, onClose }) => {
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-sm animate-fade-in"
     >
       {/* Drawer / Modal Container */}
-      <div className="w-full sm:max-w-lg bg-dojo-card border-t sm:border border-dojo-border rounded-t-3xl sm:rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
+      <div className="w-full sm:max-w-lg bg-dojo-card border-t sm:border border-dojo-border rounded-t-3xl sm:rounded-2xl shadow-2xl max-h-dvh-92 flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="sticky top-0 bg-dojo-card/95 backdrop-blur-md px-5 py-4 border-b border-dojo-border flex items-center justify-between z-10">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-red-600/20 text-red-500 border border-red-500/30 flex items-center justify-center">
+        <div className="shrink-0 bg-dojo-card/95 backdrop-blur-md px-5 py-4 border-b border-dojo-border flex items-center justify-between gap-2 z-10">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-lg bg-red-600/20 text-red-500 border border-red-500/30 flex items-center justify-center shrink-0">
               <Building2 className="w-4 h-4" />
             </div>
-            <div>
-              <h2 className="text-base font-bold text-white tracking-tight">Add New Dojo Branch</h2>
-              <p className="text-[11px] text-zinc-400">Expand training locations & instructor assignments</p>
+            <div className="min-w-0">
+              <h2 className="text-base font-bold text-white tracking-tight truncate">Add New Dojo Branch</h2>
+              <p className="text-[11px] text-zinc-400 truncate">Expand training locations & instructor assignments</p>
             </div>
           </div>
           <button
             type="button"
             onClick={handleClose}
-            className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer"
+            className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer shrink-0"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-5 space-y-4">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
           {/* Dojo Name */}
           <div>
             <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
@@ -142,7 +142,7 @@ export const AddDojoModal = ({ isOpen, onClose }) => {
 
           {/* Contact Details Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
+            <div className="min-w-0">
               <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
                 Contact Phone *
               </label>
@@ -153,7 +153,7 @@ export const AddDojoModal = ({ isOpen, onClose }) => {
                   placeholder="+971 50 123 4567"
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className={`w-full bg-zinc-900 border ${
+                  className={`w-full min-w-0 bg-zinc-900 border ${
                     errors.phone ? 'border-red-500' : 'border-zinc-700'
                   } rounded-xl pl-10 pr-3.5 py-2.5 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-red-500 transition-colors`}
                 />
@@ -161,7 +161,7 @@ export const AddDojoModal = ({ isOpen, onClose }) => {
               {errors.phone && <p className="text-[11px] text-red-400 mt-1">{errors.phone}</p>}
             </div>
 
-            <div>
+            <div className="min-w-0">
               <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
                 Official Email (Optional)
               </label>
@@ -172,7 +172,7 @@ export const AddDojoModal = ({ isOpen, onClose }) => {
                   placeholder="branch@dojo.com"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full bg-zinc-900 border border-zinc-700 rounded-xl pl-10 pr-3.5 py-2.5 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-red-500 transition-colors"
+                  className="w-full min-w-0 bg-zinc-900 border border-zinc-700 rounded-xl pl-10 pr-3.5 py-2.5 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-red-500 transition-colors"
                 />
               </div>
             </div>
@@ -183,8 +183,8 @@ export const AddDojoModal = ({ isOpen, onClose }) => {
             <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
               Branch Status
             </label>
-            <div className="grid grid-cols-2 gap-3">
-              <label className={`flex items-center gap-2 p-2.5 rounded-xl border cursor-pointer transition-all ${
+            <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
+              <label className={`min-w-0 flex items-center gap-2 p-2.5 rounded-xl border cursor-pointer transition-all ${
                 formData.status === 'Active'
                   ? 'bg-emerald-950/30 border-emerald-500/50 text-emerald-300'
                   : 'bg-zinc-900 border-zinc-800 text-zinc-400'
@@ -195,12 +195,12 @@ export const AddDojoModal = ({ isOpen, onClose }) => {
                   value="Active"
                   checked={formData.status === 'Active'}
                   onChange={() => setFormData({ ...formData, status: 'Active' })}
-                  className="accent-emerald-500"
+                  className="accent-emerald-500 shrink-0"
                 />
-                <span className="text-xs font-bold">Active Branch</span>
+                <span className="text-xs font-bold truncate">Active Branch</span>
               </label>
 
-              <label className={`flex items-center gap-2 p-2.5 rounded-xl border cursor-pointer transition-all ${
+              <label className={`min-w-0 flex items-center gap-2 p-2.5 rounded-xl border cursor-pointer transition-all ${
                 formData.status === 'Inactive'
                   ? 'bg-zinc-800 border-zinc-600 text-zinc-200'
                   : 'bg-zinc-900 border-zinc-800 text-zinc-400'
@@ -211,25 +211,25 @@ export const AddDojoModal = ({ isOpen, onClose }) => {
                   value="Inactive"
                   checked={formData.status === 'Inactive'}
                   onChange={() => setFormData({ ...formData, status: 'Inactive' })}
-                  className="accent-zinc-500"
+                  className="accent-zinc-500 shrink-0"
                 />
-                <span className="text-xs font-bold">Inactive / Setup</span>
+                <span className="text-xs font-bold truncate">Inactive / Setup</span>
               </label>
             </div>
           </div>
 
           {/* Submit Actions */}
-          <div className="pt-3 border-t border-zinc-800 flex items-center justify-end gap-3">
+          <div className="pt-3 border-t border-zinc-800 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2 sm:gap-3">
             <button
               type="button"
               onClick={handleClose}
-              className="px-4 py-2.5 text-xs font-semibold text-zinc-400 hover:text-white transition-colors cursor-pointer"
+              className="w-full sm:w-auto px-4 py-2.5 text-xs font-semibold text-zinc-400 hover:text-white transition-colors cursor-pointer text-center"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-5 py-2.5 bg-dojo-red hover:bg-dojo-redHover active:scale-95 text-xs font-bold text-white rounded-xl shadow-lg shadow-red-600/30 transition-all"
+              className="w-full sm:w-auto px-5 py-2.5 bg-dojo-red hover:bg-dojo-redHover active:scale-95 text-xs font-bold text-white rounded-xl shadow-lg shadow-red-600/30 transition-all cursor-pointer text-center"
             >
               Save Dojo Branch
             </button>

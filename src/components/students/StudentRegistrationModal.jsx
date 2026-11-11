@@ -228,22 +228,22 @@ export const StudentRegistrationModal = ({ isOpen, onClose }) => {
       }}
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-sm animate-fade-in"
     >
-      <div className="w-full sm:max-w-2xl bg-dojo-card border-t sm:border border-dojo-border rounded-t-3xl sm:rounded-2xl shadow-2xl max-h-[92vh] flex flex-col overflow-hidden">
+      <div className="w-full sm:max-w-2xl bg-dojo-card border-t sm:border border-dojo-border rounded-t-3xl sm:rounded-2xl shadow-2xl max-h-dvh-92 flex flex-col overflow-hidden">
         {/* Modal Header */}
-        <div className="sticky top-0 bg-dojo-card/95 backdrop-blur-md px-5 py-4 border-b border-dojo-border flex items-center justify-between z-10 shrink-0">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-red-600/20 text-red-500 border border-red-500/30 flex items-center justify-center">
+        <div className="shrink-0 bg-dojo-card/95 backdrop-blur-md px-4 sm:px-5 py-3.5 sm:py-4 border-b border-dojo-border flex items-center justify-between gap-2 z-10">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-lg bg-red-600/20 text-red-500 border border-red-500/30 flex items-center justify-center shrink-0">
               <UserPlus className="w-4 h-4" />
             </div>
-            <div>
-              <h2 className="text-base font-bold text-white tracking-tight">Student Registration & Onboarding</h2>
-              <p className="text-[11px] text-zinc-400">Complete martial arts profile & admission details</p>
+            <div className="min-w-0">
+              <h2 className="text-base font-bold text-white tracking-tight truncate">Student Registration & Onboarding</h2>
+              <p className="text-[11px] text-zinc-400 truncate">Complete martial arts profile & admission details</p>
             </div>
           </div>
           <button
             type="button"
             onClick={handleClose}
-            className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer"
+            className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer shrink-0"
             title="Close and discard form"
           >
             <X className="w-5 h-5" />
@@ -251,7 +251,7 @@ export const StudentRegistrationModal = ({ isOpen, onClose }) => {
         </div>
 
         {/* Modal Body / Scrollable Form */}
-        <form onSubmit={handleSubmit} className="p-5 sm:p-6 space-y-5 overflow-y-auto">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5">
           {/* Section 1: Basic Information */}
           <div className="space-y-3">
             <h3 className="text-xs font-bold text-red-400 uppercase tracking-wider flex items-center gap-1.5">
@@ -285,7 +285,7 @@ export const StudentRegistrationModal = ({ isOpen, onClose }) => {
                   </div>
                 </div>
 
-                <div className="flex-1 space-y-1.5">
+                <div className="flex-1 min-w-0 space-y-1.5">
                   <span className="block text-xs font-bold text-zinc-200">
                     Student Profile Photo
                   </span>
@@ -383,7 +383,7 @@ export const StudentRegistrationModal = ({ isOpen, onClose }) => {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
+              <div className="min-w-0">
                 <label className="block text-xs font-semibold text-zinc-300 mb-1">
                   Date of Birth
                 </label>
@@ -391,11 +391,11 @@ export const StudentRegistrationModal = ({ isOpen, onClose }) => {
                   type="date"
                   value={formData.dob}
                   onChange={(e) => setFormData({ ...formData, dob: e.target.value })}
-                  className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-red-500"
+                  className="w-full min-w-0 bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-red-500"
                 />
               </div>
 
-              <div>
+              <div className="min-w-0">
                 <label className="block text-xs font-semibold text-zinc-300 mb-1">
                   Join Date
                 </label>
@@ -403,7 +403,7 @@ export const StudentRegistrationModal = ({ isOpen, onClose }) => {
                   type="date"
                   value={formData.joinDate}
                   onChange={(e) => setFormData({ ...formData, joinDate: e.target.value })}
-                  className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-red-500"
+                  className="w-full min-w-0 bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-red-500"
                 />
               </div>
             </div>
@@ -495,8 +495,8 @@ export const StudentRegistrationModal = ({ isOpen, onClose }) => {
               <span>3. Dojo Enrollment & Belt Rank</span>
             </h3>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div className="min-w-0">
                 <label className="block text-xs font-semibold text-zinc-300 mb-1">
                   Dojo Branch *
                 </label>
@@ -511,7 +511,7 @@ export const StudentRegistrationModal = ({ isOpen, onClose }) => {
                       batchId: matchingBatches[0]?.id || ''
                     });
                   }}
-                  className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-red-500"
+                  className="w-full min-w-0 bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-red-500 truncate"
                 >
                   {dojos.map((d) => (
                     <option key={d.id} value={d.id}>{d.name}</option>
@@ -519,14 +519,14 @@ export const StudentRegistrationModal = ({ isOpen, onClose }) => {
                 </select>
               </div>
 
-              <div>
+              <div className="min-w-0">
                 <label className="block text-xs font-semibold text-zinc-300 mb-1">
                   Class Batch *
                 </label>
                 <select
                   value={formData.batchId}
                   onChange={(e) => setFormData({ ...formData, batchId: e.target.value })}
-                  className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-red-500"
+                  className="w-full min-w-0 bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-red-500 truncate"
                 >
                   {dojoBatches.map((b) => (
                     <option key={b.id} value={b.id}>{b.name} ({b.startTime})</option>
@@ -534,15 +534,15 @@ export const StudentRegistrationModal = ({ isOpen, onClose }) => {
                 </select>
               </div>
 
-              <div>
-                <div className="flex items-center justify-between mb-1">
+              <div className="min-w-0 sm:col-span-2 lg:col-span-1">
+                <div className="flex items-center justify-between gap-1 flex-wrap mb-1">
                   <label className="block text-xs font-semibold text-zinc-300">
                     Starting Belt Rank *
                   </label>
                   <button
                     type="button"
                     onClick={() => setIsManageBeltsOpen(true)}
-                    className="text-[10px] font-bold text-red-400 hover:text-red-300 underline cursor-pointer"
+                    className="text-[10px] font-bold text-red-400 hover:text-red-300 underline cursor-pointer shrink-0"
                   >
                     ⚙️ Manage / Add Belts
                   </button>
@@ -551,20 +551,20 @@ export const StudentRegistrationModal = ({ isOpen, onClose }) => {
                   <select
                     value={formData.beltRank}
                     onChange={(e) => setFormData({ ...formData, beltRank: e.target.value })}
-                    className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-red-500 cursor-pointer"
+                    className="w-full min-w-0 bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-red-500 cursor-pointer truncate"
                   >
                     {beltRanks.map((belt) => (
                       <option key={belt.id || belt.name} value={belt.name}>🥋 {belt.name}</option>
                     ))}
                   </select>
                 ) : (
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
                     <input
                       type="text"
                       placeholder="e.g. White Belt"
                       value={formData.beltRank}
                       onChange={(e) => setFormData({ ...formData, beltRank: e.target.value })}
-                      className="flex-1 bg-zinc-900 border border-amber-500/50 rounded-xl px-3 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-red-500"
+                      className="flex-1 min-w-0 bg-zinc-900 border border-amber-500/50 rounded-xl px-3 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-red-500"
                     />
                     <button
                       type="button"
@@ -761,14 +761,14 @@ export const StudentRegistrationModal = ({ isOpen, onClose }) => {
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {/* Payment Method */}
-                      <div>
+                      <div className="min-w-0">
                         <label className="block text-[11px] font-bold text-zinc-300 mb-1">
                           💳 Payment Method *
                         </label>
                         <select
                           value={formData.paymentMethod}
                           onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value })}
-                          className="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:border-red-500 font-semibold cursor-pointer"
+                          className="w-full min-w-0 bg-zinc-950 border border-zinc-700 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:border-red-500 font-semibold cursor-pointer truncate"
                         >
                           <option value="Cash">💵 Cash (Reception Desk)</option>
                           <option value="Card / POS">💳 Card / POS Machine</option>
@@ -779,7 +779,7 @@ export const StudentRegistrationModal = ({ isOpen, onClose }) => {
                       </div>
 
                       {/* Payment Reference / Receipt Note */}
-                      <div>
+                      <div className="min-w-0">
                         <label className="block text-[11px] font-bold text-zinc-300 mb-1">
                           Payment Reference / Note (Optional)
                         </label>
@@ -788,7 +788,7 @@ export const StudentRegistrationModal = ({ isOpen, onClose }) => {
                           placeholder="e.g. POS Slip #8842 / Discount note"
                           value={formData.paymentNotes}
                           onChange={(e) => setFormData({ ...formData, paymentNotes: e.target.value })}
-                          className="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-2.5 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-red-500"
+                          className="w-full min-w-0 bg-zinc-950 border border-zinc-700 rounded-xl px-2.5 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-red-500"
                         />
                       </div>
                     </div>
@@ -796,9 +796,9 @@ export const StudentRegistrationModal = ({ isOpen, onClose }) => {
                 )}
 
                 {/* Subscription Start Date, Next Due Date & Last Payment Date */}
-                <div className="pt-2.5 border-t border-zinc-800/80 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="pt-2.5 border-t border-zinc-800/80 grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3">
                   {/* Subscription Start Date */}
-                  <div>
+                  <div className="min-w-0">
                     <label className="block text-[11px] font-bold text-blue-400 mb-1">
                       📅 Subscription Starts
                     </label>
@@ -813,14 +813,14 @@ export const StudentRegistrationModal = ({ isOpen, onClose }) => {
                           nextDueDate: calculateNextDueDate(newDate, selectedPlan) || prev.nextDueDate
                         }));
                       }}
-                      className="w-full bg-zinc-950 border border-blue-500/40 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:border-blue-400 cursor-pointer font-semibold"
+                      className="w-full min-w-0 bg-zinc-950 border border-blue-500/40 rounded-xl px-2 py-2 text-xs text-white focus:outline-none focus:border-blue-400 cursor-pointer font-semibold"
                     />
                   </div>
 
                   {/* Next Payment Due Date */}
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="text-[11px] font-bold text-amber-400 flex items-center gap-1">
+                  <div className="min-w-0">
+                    <div className="flex items-center justify-between gap-1 mb-1">
+                      <label className="text-[11px] font-bold text-amber-400 flex items-center gap-1 truncate">
                         ⏰ Next Due Date *
                       </label>
                       <button
@@ -829,7 +829,7 @@ export const StudentRegistrationModal = ({ isOpen, onClose }) => {
                           const autoDue = calculateNextDueDate(formData.subscriptionStartDate || formData.lastPaidDate || formData.joinDate, selectedPlan);
                           if (autoDue) setFormData(prev => ({ ...prev, nextDueDate: autoDue }));
                         }}
-                        className="text-[10px] font-bold text-red-400 hover:text-red-300 underline cursor-pointer"
+                        className="text-[10px] font-bold text-red-400 hover:text-red-300 underline cursor-pointer shrink-0"
                       >
                         ⚡ Auto ({selectedPlan?.durationMonths || 1}M)
                       </button>
@@ -838,12 +838,12 @@ export const StudentRegistrationModal = ({ isOpen, onClose }) => {
                       type="date"
                       value={formData.nextDueDate}
                       onChange={(e) => setFormData({ ...formData, nextDueDate: e.target.value })}
-                      className="w-full bg-zinc-950 border border-amber-500/40 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:border-amber-400 cursor-pointer font-bold"
+                      className="w-full min-w-0 bg-zinc-950 border border-amber-500/40 rounded-xl px-2 py-2 text-xs text-white focus:outline-none focus:border-amber-400 cursor-pointer font-bold"
                     />
                   </div>
 
                   {/* Last Payment Date */}
-                  <div>
+                  <div className="min-w-0">
                     <div className="flex items-center justify-between mb-1">
                       <label className="text-[11px] font-bold text-zinc-300">
                         💳 Payment Date
@@ -859,7 +859,7 @@ export const StudentRegistrationModal = ({ isOpen, onClose }) => {
                           lastPaidDate: newDate
                         }));
                       }}
-                      className="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:border-red-500 cursor-pointer"
+                      className="w-full min-w-0 bg-zinc-950 border border-zinc-700 rounded-xl px-2 py-2 text-xs text-white focus:outline-none focus:border-red-500 cursor-pointer"
                     />
                   </div>
                 </div>
@@ -908,17 +908,17 @@ export const StudentRegistrationModal = ({ isOpen, onClose }) => {
           </div>
 
           {/* Footer Submit */}
-          <div className="pt-3 border-t border-zinc-800 flex items-center justify-end gap-3 sticky bottom-0 bg-dojo-card py-2">
+          <div className="pt-3 border-t border-zinc-800 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2 sm:gap-3">
             <button
               type="button"
               onClick={handleClose}
-              className="px-4 py-2.5 text-xs font-semibold text-zinc-400 hover:text-white transition-colors cursor-pointer"
+              className="w-full sm:w-auto px-4 py-2.5 text-xs font-semibold text-zinc-400 hover:text-white transition-colors cursor-pointer text-center"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-6 py-2.5 bg-dojo-red hover:bg-dojo-redHover active:scale-95 text-xs font-bold text-white rounded-xl shadow-lg shadow-red-600/30 transition-all flex items-center gap-1.5"
+              className="w-full sm:w-auto px-6 py-2.5 bg-dojo-red hover:bg-dojo-redHover active:scale-95 text-xs font-bold text-white rounded-xl shadow-lg shadow-red-600/30 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
             >
               <Check className="w-4 h-4" />
               <span>Enroll Student</span>

@@ -375,7 +375,7 @@ export const StudentProfileModal = ({ student, onClose, initialTab = 'overview' 
       }}
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-sm animate-fade-in"
     >
-      <div className="w-full sm:max-w-2xl bg-dojo-card border-t sm:border border-dojo-border rounded-t-3xl sm:rounded-2xl shadow-2xl max-h-[92vh] flex flex-col overflow-hidden">
+      <div className="w-full sm:max-w-2xl lg:max-w-3xl bg-dojo-card border-t sm:border border-dojo-border rounded-t-3xl sm:rounded-2xl shadow-2xl max-h-dvh-92 flex flex-col overflow-hidden">
         {/* Top Header Card */}
         <div className="relative p-4 sm:p-5 pb-3 border-b border-dojo-border bg-gradient-to-b from-zinc-900/90 to-dojo-card shrink-0">
           <button
@@ -534,29 +534,29 @@ export const StudentProfileModal = ({ student, onClose, initialTab = 'overview' 
             <button
               type="button"
               onClick={() => setActiveTab('overview')}
-              className={`flex items-center justify-center sm:justify-start gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold transition-all cursor-pointer shrink-0 whitespace-nowrap ${
+              className={`min-w-0 flex items-center justify-center sm:justify-start gap-1 sm:gap-1.5 px-1.5 sm:px-3 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold transition-all cursor-pointer sm:shrink-0 whitespace-nowrap ${
                 activeTab === 'overview'
                   ? 'bg-red-600 text-white shadow-md shadow-red-600/30'
                   : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
               }`}
             >
-              <span>🥋 Overview</span>
+              <span className="truncate">🥋 Overview</span>
             </button>
 
             <button
               type="button"
               onClick={() => setActiveTab('attendance')}
-              className={`flex items-center justify-center sm:justify-start gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold transition-all cursor-pointer shrink-0 whitespace-nowrap ${
+              className={`min-w-0 flex items-center justify-center sm:justify-start gap-1 sm:gap-1.5 px-1.5 sm:px-3 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold transition-all cursor-pointer sm:shrink-0 whitespace-nowrap ${
                 activeTab === 'attendance'
                   ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30'
                   : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
               }`}
             >
               <Calendar className="w-3.5 h-3.5 shrink-0" />
-              <span className="sm:hidden">Attendance</span>
+              <span className="sm:hidden truncate">Attendance</span>
               <span className="hidden sm:inline">Attendance History</span>
               {studentAttendanceList.length > 0 && (
-                <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-black/40">
+                <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-black/40 shrink-0">
                   {studentAttendanceList.length}
                 </span>
               )}
@@ -565,17 +565,17 @@ export const StudentProfileModal = ({ student, onClose, initialTab = 'overview' 
             <button
               type="button"
               onClick={() => setActiveTab('payments')}
-              className={`flex items-center justify-center sm:justify-start gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold transition-all cursor-pointer shrink-0 whitespace-nowrap ${
+              className={`min-w-0 flex items-center justify-center sm:justify-start gap-1 sm:gap-1.5 px-1.5 sm:px-3 py-1.5 rounded-xl text-[11px] sm:text-xs font-bold transition-all cursor-pointer sm:shrink-0 whitespace-nowrap ${
                 activeTab === 'payments'
                   ? 'bg-amber-600 text-white shadow-md shadow-amber-600/30'
                   : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
               }`}
             >
               <CreditCard className="w-3.5 h-3.5 shrink-0" />
-              <span className="sm:hidden">Payments</span>
+              <span className="sm:hidden truncate">Payments</span>
               <span className="hidden sm:inline">Payment History</span>
               {studentPaymentsList.length > 0 && (
-                <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-black/40">
+                <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-black/40 shrink-0">
                   {studentPaymentsList.length}
                 </span>
               )}
@@ -925,7 +925,7 @@ export const StudentProfileModal = ({ student, onClose, initialTab = 'overview' 
                   </h4>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                    <div>
+                    <div className="min-w-0">
                       <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1">
                         📅 Session Date
                       </label>
@@ -933,18 +933,18 @@ export const StudentProfileModal = ({ student, onClose, initialTab = 'overview' 
                         type="date"
                         value={logDate}
                         onChange={(e) => setLogDate(e.target.value)}
-                        className="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-emerald-500 cursor-pointer"
+                        className="w-full min-w-0 bg-zinc-950 border border-zinc-700 rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-emerald-500 cursor-pointer"
                       />
                     </div>
 
-                    <div>
+                    <div className="min-w-0">
                       <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1">
                         Status
                       </label>
                       <select
                         value={logStatus}
                         onChange={(e) => setLogStatus(e.target.value)}
-                        className="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-emerald-500 font-semibold cursor-pointer"
+                        className="w-full min-w-0 bg-zinc-950 border border-zinc-700 rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-emerald-500 font-semibold cursor-pointer truncate"
                       >
                         <option value="Present">Present 🥋</option>
                         <option value="Absent">Absent ❌</option>
@@ -952,7 +952,7 @@ export const StudentProfileModal = ({ student, onClose, initialTab = 'overview' 
                       </select>
                     </div>
 
-                    <div>
+                    <div className="min-w-0">
                       <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1">
                         Session Note (Optional)
                       </label>
@@ -961,7 +961,7 @@ export const StudentProfileModal = ({ student, onClose, initialTab = 'overview' 
                         placeholder="e.g. Regular class / make-up"
                         value={logNote}
                         onChange={(e) => setLogNote(e.target.value)}
-                        className="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-2.5 py-1.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-500"
+                        className="w-full min-w-0 bg-zinc-950 border border-zinc-700 rounded-xl px-2.5 py-1.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-500"
                       />
                     </div>
                   </div>
@@ -984,8 +984,8 @@ export const StudentProfileModal = ({ student, onClose, initialTab = 'overview' 
                 </form>
               )}
 
-              {/* Attendance Records List */}
-              <div className="space-y-2">
+              {/* Attendance Records List: Mobile Cards + Desktop Table */}
+              <div>
                 {filteredAttendanceList.length === 0 ? (
                   <div className="p-8 text-center bg-zinc-900/40 rounded-2xl border border-zinc-800 space-y-2">
                     <Calendar className="w-8 h-8 text-zinc-600 mx-auto" />
@@ -995,91 +995,179 @@ export const StudentProfileModal = ({ student, onClose, initialTab = 'overview' 
                     </p>
                   </div>
                 ) : (
-                  filteredAttendanceList.map((record) => (
-                    <div
-                      key={record.id}
-                      className="p-3 bg-zinc-900/80 rounded-xl border border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs hover:border-zinc-700 transition-colors"
-                    >
-                      <div className="flex items-start sm:items-center gap-3 min-w-0 flex-1">
-                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold shrink-0 ${
-                          record.status === 'Present'
-                            ? 'bg-emerald-950 text-emerald-400 border border-emerald-500/30'
-                            : record.status === 'Absent'
-                            ? 'bg-red-950 text-red-400 border border-red-500/30'
-                            : 'bg-amber-950 text-amber-400 border border-amber-500/30'
-                        }`}>
-                          {record.status === 'Present' ? (
-                            <CheckCircle2 className="w-4 h-4" />
-                          ) : record.status === 'Absent' ? (
-                            <XCircle className="w-4 h-4" />
-                          ) : (
-                            <Clock className="w-4 h-4" />
-                          )}
-                        </div>
+                  <>
+                    {/* Mobile Card View (< md) */}
+                    <div className="md:hidden space-y-2">
+                      {filteredAttendanceList.map((record) => (
+                        <div
+                          key={record.id}
+                          className="p-3 bg-zinc-900/80 rounded-xl border border-zinc-800 flex flex-col gap-2.5 text-xs hover:border-zinc-700 transition-colors"
+                        >
+                          <div className="flex items-start gap-3 min-w-0 flex-1">
+                            <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold shrink-0 ${
+                              record.status === 'Present'
+                                ? 'bg-emerald-950 text-emerald-400 border border-emerald-500/30'
+                                : record.status === 'Absent'
+                                ? 'bg-red-950 text-red-400 border border-red-500/30'
+                                : 'bg-amber-950 text-amber-400 border border-amber-500/30'
+                            }`}>
+                              {record.status === 'Present' ? (
+                                <CheckCircle2 className="w-4 h-4" />
+                              ) : record.status === 'Absent' ? (
+                                <XCircle className="w-4 h-4" />
+                              ) : (
+                                <Clock className="w-4 h-4" />
+                              )}
+                            </div>
 
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-bold text-white text-xs">
-                              {formatDisplayDate(record.date)}
-                            </span>
-                            {record.isGuest && (
-                              <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-purple-950 text-purple-400 border border-purple-500/30 shrink-0">
-                                Make-up / Guest
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="font-bold text-white text-xs">
+                                  {formatDisplayDate(record.date)}
+                                </span>
+                                {record.isGuest && (
+                                  <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-purple-950 text-purple-400 border border-purple-500/30 shrink-0">
+                                    Make-up / Guest
+                                  </span>
+                                )}
+                              </div>
+                              <span className="text-[11px] text-zinc-400 block break-words">
+                                {record.batchName || 'General Batch'}{record.notes ? ` • ${record.notes}` : ''}
                               </span>
-                            )}
+                            </div>
                           </div>
-                          <span className="text-[11px] text-zinc-400 block break-words">
-                            {record.batchName || 'General Batch'}{record.notes ? ` • ${record.notes}` : ''}
-                          </span>
-                        </div>
-                      </div>
 
-                      <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-auto">
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                          record.status === 'Present'
-                            ? 'bg-emerald-950/80 text-emerald-400 border border-emerald-500/30'
-                            : record.status === 'Absent'
-                            ? 'bg-red-950/80 text-red-400 border border-red-500/30'
-                            : 'bg-amber-950/80 text-amber-400 border border-amber-500/30'
-                        }`}>
-                          {record.status}
-                        </span>
+                          <div className="flex items-center justify-between gap-2 pt-2 border-t border-zinc-800/70">
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              record.status === 'Present'
+                                ? 'bg-emerald-950/80 text-emerald-400 border border-emerald-500/30'
+                                : record.status === 'Absent'
+                                ? 'bg-red-950/80 text-red-400 border border-red-500/30'
+                                : 'bg-amber-950/80 text-amber-400 border border-amber-500/30'
+                            }`}>
+                              {record.status}
+                            </span>
 
-                        <div className="flex items-center gap-0.5 bg-zinc-950 p-0.5 rounded-lg border border-zinc-800">
-                          <button
-                            type="button"
-                            onClick={() => requireAdmin(() => updateSingleAttendanceRecord({ studentId: currentStudent.id, date: record.date, batchId: record.batchId, status: 'Present' }))}
-                            className={`px-1.5 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-all ${
-                              record.status === 'Present' ? 'bg-emerald-600 text-white shadow' : 'text-zinc-500 hover:text-white'
-                            }`}
-                            title="Correct to Present"
-                          >
-                            P
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => requireAdmin(() => updateSingleAttendanceRecord({ studentId: currentStudent.id, date: record.date, batchId: record.batchId, status: 'Absent' }))}
-                            className={`px-1.5 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-all ${
-                              record.status === 'Absent' ? 'bg-red-600 text-white shadow' : 'text-zinc-500 hover:text-white'
-                            }`}
-                            title="Correct to Absent"
-                          >
-                            A
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => requireAdmin(() => updateSingleAttendanceRecord({ studentId: currentStudent.id, date: record.date, batchId: record.batchId, status: 'Late' }))}
-                            className={`px-1.5 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-all ${
-                              record.status === 'Late' ? 'bg-amber-600 text-white shadow' : 'text-zinc-500 hover:text-white'
-                            }`}
-                            title="Correct to Late"
-                          >
-                            L
-                          </button>
+                            <div className="flex items-center gap-0.5 bg-zinc-950 p-0.5 rounded-lg border border-zinc-800">
+                              <button
+                                type="button"
+                                onClick={() => requireAdmin(() => updateSingleAttendanceRecord({ studentId: currentStudent.id, date: record.date, batchId: record.batchId, status: 'Present' }))}
+                                className={`px-2 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-all ${
+                                  record.status === 'Present' ? 'bg-emerald-600 text-white shadow' : 'text-zinc-500 hover:text-white'
+                                }`}
+                                title="Correct to Present"
+                              >
+                                P
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => requireAdmin(() => updateSingleAttendanceRecord({ studentId: currentStudent.id, date: record.date, batchId: record.batchId, status: 'Absent' }))}
+                                className={`px-2 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-all ${
+                                  record.status === 'Absent' ? 'bg-red-600 text-white shadow' : 'text-zinc-500 hover:text-white'
+                                }`}
+                                title="Correct to Absent"
+                              >
+                                A
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => requireAdmin(() => updateSingleAttendanceRecord({ studentId: currentStudent.id, date: record.date, batchId: record.batchId, status: 'Late' }))}
+                                className={`px-2 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-all ${
+                                  record.status === 'Late' ? 'bg-amber-600 text-white shadow' : 'text-zinc-500 hover:text-white'
+                                }`}
+                                title="Correct to Late"
+                              >
+                                L
+                              </button>
+                            </div>
+                          </div>
                         </div>
+                      ))}
+                    </div>
+
+                    {/* Desktop / Tablet Table View (>= md) */}
+                    <div className="hidden md:block bg-zinc-900/80 rounded-2xl border border-zinc-800 overflow-hidden">
+                      <div className="overflow-x-auto">
+                        <table className="w-full min-w-[540px] text-left border-collapse text-xs">
+                          <thead>
+                            <tr className="border-b border-zinc-800 bg-zinc-950/60 text-[10px] font-semibold text-zinc-400 uppercase tracking-wider">
+                              <th className="py-2.5 px-3">Date</th>
+                              <th className="py-2.5 px-3">Batch &amp; Notes</th>
+                              <th className="py-2.5 px-3">Status</th>
+                              <th className="py-2.5 px-3 text-right">Quick Override</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-zinc-800/70">
+                            {filteredAttendanceList.map((record) => (
+                              <tr key={record.id} className="hover:bg-zinc-800/40 transition-colors">
+                                <td className="py-2.5 px-3 whitespace-nowrap font-bold text-white">
+                                  <div className="flex items-center gap-2">
+                                    <span>{formatDisplayDate(record.date)}</span>
+                                    {record.isGuest && (
+                                      <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-purple-950 text-purple-400 border border-purple-500/30">
+                                        Guest
+                                      </span>
+                                    )}
+                                  </div>
+                                </td>
+                                <td className="py-2.5 px-3 text-zinc-300 max-w-[240px]">
+                                  <span className="block truncate font-medium">{record.batchName || 'General Batch'}</span>
+                                  {record.notes && (
+                                    <span className="block text-[10px] text-zinc-500 truncate">{record.notes}</span>
+                                  )}
+                                </td>
+                                <td className="py-2.5 px-3 whitespace-nowrap">
+                                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                    record.status === 'Present'
+                                      ? 'bg-emerald-950/80 text-emerald-400 border border-emerald-500/30'
+                                      : record.status === 'Absent'
+                                      ? 'bg-red-950/80 text-red-400 border border-red-500/30'
+                                      : 'bg-amber-950/80 text-amber-400 border border-amber-500/30'
+                                  }`}>
+                                    {record.status}
+                                  </span>
+                                </td>
+                                <td className="py-2.5 px-3 text-right whitespace-nowrap">
+                                  <div className="inline-flex items-center gap-0.5 bg-zinc-950 p-0.5 rounded-lg border border-zinc-800">
+                                    <button
+                                      type="button"
+                                      onClick={() => requireAdmin(() => updateSingleAttendanceRecord({ studentId: currentStudent.id, date: record.date, batchId: record.batchId, status: 'Present' }))}
+                                      className={`px-1.5 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-all ${
+                                        record.status === 'Present' ? 'bg-emerald-600 text-white shadow' : 'text-zinc-500 hover:text-white'
+                                      }`}
+                                      title="Correct to Present"
+                                    >
+                                      P
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => requireAdmin(() => updateSingleAttendanceRecord({ studentId: currentStudent.id, date: record.date, batchId: record.batchId, status: 'Absent' }))}
+                                      className={`px-1.5 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-all ${
+                                        record.status === 'Absent' ? 'bg-red-600 text-white shadow' : 'text-zinc-500 hover:text-white'
+                                      }`}
+                                      title="Correct to Absent"
+                                    >
+                                      A
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => requireAdmin(() => updateSingleAttendanceRecord({ studentId: currentStudent.id, date: record.date, batchId: record.batchId, status: 'Late' }))}
+                                      className={`px-1.5 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-all ${
+                                        record.status === 'Late' ? 'bg-amber-600 text-white shadow' : 'text-zinc-500 hover:text-white'
+                                      }`}
+                                      title="Correct to Late"
+                                    >
+                                      L
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
                       </div>
                     </div>
-                  ))
+                  </>
                 )}
               </div>
             </div>
@@ -1216,21 +1304,21 @@ export const StudentProfileModal = ({ student, onClose, initialTab = 'overview' 
                 </div>
 
                 {studentPaymentsList.length > 0 && (
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <div className="relative flex-1">
+                  <div className="flex flex-col sm:flex-row gap-2 min-w-0">
+                    <div className="relative flex-1 min-w-0">
                       <Search className="w-3.5 h-3.5 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2" />
                       <input
                         type="text"
                         placeholder="Search by Bill No. (e.g. BILL-0001), package, or note..."
                         value={paymentSearch}
                         onChange={(e) => setPaymentSearch(e.target.value)}
-                        className="w-full bg-zinc-900 border border-zinc-700 rounded-xl pl-8 pr-3 py-1.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-amber-500"
+                        className="w-full min-w-0 bg-zinc-900 border border-zinc-700 rounded-xl pl-8 pr-3 py-1.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-amber-500"
                       />
                     </div>
                     <select
                       value={paymentMethodFilter}
                       onChange={(e) => setPaymentMethodFilter(e.target.value)}
-                      className="bg-zinc-900 border border-zinc-700 rounded-xl px-2.5 py-1.5 text-xs text-white font-semibold focus:outline-none focus:border-amber-500 cursor-pointer"
+                      className="w-full sm:w-auto min-w-0 sm:max-w-[200px] bg-zinc-900 border border-zinc-700 rounded-xl px-2.5 py-1.5 text-xs text-white font-semibold focus:outline-none focus:border-amber-500 cursor-pointer truncate"
                     >
                       <option value="all">All Methods ({studentPaymentsList.length})</option>
                       {studentPaymentMethods.map(m => (
@@ -1241,8 +1329,8 @@ export const StudentProfileModal = ({ student, onClose, initialTab = 'overview' 
                 )}
               </div>
 
-              {/* Payment List */}
-              <div className="space-y-2.5">
+              {/* Payment List: Mobile Cards + Desktop/Tablet Table */}
+              <div>
                 {studentPaymentsList.length === 0 ? (
                   <div className="p-8 text-center bg-zinc-900/40 rounded-2xl border border-zinc-800 space-y-3">
                     <Receipt className="w-8 h-8 text-zinc-600 mx-auto" />
@@ -1276,149 +1364,283 @@ export const StudentProfileModal = ({ student, onClose, initialTab = 'overview' 
                     </button>
                   </div>
                 ) : (
-                  filteredStudentPayments.map((payment) => {
-                    const billNo = payment.billNumber || payment.receiptNumber || `BILL-${String(payment.id || '').slice(-4) || '0000'}`;
-                    const isReset = payment.status === 'Reset';
+                  <>
+                    {/* Mobile Card View (< md) */}
+                    <div className="md:hidden space-y-2.5">
+                      {filteredStudentPayments.map((payment) => {
+                        const billNo = payment.billNumber || payment.receiptNumber || `BILL-${String(payment.id || '').slice(-4) || '0000'}`;
+                        const isReset = payment.status === 'Reset';
 
-                    return (
-                      <div
-                        key={payment.id}
-                        className={`p-3.5 rounded-2xl border transition-all space-y-2 ${
-                          isReset
-                            ? 'bg-orange-950/15 border-orange-500/40 opacity-85'
-                            : 'bg-zinc-900/90 border-zinc-800 hover:border-zinc-700'
-                        }`}
-                      >
-                        <div className="flex items-start justify-between gap-2.5 sm:gap-3">
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className="inline-flex items-center gap-1 font-mono font-bold text-xs px-2 py-0.5 rounded-lg bg-amber-500/15 text-amber-300 border border-amber-500/30">
-                                <Hash className="w-3 h-3 text-amber-400" />
-                                <span>{billNo}</span>
-                              </span>
+                        return (
+                          <div
+                            key={payment.id}
+                            className={`p-3.5 rounded-2xl border transition-all space-y-2 ${
+                              isReset
+                                ? 'bg-orange-950/15 border-orange-500/40 opacity-85'
+                                : 'bg-zinc-900/90 border-zinc-800 hover:border-zinc-700'
+                            }`}
+                          >
+                            <div className="flex items-start justify-between gap-2.5">
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span className="inline-flex items-center gap-1 font-mono font-bold text-xs px-2 py-0.5 rounded-lg bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                                    <Hash className="w-3 h-3 text-amber-400" />
+                                    <span>{billNo}</span>
+                                  </span>
 
-                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
-                                payment.renewalType === 'restart'
-                                  ? 'bg-amber-950/80 text-amber-300 border-amber-500/40'
-                                  : payment.renewalType === 'initial'
-                                  ? 'bg-emerald-950/80 text-emerald-300 border-emerald-500/40'
-                                  : 'bg-blue-950/80 text-blue-300 border-blue-500/40'
-                              }`}>
-                                {payment.renewalType === 'restart'
-                                  ? 'Resumed After Break'
-                                  : payment.renewalType === 'initial'
-                                  ? 'Initial Admission'
-                                  : 'Regular Renewal'}
-                              </span>
+                                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                                    payment.renewalType === 'restart'
+                                      ? 'bg-amber-950/80 text-amber-300 border-amber-500/40'
+                                      : payment.renewalType === 'initial'
+                                      ? 'bg-emerald-950/80 text-emerald-300 border-emerald-500/40'
+                                      : 'bg-blue-950/80 text-blue-300 border-blue-500/40'
+                                  }`}>
+                                    {payment.renewalType === 'restart'
+                                      ? 'Resumed After Break'
+                                      : payment.renewalType === 'initial'
+                                      ? 'Initial Admission'
+                                      : 'Regular Renewal'}
+                                  </span>
 
-                              {payment.isEdited && (
-                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40">
-                                  ✏️ Corrected
+                                  {payment.isEdited && (
+                                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                                      ✏️ Corrected
+                                    </span>
+                                  )}
+
+                                  {isReset && (
+                                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-600/25 text-orange-300 border border-orange-500/50">
+                                      ↺ Reset / Voided
+                                    </span>
+                                  )}
+                                </div>
+
+                                <span className="text-[11px] text-zinc-400 block mt-1">
+                                  Date: <strong className="text-zinc-200">{formatDisplayDate(payment.paymentDate || payment.createdAt)}</strong> • Method: <strong className="text-zinc-200">{payment.paymentMethod || 'Cash'}</strong>
+                                  {payment.planName ? ` • ${payment.planName}` : ''}
                                 </span>
-                              )}
+                              </div>
 
-                              {isReset && (
-                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-600/25 text-orange-300 border border-orange-500/50">
-                                  ↺ Reset / Voided
+                              <div className="text-right shrink-0">
+                                <span className={`text-sm font-black block ${
+                                  isReset ? 'text-zinc-500 line-through' : 'text-emerald-400'
+                                }`}>
+                                  AED {formatCurrencyAmount(payment.amount)}
                                 </span>
-                              )}
+                                <span className="text-[10px] text-zinc-500">
+                                  {isReset ? 'Reverted' : 'VAT Incl.'}
+                                </span>
+                              </div>
                             </div>
 
-                            <span className="text-[11px] text-zinc-400 block mt-1">
-                              Date: <strong className="text-zinc-200">{formatDisplayDate(payment.paymentDate || payment.createdAt)}</strong> • Method: <strong className="text-zinc-200">{payment.paymentMethod || 'Cash'}</strong>
-                              {payment.planName ? ` • ${payment.planName}` : ''}
-                            </span>
-                          </div>
-
-                          <div className="text-right shrink-0">
-                            <span className={`text-sm font-black block ${
-                              isReset ? 'text-zinc-500 line-through' : 'text-emerald-400'
-                            }`}>
-                              AED {formatCurrencyAmount(payment.amount)}
-                            </span>
-                            <span className="text-[10px] text-zinc-500">
-                              {isReset ? 'Reverted' : 'VAT Incl.'}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Subscription Period Covered */}
-                        {(payment.subscriptionStartDate || payment.nextDueDate) && (
-                          <div className="p-2 bg-zinc-950 rounded-xl border border-zinc-800/80 flex flex-wrap items-center justify-between gap-1.5 text-[11px]">
-                            <span className="text-zinc-500">Period Covered:</span>
-                            <span className="font-semibold text-zinc-200">
-                              {formatDisplayDate(payment.subscriptionStartDate)} ➔ <strong className="text-amber-400">{formatDisplayDate(payment.nextDueDate)}</strong>
-                            </span>
-                          </div>
-                        )}
-
-                        {payment.isEdited && (payment.editReason || payment.lastEditedBy) && (
-                          <p className="text-[10px] text-amber-300/90 bg-amber-950/30 px-2.5 py-1 rounded-lg border border-amber-500/20">
-                            Edited by {payment.lastEditedBy || 'Admin'}{payment.editReason ? ` — "${payment.editReason}"` : ''}
-                          </p>
-                        )}
-
-                        {isReset && (payment.resetReason || payment.resetBy) && (
-                          <p className="text-[10px] text-orange-300/90 bg-orange-950/30 px-2.5 py-1 rounded-lg border border-orange-500/20">
-                            Reset by {payment.resetBy || 'Admin'}{payment.resetReason ? ` — "${payment.resetReason}"` : ''}
-                          </p>
-                        )}
-
-                        {/* Notes & Staff Actions */}
-                        <div className="flex flex-wrap items-center justify-between gap-2 pt-1.5 border-t border-zinc-800/80 text-xs">
-                          <span className="text-[11px] text-zinc-400 truncate min-w-0 flex-1">
-                            {payment.notes || 'Training subscription'}
-                          </span>
-
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <button
-                              type="button"
-                              onClick={() => handleOpenReceipt(payment)}
-                              className="inline-flex items-center gap-1 px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg text-[11px] font-bold border border-zinc-700 transition-colors cursor-pointer"
-                            >
-                              <Printer className="w-3 h-3 text-amber-400" />
-                              <span>Receipt</span>
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => handleEditPayment(payment)}
-                              className="inline-flex items-center gap-1 px-2 py-1 bg-zinc-800 hover:bg-amber-500/20 text-zinc-300 hover:text-amber-300 rounded-lg text-[11px] font-bold border border-zinc-700 hover:border-amber-500/40 transition-colors cursor-pointer"
-                              title={isAdmin ? 'Edit / Correct payment' : 'Authorized Staff Only — Edit payment'}
-                            >
-                              <Pencil className="w-3 h-3" />
-                              <span>Edit</span>
-                              {!isAdmin && <Lock className="w-2.5 h-2.5 text-amber-400" />}
-                            </button>
-
-                            {!isReset && (
-                              <button
-                                type="button"
-                                onClick={() => handleResetPayment(payment)}
-                                className="inline-flex items-center gap-1 px-2 py-1 bg-zinc-800 hover:bg-orange-500/20 text-zinc-300 hover:text-orange-300 rounded-lg text-[11px] font-bold border border-zinc-700 hover:border-orange-500/40 transition-colors cursor-pointer"
-                                title={isAdmin ? 'Reset / Void payment and revert balance' : 'Authorized Staff Only — Reset payment'}
-                              >
-                                <RotateCcw className="w-3 h-3" />
-                                <span>Reset</span>
-                                {!isAdmin && <Lock className="w-2.5 h-2.5 text-orange-400" />}
-                              </button>
+                            {(payment.subscriptionStartDate || payment.nextDueDate) && (
+                              <div className="p-2 bg-zinc-950 rounded-xl border border-zinc-800/80 flex flex-wrap items-center justify-between gap-1.5 text-[11px]">
+                                <span className="text-zinc-500">Period Covered:</span>
+                                <span className="font-semibold text-zinc-200">
+                                  {formatDisplayDate(payment.subscriptionStartDate)} ➔ <strong className="text-amber-400">{formatDisplayDate(payment.nextDueDate)}</strong>
+                                </span>
+                              </div>
                             )}
 
-                            <button
-                              type="button"
-                              onClick={() => handleDeletePayment(payment)}
-                              className="inline-flex items-center gap-1 px-2 py-1 bg-zinc-800 hover:bg-red-500/20 text-zinc-400 hover:text-red-400 rounded-lg text-[11px] font-bold border border-zinc-700 hover:border-red-500/40 transition-colors cursor-pointer"
-                              title={isAdmin ? 'Delete payment permanently (logged in activity)' : 'Authorized Staff Only — Delete payment'}
-                            >
-                              <Trash2 className="w-3 h-3" />
-                              <span>Delete</span>
-                              {!isAdmin && <Lock className="w-2.5 h-2.5 text-red-400" />}
-                            </button>
+                            {payment.isEdited && (payment.editReason || payment.lastEditedBy) && (
+                              <p className="text-[10px] text-amber-300/90 bg-amber-950/30 px-2.5 py-1 rounded-lg border border-amber-500/20">
+                                Edited by {payment.lastEditedBy || 'Admin'}{payment.editReason ? ` — "${payment.editReason}"` : ''}
+                              </p>
+                            )}
+
+                            {isReset && (payment.resetReason || payment.resetBy) && (
+                              <p className="text-[10px] text-orange-300/90 bg-orange-950/30 px-2.5 py-1 rounded-lg border border-orange-500/20">
+                                Reset by {payment.resetBy || 'Admin'}{payment.resetReason ? ` — "${payment.resetReason}"` : ''}
+                              </p>
+                            )}
+
+                            <div className="flex flex-wrap items-center justify-between gap-2 pt-1.5 border-t border-zinc-800/80 text-xs">
+                              <span className="text-[11px] text-zinc-400 truncate min-w-0 flex-1">
+                                {payment.notes || 'Training subscription'}
+                              </span>
+
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenReceipt(payment)}
+                                  className="inline-flex items-center gap-1 px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg text-[11px] font-bold border border-zinc-700 transition-colors cursor-pointer"
+                                >
+                                  <Printer className="w-3 h-3 text-amber-400" />
+                                  <span>Receipt</span>
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => handleEditPayment(payment)}
+                                  className="inline-flex items-center gap-1 px-2 py-1 bg-zinc-800 hover:bg-amber-500/20 text-zinc-300 hover:text-amber-300 rounded-lg text-[11px] font-bold border border-zinc-700 hover:border-amber-500/40 transition-colors cursor-pointer"
+                                  title={isAdmin ? 'Edit / Correct payment' : 'Authorized Staff Only — Edit payment'}
+                                >
+                                  <Pencil className="w-3 h-3" />
+                                  <span>Edit</span>
+                                  {!isAdmin && <Lock className="w-2.5 h-2.5 text-amber-400" />}
+                                </button>
+
+                                {!isReset && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleResetPayment(payment)}
+                                    className="inline-flex items-center gap-1 px-2 py-1 bg-zinc-800 hover:bg-orange-500/20 text-zinc-300 hover:text-orange-300 rounded-lg text-[11px] font-bold border border-zinc-700 hover:border-orange-500/40 transition-colors cursor-pointer"
+                                    title={isAdmin ? 'Reset / Void payment and revert balance' : 'Authorized Staff Only — Reset payment'}
+                                  >
+                                    <RotateCcw className="w-3 h-3" />
+                                    <span>Reset</span>
+                                    {!isAdmin && <Lock className="w-2.5 h-2.5 text-orange-400" />}
+                                  </button>
+                                )}
+
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeletePayment(payment)}
+                                  className="inline-flex items-center gap-1 px-2 py-1 bg-zinc-800 hover:bg-red-500/20 text-zinc-400 hover:text-red-400 rounded-lg text-[11px] font-bold border border-zinc-700 hover:border-red-500/40 transition-colors cursor-pointer"
+                                  title={isAdmin ? 'Delete payment permanently (logged in activity)' : 'Authorized Staff Only — Delete payment'}
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                  <span>Delete</span>
+                                  {!isAdmin && <Lock className="w-2.5 h-2.5 text-red-400" />}
+                                </button>
+                              </div>
+                            </div>
                           </div>
-                        </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Desktop / Tablet Table View (>= md) */}
+                    <div className="hidden md:block bg-zinc-900/80 rounded-2xl border border-zinc-800 overflow-hidden">
+                      <div className="overflow-x-auto">
+                        <table className="w-full min-w-[600px] text-left border-collapse text-xs">
+                          <thead>
+                            <tr className="border-b border-zinc-800 bg-zinc-950/60 text-[10px] font-semibold text-zinc-400 uppercase tracking-wider">
+                              <th className="py-2.5 px-3">Bill &amp; Type</th>
+                              <th className="py-2.5 px-3">Paid On &amp; Mode</th>
+                              <th className="py-2.5 px-3">Cycle Period</th>
+                              <th className="py-2.5 px-3 text-right">Amount</th>
+                              <th className="py-2.5 px-3 text-right">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-zinc-800/70">
+                            {filteredStudentPayments.map((payment) => {
+                              const billNo = payment.billNumber || payment.receiptNumber || `BILL-${String(payment.id || '').slice(-4) || '0000'}`;
+                              const isReset = payment.status === 'Reset';
+
+                              return (
+                                <tr
+                                  key={payment.id}
+                                  className={`transition-colors ${
+                                    isReset ? 'bg-orange-950/10 hover:bg-orange-950/20 opacity-85' : 'hover:bg-zinc-800/40'
+                                  }`}
+                                >
+                                  <td className="py-2.5 px-3 align-top">
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                      <span className="inline-flex items-center gap-1 font-mono font-bold text-[11px] px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                                        {billNo}
+                                      </span>
+                                      {payment.isEdited && (
+                                        <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                                          Corrected
+                                        </span>
+                                      )}
+                                      {isReset && (
+                                        <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-orange-600/25 text-orange-300 border border-orange-500/50">
+                                          Reset
+                                        </span>
+                                      )}
+                                    </div>
+                                    <span className="text-[10px] text-zinc-400 block mt-0.5">
+                                      {payment.renewalType === 'restart'
+                                        ? 'Resumed After Break'
+                                        : payment.renewalType === 'initial'
+                                        ? 'Initial Admission'
+                                        : 'Regular Renewal'}
+                                      {payment.planName ? ` • ${payment.planName}` : ''}
+                                    </span>
+                                    {(payment.isEdited || isReset) && (
+                                      <span className="text-[10px] text-amber-300/80 block truncate max-w-[190px]">
+                                        {isReset ? (payment.resetReason || 'Voided') : (payment.editReason || 'Edited')}
+                                      </span>
+                                    )}
+                                  </td>
+
+                                  <td className="py-2.5 px-3 align-top whitespace-nowrap">
+                                    <span className="font-semibold text-zinc-200 block">
+                                      {formatDisplayDate(payment.paymentDate || payment.createdAt)}
+                                    </span>
+                                    <span className="text-[10px] text-zinc-400">
+                                      {payment.paymentMethod || 'Cash'}
+                                    </span>
+                                  </td>
+
+                                  <td className="py-2.5 px-3 align-top whitespace-nowrap text-[11px] text-zinc-300">
+                                    {(payment.subscriptionStartDate || payment.nextDueDate) ? (
+                                      <span>
+                                        {formatDisplayDate(payment.subscriptionStartDate)} ➔ <strong className="text-amber-400">{formatDisplayDate(payment.nextDueDate)}</strong>
+                                      </span>
+                                    ) : (
+                                      <span className="text-zinc-500">—</span>
+                                    )}
+                                  </td>
+
+                                  <td className="py-2.5 px-3 align-top text-right whitespace-nowrap">
+                                    <span className={`font-black block ${isReset ? 'text-zinc-500 line-through' : 'text-emerald-400'}`}>
+                                      AED {formatCurrencyAmount(payment.amount)}
+                                    </span>
+                                    <span className="text-[10px] text-zinc-500">
+                                      {isReset ? 'Reverted' : 'VAT Incl.'}
+                                    </span>
+                                  </td>
+
+                                  <td className="py-2.5 px-3 align-top text-right whitespace-nowrap">
+                                    <div className="inline-flex items-center justify-end gap-1">
+                                      <button
+                                        type="button"
+                                        onClick={() => handleOpenReceipt(payment)}
+                                        className="inline-flex items-center gap-1 px-2 py-1 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg text-[10px] font-bold border border-zinc-700 transition-colors cursor-pointer"
+                                        title="View Official Printable Receipt"
+                                      >
+                                        <Printer className="w-3 h-3 text-amber-400" />
+                                        <span>Receipt</span>
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleEditPayment(payment)}
+                                        className="p-1.5 bg-zinc-800 hover:bg-amber-500/20 text-zinc-300 hover:text-amber-300 rounded-lg border border-zinc-700 hover:border-amber-500/40 transition-colors cursor-pointer"
+                                        title={isAdmin ? 'Edit / Correct payment' : 'Authorized Staff Only — Edit'}
+                                      >
+                                        <Pencil className="w-3 h-3" />
+                                      </button>
+                                      {!isReset && (
+                                        <button
+                                          type="button"
+                                          onClick={() => handleResetPayment(payment)}
+                                          className="p-1.5 bg-zinc-800 hover:bg-orange-500/20 text-zinc-300 hover:text-orange-300 rounded-lg border border-zinc-700 hover:border-orange-500/40 transition-colors cursor-pointer"
+                                          title={isAdmin ? 'Reset / Void payment' : 'Authorized Staff Only — Reset'}
+                                        >
+                                          <RotateCcw className="w-3 h-3" />
+                                        </button>
+                                      )}
+                                      <button
+                                        type="button"
+                                        onClick={() => handleDeletePayment(payment)}
+                                        className="p-1.5 bg-zinc-800 hover:bg-red-500/20 text-zinc-400 hover:text-red-400 rounded-lg border border-zinc-700 hover:border-red-500/40 transition-colors cursor-pointer"
+                                        title={isAdmin ? 'Delete payment permanently' : 'Authorized Staff Only — Delete'}
+                                      >
+                                        <Trash2 className="w-3 h-3" />
+                                      </button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
                       </div>
-                    );
-                  })
+                    </div>
+                  </>
                 )}
               </div>
 

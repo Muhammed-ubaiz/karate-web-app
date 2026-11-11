@@ -69,7 +69,7 @@ export const ActivityFeed = () => {
   const recentActivities = activities.slice(0, 15);
 
   return (
-    <div className="bg-dojo-card border border-dojo-border rounded-2xl p-5 shadow-lg">
+    <div className="bg-dojo-card border border-dojo-border rounded-2xl p-4 sm:p-5 shadow-lg min-w-0">
       <div className="flex items-center justify-between gap-2 mb-4 flex-wrap">
         <div className="flex items-center gap-2">
           <Activity className="w-4 h-4 text-dojo-red" />

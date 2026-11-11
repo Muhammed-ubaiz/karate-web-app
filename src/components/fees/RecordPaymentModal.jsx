@@ -330,22 +330,22 @@ export const RecordPaymentModal = ({
       }}
       className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-sm animate-fade-in"
     >
-      <div className="w-full sm:max-w-xl bg-dojo-card border-t sm:border border-dojo-border rounded-t-3xl sm:rounded-2xl shadow-2xl max-h-[92vh] flex flex-col overflow-hidden">
+      <div className="w-full sm:max-w-xl bg-dojo-card border-t sm:border border-dojo-border rounded-t-3xl sm:rounded-2xl shadow-2xl max-h-dvh-92 flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="sticky top-0 bg-dojo-card/95 backdrop-blur-md px-5 py-4 border-b border-dojo-border flex items-center justify-between z-10 shrink-0">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center">
+        <div className="shrink-0 bg-dojo-card/95 backdrop-blur-md px-4 sm:px-5 py-3.5 sm:py-4 border-b border-dojo-border flex items-center justify-between gap-2 z-10">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center shrink-0">
               <CreditCard className="w-4 h-4" />
             </div>
-            <div>
-              <h2 className="text-base font-bold text-white tracking-tight">Record Student Fee &amp; Renewal</h2>
-              <p className="text-[11px] text-zinc-400">Calculate renewal dates &amp; 5% VAT consistently with Fee Structures</p>
+            <div className="min-w-0">
+              <h2 className="text-base font-bold text-white tracking-tight truncate">Record Student Fee &amp; Renewal</h2>
+              <p className="text-[11px] text-zinc-400 truncate">Calculate renewal dates &amp; 5% VAT consistently with Fee Structures</p>
             </div>
           </div>
           <button
             type="button"
             onClick={handleClose}
-            className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer"
+            className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer shrink-0"
           >
             <X className="w-5 h-5" />
           </button>
@@ -373,18 +373,18 @@ export const RecordPaymentModal = ({
             </button>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="p-5 sm:p-6 space-y-4 overflow-y-auto">
+          <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
             {/* 0. Unique Bill / Receipt Number */}
             <div className="p-3.5 bg-zinc-900/90 rounded-2xl border border-amber-500/30 space-y-2">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <label className="text-xs font-bold text-amber-300 flex items-center gap-1.5">
-                  <Hash className="w-3.5 h-3.5 text-amber-400" />
+                  <Hash className="w-3.5 h-3.5 text-amber-400 shrink-0" />
                   <span>Unique Bill / Receipt Number *</span>
                 </label>
                 <button
                   type="button"
                   onClick={() => handleBillChange(getNextBillNumber())}
-                  className="text-[11px] font-bold text-amber-400 hover:text-amber-300 underline cursor-pointer"
+                  className="text-[11px] font-bold text-amber-400 hover:text-amber-300 underline cursor-pointer shrink-0"
                 >
                   ⚡ Auto Next Serial
                 </button>
@@ -421,7 +421,7 @@ export const RecordPaymentModal = ({
                 <select
                   value={selectedStudentId}
                   onChange={(e) => handleStudentChange(e.target.value)}
-                  className="w-full bg-zinc-900 border border-zinc-700 rounded-xl pl-10 pr-3.5 py-2.5 text-sm text-white font-medium focus:outline-none focus:border-red-500 cursor-pointer"
+                  className="w-full min-w-0 bg-zinc-900 border border-zinc-700 rounded-xl pl-10 pr-3.5 py-2.5 text-sm text-white font-medium focus:outline-none focus:border-red-500 cursor-pointer truncate"
                 >
                   {students.map((s) => {
                     const effectiveDue = getStudentDueAmount(s, feePlans);
@@ -458,7 +458,7 @@ export const RecordPaymentModal = ({
 
             {/* 3. Renewal Type Selector */}
             <div>
-              <label className="block text-xs font-bold text-zinc-300 mb-1.5 flex items-center gap-1.5">
+              <label className="text-xs font-bold text-zinc-300 mb-1.5 flex flex-wrap items-center gap-1.5">
                 <span>Subscription Renewal Mode *</span>
                 <span className="text-[10px] text-zinc-500 font-normal">(Choose calculation method)</span>
               </label>
@@ -546,7 +546,7 @@ export const RecordPaymentModal = ({
               <select
                 value={selectedPlanId}
                 onChange={(e) => handlePlanChange(e.target.value)}
-                className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-xs text-white font-bold focus:outline-none focus:border-red-500 cursor-pointer"
+                className="w-full min-w-0 bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-xs text-white font-bold focus:outline-none focus:border-red-500 cursor-pointer truncate"
               >
                 {feePlans.map(p => {
                   const b = calculatePlanRenewalBreakdown(p);
@@ -561,8 +561,8 @@ export const RecordPaymentModal = ({
 
             {/* 6. Dates Confirmation Box */}
             <div className="p-3.5 bg-zinc-950/70 rounded-2xl border border-zinc-800 space-y-3">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3">
+                <div className="min-w-0">
                   <label className="block text-[11px] font-bold text-zinc-400 mb-1">
                     💰 Payment Received
                   </label>
@@ -570,11 +570,11 @@ export const RecordPaymentModal = ({
                     type="date"
                     value={paymentDate}
                     onChange={(e) => setPaymentDate(e.target.value)}
-                    className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-red-500 cursor-pointer"
+                    className="w-full min-w-0 bg-zinc-900 border border-zinc-700 rounded-xl px-2 py-1.5 text-xs text-white focus:outline-none focus:border-red-500 cursor-pointer"
                   />
                 </div>
 
-                <div>
+                <div className="min-w-0">
                   <div className="flex items-center justify-between mb-1">
                     <label className="text-[11px] font-bold text-blue-400">
                       📅 Valid From
@@ -584,19 +584,19 @@ export const RecordPaymentModal = ({
                     type="date"
                     value={subscriptionStartDate}
                     onChange={(e) => handleStartDateChange(e.target.value)}
-                    className="w-full bg-zinc-900 border border-blue-500/40 rounded-xl px-2.5 py-1.5 text-xs text-white font-bold focus:outline-none focus:border-blue-400 cursor-pointer"
+                    className="w-full min-w-0 bg-zinc-900 border border-blue-500/40 rounded-xl px-2 py-1.5 text-xs text-white font-bold focus:outline-none focus:border-blue-400 cursor-pointer"
                   />
                 </div>
 
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="text-[11px] font-bold text-emerald-400">
+                <div className="min-w-0">
+                  <div className="flex items-center justify-between gap-1 mb-1">
+                    <label className="text-[11px] font-bold text-emerald-400 truncate">
                       ⏰ Next Due Date
                     </label>
                     <button
                       type="button"
                       onClick={handleRecalculateDue}
-                      className="text-[10px] text-emerald-400 underline font-semibold hover:text-emerald-300 cursor-pointer"
+                      className="text-[10px] text-emerald-400 underline font-semibold hover:text-emerald-300 cursor-pointer shrink-0"
                       title="Recalculate based on plan duration"
                     >
                       ⚡ Auto
@@ -606,7 +606,7 @@ export const RecordPaymentModal = ({
                     type="date"
                     value={nextDueDate}
                     onChange={(e) => setNextDueDate(e.target.value)}
-                    className="w-full bg-zinc-900 border border-emerald-500/40 rounded-xl px-2.5 py-1.5 text-xs text-white font-bold focus:outline-none focus:border-emerald-400 cursor-pointer"
+                    className="w-full min-w-0 bg-zinc-900 border border-emerald-500/40 rounded-xl px-2 py-1.5 text-xs text-white font-bold focus:outline-none focus:border-emerald-400 cursor-pointer"
                   />
                 </div>
               </div>
@@ -633,7 +633,7 @@ export const RecordPaymentModal = ({
                     : `Payment Amount Received (Incl. ${currentVatRate}% VAT) *`}
                 </label>
 
-                <div className="inline-flex items-center p-0.5 bg-zinc-900 border border-zinc-700 rounded-lg text-[10px] font-bold">
+                <div className="inline-flex flex-wrap items-center p-0.5 bg-zinc-900 border border-zinc-700 rounded-lg text-[10px] font-bold max-w-full">
                   <button
                     type="button"
                     onClick={() => handleEntryModeSwitch('total')}
@@ -670,17 +670,17 @@ export const RecordPaymentModal = ({
 
               {/* Live VAT Breakdown Card matching Enrollment & Fee Structures */}
               <div className="p-3 bg-zinc-950/80 rounded-xl border border-zinc-800 space-y-1 text-xs">
-                <div className="flex items-center justify-between text-zinc-400">
-                  <span>Base Fee Amount:</span>
-                  <span className="font-semibold text-zinc-200">{liveBreakdown.baseAmount.toFixed(2)} Dhs</span>
+                <div className="flex items-center justify-between gap-2 text-zinc-400">
+                  <span className="min-w-0">Base Fee Amount:</span>
+                  <span className="font-semibold text-zinc-200 shrink-0">{liveBreakdown.baseAmount.toFixed(2)} Dhs</span>
                 </div>
-                <div className="flex items-center justify-between text-zinc-400">
-                  <span>{liveBreakdown.vatRate}% UAE VAT:</span>
-                  <span className="font-semibold text-amber-400">+{liveBreakdown.vatAmount.toFixed(2)} Dhs</span>
+                <div className="flex items-center justify-between gap-2 text-zinc-400">
+                  <span className="min-w-0">{liveBreakdown.vatRate}% UAE VAT:</span>
+                  <span className="font-semibold text-amber-400 shrink-0">+{liveBreakdown.vatAmount.toFixed(2)} Dhs</span>
                 </div>
-                <div className="flex items-center justify-between pt-1 border-t border-zinc-800 font-bold">
-                  <span className="text-white">Total Payment Recorded (Incl. {liveBreakdown.vatRate}% VAT):</span>
-                  <span className="text-sm font-black text-emerald-400">{liveBreakdown.totalWithVat.toFixed(2)} Dhs</span>
+                <div className="flex items-center justify-between gap-2 pt-1 border-t border-zinc-800 font-bold">
+                  <span className="text-white min-w-0">Total Payment (Incl. {liveBreakdown.vatRate}% VAT):</span>
+                  <span className="text-sm font-black text-emerald-400 shrink-0">{liveBreakdown.totalWithVat.toFixed(2)} Dhs</span>
                 </div>
               </div>
 
@@ -694,7 +694,7 @@ export const RecordPaymentModal = ({
                       type="button"
                       key={p.id}
                       onClick={() => handlePlanChange(p.id)}
-                      className={`py-1.5 px-2 rounded-lg text-[11px] font-bold border transition-all cursor-pointer text-center ${
+                      className={`min-w-0 py-1.5 px-2 rounded-lg text-[11px] font-bold border transition-all cursor-pointer text-center ${
                         isActivePlan
                           ? 'bg-emerald-950 text-emerald-400 border-emerald-500/50'
                           : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-white'
@@ -756,40 +756,40 @@ export const RecordPaymentModal = ({
                 type="checkbox"
                 checked={sendWhatsAppReceipt}
                 onChange={(e) => setSendWhatsAppReceipt(e.target.checked)}
-                className="w-4 h-4 rounded text-emerald-500 accent-emerald-500"
+                className="w-4 h-4 rounded text-emerald-500 accent-emerald-500 shrink-0"
               />
-              <div className="flex items-center gap-2">
-                <MessageSquare className="w-4 h-4 text-emerald-400" />
-                <span className="text-xs font-medium text-zinc-200">
+              <div className="flex items-center gap-2 min-w-0">
+                <MessageSquare className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span className="text-xs font-medium text-zinc-200 break-words">
                   Open printable Official Receipt &amp; WhatsApp image share after recording
                 </span>
               </div>
             </label>
 
             {/* 11. Submit Action */}
-            <div className="pt-3 border-t border-zinc-800 flex items-center justify-between gap-2 flex-wrap">
+            <div className="pt-3 border-t border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
               <button
                 type="button"
                 onClick={initializeDefaults}
-                className="inline-flex items-center gap-1.5 px-3 py-2 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-700 rounded-xl text-xs font-semibold transition-all cursor-pointer"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-700 rounded-xl text-xs font-semibold transition-all cursor-pointer"
                 title="Reset all payment form fields"
               >
                 <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
                 <span>Reset Form</span>
               </button>
 
-              <div className="flex items-center gap-2.5 ml-auto">
+              <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-2 sm:gap-2.5 sm:ml-auto">
                 <button
                   type="button"
                   onClick={handleClose}
-                  className="px-4 py-2.5 text-xs font-semibold text-zinc-400 hover:text-white transition-colors cursor-pointer"
+                  className="px-4 py-2.5 text-xs font-semibold text-zinc-400 hover:text-white transition-colors cursor-pointer text-center"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={Boolean(billError) || liveBreakdown.totalWithVat <= 0}
-                  className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 text-xs font-bold text-white rounded-xl shadow-lg shadow-emerald-700/30 transition-all cursor-pointer"
+                  className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 text-xs font-bold text-white rounded-xl shadow-lg shadow-emerald-700/30 transition-all cursor-pointer text-center"
                 >
                   Confirm &amp; Issue Receipt ({formatCurrencyAmount(liveBreakdown.totalWithVat)} Dhs)
                 </button>

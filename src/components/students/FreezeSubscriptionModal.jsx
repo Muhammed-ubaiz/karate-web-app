@@ -38,6 +38,7 @@ export const FreezeSubscriptionModal = ({ isOpen, onClose, student }) => {
   const [newDueDate, setNewDueDate] = useState('');
   const [reason, setReason] = useState('Traveling / Vacation');
   const [adminOverride, setAdminOverride] = useState(false);
+  const [avatarError, setAvatarError] = useState(false);
 
   const currentYear = new Date(startDate || Date.now()).getFullYear();
 
@@ -63,6 +64,7 @@ export const FreezeSubscriptionModal = ({ isOpen, onClose, student }) => {
       const origDue = normalizeDateToISO(currentStudent.nextDueDate || todayStr);
       const calculatedDue = calculateNextDueDate(origDue, durationMonths);
       setNewDueDate(calculatedDue);
+      setAvatarError(false);
     }
   }, [isOpen, startDate, durationMonths, currentStudent]);
 
@@ -138,29 +140,29 @@ export const FreezeSubscriptionModal = ({ isOpen, onClose, student }) => {
       }}
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-sm animate-fade-in"
     >
-      <div className="w-full sm:max-w-xl bg-dojo-card border-t sm:border border-dojo-border rounded-t-3xl sm:rounded-2xl shadow-2xl max-h-[92vh] flex flex-col overflow-hidden">
+      <div className="w-full sm:max-w-xl bg-dojo-card border-t sm:border border-dojo-border rounded-t-3xl sm:rounded-2xl shadow-2xl max-h-dvh-92 flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="sticky top-0 bg-dojo-card/95 backdrop-blur-md px-5 py-4 border-b border-dojo-border flex items-center justify-between z-10 shrink-0">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-cyan-950 text-cyan-400 border border-cyan-500/40 flex items-center justify-center">
+        <div className="shrink-0 bg-dojo-card/95 backdrop-blur-md px-4 sm:px-5 py-3.5 sm:py-4 border-b border-dojo-border flex items-center justify-between gap-2 z-10">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-9 h-9 rounded-xl bg-cyan-950 text-cyan-400 border border-cyan-500/40 flex items-center justify-center shrink-0">
               <Snowflake className="w-5 h-5 animate-pulse" />
             </div>
-            <div>
-              <h2 className="text-base font-bold text-white tracking-tight">Subscription Extension / Freeze</h2>
-              <p className="text-[11px] text-zinc-400">Pause active training & extend due date for approved breaks</p>
+            <div className="min-w-0">
+              <h2 className="text-base font-bold text-white tracking-tight truncate">Subscription Extension / Freeze</h2>
+              <p className="text-[11px] text-zinc-400 truncate">Pause active training & extend due date for approved breaks</p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer"
+            className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer shrink-0"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Modal Body */}
-        <div className="p-5 sm:p-6 space-y-4 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
           {/* Active Freeze Banner if student is already frozen */}
           {isCurrentlyFrozen && (
             <div className="p-4 bg-cyan-950/40 rounded-2xl border border-cyan-500/40 space-y-3">
@@ -194,11 +196,18 @@ export const FreezeSubscriptionModal = ({ isOpen, onClose, student }) => {
           {/* Student & Active Subscription Info */}
           <div className="p-3.5 bg-zinc-900/90 rounded-2xl border border-zinc-800 flex flex-wrap items-center justify-between gap-3 text-xs">
             <div className="flex items-center gap-3 min-w-0 flex-1">
-              <img
-                src={currentStudent.photoUrl}
-                alt={currentStudent.fullName}
-                className="w-10 h-10 rounded-xl object-cover border border-zinc-700 shrink-0"
-              />
+              {currentStudent.photoUrl && !avatarError ? (
+                <img
+                  src={currentStudent.photoUrl}
+                  alt={currentStudent.fullName}
+                  onError={() => setAvatarError(true)}
+                  className="w-10 h-10 rounded-xl object-cover border border-zinc-700 shrink-0"
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-xl bg-zinc-800 border border-zinc-700 shrink-0 flex items-center justify-center text-sm font-black text-zinc-200 select-none">
+                  {(currentStudent.fullName || 'S').trim().charAt(0).toUpperCase()}
+                </div>
+              )}
               <div className="min-w-0 flex-1">
                 <h4 className="font-bold text-white text-sm truncate">{currentStudent.fullName}</h4>
                 <p className="text-zinc-400 text-[11px] truncate">
@@ -259,7 +268,7 @@ export const FreezeSubscriptionModal = ({ isOpen, onClose, student }) => {
                 </span>
               </div>
 
-              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {[
                   { label: '1 Month', val: 1, sub: 'Min allowed' },
                   { label: '2 Months', val: 2, sub: '60 days' },
@@ -306,7 +315,7 @@ export const FreezeSubscriptionModal = ({ isOpen, onClose, student }) => {
 
             {/* Break Dates: Start Date & Resume Date */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
+              <div className="min-w-0">
                 <label className="block text-xs font-bold text-zinc-300 mb-1">
                   📅 Break Start Date *
                 </label>
@@ -314,12 +323,12 @@ export const FreezeSubscriptionModal = ({ isOpen, onClose, student }) => {
                   type="date"
                   value={startDate}
                   onChange={(e) => handleStartDateChange(e.target.value)}
-                  className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500 cursor-pointer font-semibold"
+                  className="w-full min-w-0 bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500 cursor-pointer font-semibold"
                 />
                 <span className="text-[10px] text-zinc-500 mt-0.5 block">Date student stops attending</span>
               </div>
 
-              <div>
+              <div className="min-w-0">
                 <label className="block text-xs font-bold text-cyan-300 mb-1">
                   ▶️ Resumption Date ({durationMonths}M break)
                 </label>
@@ -327,7 +336,7 @@ export const FreezeSubscriptionModal = ({ isOpen, onClose, student }) => {
                   type="date"
                   value={endDate}
                   disabled
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-cyan-300 font-bold opacity-90 cursor-not-allowed"
+                  className="w-full min-w-0 bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-cyan-300 font-bold opacity-90 cursor-not-allowed"
                 />
                 <span className="text-[10px] text-zinc-500 mt-0.5 block">Training resumes automatically</span>
               </div>
@@ -403,11 +412,11 @@ export const FreezeSubscriptionModal = ({ isOpen, onClose, student }) => {
             )}
 
             {/* Modal Actions */}
-            <div className="pt-2 border-t border-zinc-800 flex items-center justify-end gap-3">
+            <div className="pt-3 border-t border-zinc-800 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2 sm:gap-3">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 text-xs font-semibold text-zinc-400 hover:text-white transition-colors cursor-pointer"
+                className="w-full sm:w-auto px-4 py-2 text-xs font-semibold text-zinc-400 hover:text-white transition-colors cursor-pointer text-center"
               >
                 Cancel
               </button>
@@ -415,7 +424,7 @@ export const FreezeSubscriptionModal = ({ isOpen, onClose, student }) => {
               <button
                 type="submit"
                 disabled={alreadyUsedFreeze && !adminOverride && !isCurrentlyFrozen}
-                className={`px-5 py-2.5 rounded-xl text-xs font-bold text-white transition-all shadow-lg ${
+                className={`w-full sm:w-auto px-5 py-2.5 rounded-xl text-xs font-bold text-white transition-all shadow-lg text-center ${
                   alreadyUsedFreeze && !adminOverride && !isCurrentlyFrozen
                     ? 'bg-zinc-800 text-zinc-500 border border-zinc-700 cursor-not-allowed'
                     : 'bg-cyan-600 hover:bg-cyan-500 shadow-cyan-700/30 active:scale-95 cursor-pointer'

@@ -3,7 +3,15 @@
 @tailwind utilities;
 
 @layer base {
-  :root {
+  :root,
+  html.dark {
+    --dojo-darkest: 13 13 14;
+    --dojo-bg: 18 18 20;
+    --dojo-card: 26 26 30;
+    --dojo-card-hover: 34 34 40;
+    --dojo-surface: 38 38 46;
+    --dojo-border: 46 46 56;
+    --dojo-muted: 142 142 160;
     --color-bg: #121214;
     --color-card: #1a1a1e;
     --color-surface: #26262e;
@@ -11,21 +19,54 @@
     --color-red: #E50914;
   }
 
+  html.light {
+    --dojo-darkest: 255 255 255;
+    --dojo-bg: 241 245 249;
+    --dojo-card: 255 255 255;
+    --dojo-card-hover: 248 250 252;
+    --dojo-surface: 241 245 249;
+    --dojo-border: 226 232 240;
+    --dojo-muted: 100 116 139;
+    --color-bg: #f1f5f9;
+    --color-card: #ffffff;
+    --color-surface: #f1f5f9;
+    --color-border: #e2e8f0;
+    --color-red: #E50914;
+  }
+
   html, body {
     overflow-x: hidden;
-    max-width: 100vw;
+    max-width: 100%;
     width: 100%;
     position: relative;
   }
 
   body {
-    background-color: #121214;
+    background-color: var(--color-bg);
     color: #f3f4f6;
     font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     -webkit-tap-highlight-color: transparent;
   }
 
-  /* Custom scrollbars for sleek dark feel */
+  html.light body {
+    background-color: #f1f5f9;
+    color: #0f172a;
+  }
+
+  input,
+  select,
+  textarea {
+    color-scheme: dark;
+    max-width: 100%;
+  }
+
+  html.light input,
+  html.light select,
+  html.light textarea {
+    color-scheme: light;
+  }
+
+  /* Custom scrollbars */
   ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
@@ -40,6 +81,35 @@
   ::-webkit-scrollbar-thumb:hover {
     background: #4b5563;
   }
+
+  html.light ::-webkit-scrollbar-track {
+    background: #f1f5f9;
+  }
+  html.light ::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+  }
+  html.light ::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+  }
+}
+
+/* Responsive helpers */
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+.max-h-dvh-92 {
+  max-height: 92vh;
+  max-height: 92dvh;
+}
+
+.max-h-dvh-95 {
+  max-height: 95vh;
+  max-height: 95dvh;
 }
 
 /* Belt colors badge utility */
@@ -63,7 +133,9 @@ div.swal2-popup {
   border: 1px solid #3f3f46 !important;
   border-radius: 1.25rem !important;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.85) !important;
-  padding: 1.5rem !important;
+  padding: 1.25rem !important;
+  max-width: calc(100vw - 1.5rem) !important;
+  box-sizing: border-box !important;
 }
 
 div.swal2-popup.swal2-toast {
@@ -114,6 +186,7 @@ div.swal2-popup .swal2-html-container {
 div.swal2-popup .swal2-actions {
   margin-top: 1.25rem !important;
   gap: 0.75rem !important;
+  flex-wrap: wrap !important;
 }
 
 div.swal2-popup .swal2-confirm {
@@ -159,6 +232,404 @@ div.swal2-popup .swal2-input {
 
 div.swal2-popup .swal2-input:focus {
   border-color: #E50914 !important;
+}
+
+/* ============================================================================ */
+/* LIGHT MODE THEME SYSTEM (html.light)                                         */
+/* ============================================================================ */
+@media screen {
+  /* Light Theme SweetAlert2 Overrides */
+  html.light div.swal2-popup {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.22) !important;
+  }
+
+  html.light div.swal2-popup.swal2-toast {
+    background: #ffffff !important;
+    border-color: #e2e8f0 !important;
+    box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.14) !important;
+  }
+
+  html.light div.swal2-popup.swal2-toast .swal2-title {
+    color: #0f172a !important;
+  }
+
+  html.light div.swal2-popup .swal2-title {
+    color: #0f172a !important;
+  }
+
+  html.light div.swal2-popup .swal2-html-container {
+    color: #475569 !important;
+  }
+
+  html.light div.swal2-popup .swal2-cancel {
+    background: #f1f5f9 !important;
+    color: #334155 !important;
+    border-color: #cbd5e1 !important;
+  }
+
+  html.light div.swal2-popup .swal2-input-label {
+    color: #334155 !important;
+  }
+
+  html.light div.swal2-popup .swal2-input {
+    background: #f8fafc !important;
+    color: #0f172a !important;
+    border-color: #cbd5e1 !important;
+  }
+
+  /* Light Surfaces & Hex Backgrounds */
+  html.light .bg-\[\#18181c\],
+  html.light .bg-\[\#1a1a1e\] {
+    background-color: #ffffff;
+  }
+
+  html.light .bg-\[\#161619\],
+  html.light .bg-\[\#16161a\],
+  html.light .bg-\[\#131316\],
+  html.light .bg-\[\#121215\] {
+    background-color: #f8fafc;
+  }
+
+  html.light .bg-zinc-950 {
+    background-color: #f1f5f9;
+  }
+  html.light .bg-zinc-950\/90 {
+    background-color: rgb(241 245 249 / 0.92);
+  }
+  html.light .bg-zinc-950\/80 {
+    background-color: rgb(241 245 249 / 0.85);
+  }
+  html.light .bg-zinc-950\/70 {
+    background-color: rgb(241 245 249 / 0.78);
+  }
+  html.light .bg-zinc-950\/60 {
+    background-color: rgb(241 245 249 / 0.72);
+  }
+
+  html.light .bg-zinc-900 {
+    background-color: #f8fafc;
+  }
+  html.light .bg-zinc-900\/95 {
+    background-color: rgb(248 250 252 / 0.96);
+  }
+  html.light .bg-zinc-900\/90 {
+    background-color: rgb(241 245 249 / 0.94);
+  }
+  html.light .bg-zinc-900\/80 {
+    background-color: rgb(241 245 249 / 0.88);
+  }
+  html.light .bg-zinc-900\/70 {
+    background-color: rgb(241 245 249 / 0.8);
+  }
+  html.light .bg-zinc-900\/60 {
+    background-color: rgb(241 245 249 / 0.75);
+  }
+  html.light .bg-zinc-900\/50 {
+    background-color: rgb(241 245 249 / 0.65);
+  }
+  html.light .bg-zinc-900\/40 {
+    background-color: rgb(248 250 252 / 0.85);
+  }
+
+  html.light .bg-zinc-800 {
+    background-color: #e2e8f0;
+  }
+  html.light .bg-zinc-800\/90 {
+    background-color: rgb(226 232 240 / 0.92);
+  }
+  html.light .bg-zinc-800\/80 {
+    background-color: rgb(226 232 240 / 0.82);
+  }
+  html.light .bg-zinc-800\/70 {
+    background-color: rgb(226 232 240 / 0.72);
+  }
+  html.light .bg-zinc-800\/50 {
+    background-color: rgb(226 232 240 / 0.55);
+  }
+  html.light .bg-zinc-800\/40 {
+    background-color: rgb(226 232 240 / 0.45);
+  }
+
+  html.light .bg-zinc-700 {
+    background-color: #cbd5e1;
+  }
+
+  html.light .bg-zinc-500,
+  html.light .bg-zinc-400 {
+    background-color: #94a3b8;
+  }
+
+  /* Modal Backdrops */
+  html.light .bg-black\/80,
+  html.light .bg-black\/85 {
+    background-color: rgb(15 23 42 / 0.52);
+  }
+
+  /* Gradient Stops */
+  html.light .from-zinc-900,
+  html.light .from-zinc-800 {
+    --tw-gradient-from: #ffffff var(--tw-gradient-from-position);
+    --tw-gradient-to: rgb(255 255 255 / 0) var(--tw-gradient-to-position);
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+  }
+  html.light .via-zinc-900 {
+    --tw-gradient-to: rgb(248 250 252 / 0) var(--tw-gradient-to-position);
+    --tw-gradient-stops: var(--tw-gradient-from), #f8fafc var(--tw-gradient-via-position), var(--tw-gradient-to);
+  }
+  html.light .to-zinc-900,
+  html.light .to-zinc-950 {
+    --tw-gradient-to: #f1f5f9 var(--tw-gradient-to-position);
+  }
+  html.light .from-red-950\/20 {
+    --tw-gradient-from: #fef2f2 var(--tw-gradient-from-position);
+    --tw-gradient-to: rgb(254 242 242 / 0) var(--tw-gradient-to-position);
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+  }
+
+  /* Light Borders & Dividers */
+  html.light .border-zinc-950,
+  html.light .border-zinc-800,
+  html.light .border-zinc-800\/90,
+  html.light .border-zinc-800\/80,
+  html.light .border-zinc-800\/70 {
+    border-color: #e2e8f0;
+  }
+
+  html.light .border-zinc-700,
+  html.light .border-zinc-700\/90,
+  html.light .border-zinc-700\/80,
+  html.light .border-zinc-700\/70,
+  html.light .border-zinc-700\/60,
+  html.light .border-zinc-700\/50 {
+    border-color: #cbd5e1;
+  }
+
+  html.light .border-zinc-600,
+  html.light .border-zinc-500 {
+    border-color: #94a3b8;
+  }
+
+  html.light .divide-zinc-800 > :not([hidden]) ~ :not([hidden]),
+  html.light .divide-zinc-800\/80 > :not([hidden]) ~ :not([hidden]),
+  html.light .divide-zinc-800\/70 > :not([hidden]) ~ :not([hidden]) {
+    border-color: #e2e8f0;
+  }
+
+  html.light .ring-zinc-950 {
+    --tw-ring-color: #ffffff;
+  }
+  html.light .ring-zinc-500\/50 {
+    --tw-ring-color: rgb(148 163 184 / 0.5);
+  }
+
+  /* Light Neutral Text & Placeholders */
+  html.light .text-zinc-100,
+  html.light .text-zinc-200 {
+    color: #1e293b;
+  }
+  html.light .text-zinc-300 {
+    color: #334155;
+  }
+  html.light .text-zinc-400 {
+    color: #475569;
+  }
+  html.light .text-zinc-500,
+  html.light .text-zinc-600 {
+    color: #64748b;
+  }
+  html.light .text-zinc-700 {
+    color: #475569;
+  }
+
+  html.light .placeholder-zinc-500::placeholder,
+  html.light .placeholder-zinc-600::placeholder {
+    color: #94a3b8;
+  }
+
+  /* Light Text White -> Deep Slate, except inside solid accent fills, belt-black, or printable-paper */
+  html.light .text-white {
+    color: #0f172a;
+  }
+
+  html.light :is(
+    .bg-dojo-red,
+    .bg-red-500,
+    .bg-red-600,
+    .bg-red-700,
+    .bg-emerald-500,
+    .bg-emerald-600,
+    .bg-emerald-700,
+    .bg-amber-500,
+    .bg-amber-600,
+    .bg-blue-500,
+    .bg-blue-600,
+    .bg-cyan-500,
+    .bg-cyan-600,
+    .bg-orange-600,
+    .bg-indigo-600,
+    .bg-purple-600,
+    .from-red-600,
+    .from-red-800,
+    .from-emerald-600,
+    .from-amber-600,
+    .from-blue-600
+  ).text-white,
+  html.light :is(
+    .bg-dojo-red,
+    .bg-red-500,
+    .bg-red-600,
+    .bg-red-700,
+    .bg-emerald-500,
+    .bg-emerald-600,
+    .bg-emerald-700,
+    .bg-amber-500,
+    .bg-amber-600,
+    .bg-blue-500,
+    .bg-blue-600,
+    .bg-cyan-500,
+    .bg-cyan-600,
+    .bg-orange-600,
+    .bg-indigo-600,
+    .bg-purple-600,
+    .from-red-600,
+    .from-red-800,
+    .from-emerald-600,
+    .from-amber-600,
+    .from-blue-600
+  ) .text-white,
+  html.light .belt-black,
+  html.light .printable-paper .text-white {
+    color: #ffffff;
+  }
+
+  /* Keep white text on translucent black counters nested inside solid active tabs */
+  html.light :is(.bg-dojo-red, .bg-amber-600, .bg-emerald-600, .bg-red-600) .bg-black\/40 {
+    background-color: rgb(0 0 0 / 0.25);
+    color: #ffffff;
+  }
+
+  /* Light Interactive Hover States */
+  html.light .hover\:bg-zinc-800:hover,
+  html.light .hover\:bg-zinc-800\/50:hover,
+  html.light .hover\:bg-zinc-800\/70:hover,
+  html.light .hover\:bg-zinc-800\/80:hover,
+  html.light .hover\:bg-zinc-700:hover {
+    background-color: #cbd5e1;
+  }
+  html.light .hover\:border-zinc-700:hover,
+  html.light .hover\:border-zinc-600:hover,
+  html.light .hover\:border-zinc-500:hover {
+    border-color: #94a3b8;
+  }
+  html.light .hover\:text-white:hover,
+  html.light .hover\:text-zinc-200:hover,
+  html.light .hover\:text-zinc-300:hover {
+    color: #0f172a;
+  }
+  html.light :is(
+    .hover\:bg-dojo-red:hover,
+    .hover\:bg-red-600:hover,
+    .hover\:bg-red-500:hover,
+    .hover\:bg-emerald-600:hover,
+    .hover\:bg-emerald-500:hover,
+    .hover\:bg-amber-600:hover,
+    .hover\:bg-amber-500:hover,
+    .hover\:bg-blue-600:hover,
+    .hover\:bg-cyan-600:hover
+  ).hover\:text-white:hover {
+    color: #ffffff;
+  }
+
+  /* Deep Tinted Badges -> Crisp Light Tinted Pills */
+  html.light .bg-emerald-950,
+  html.light .bg-emerald-950\/80,
+  html.light .bg-emerald-950\/60,
+  html.light .bg-emerald-950\/40,
+  html.light .bg-emerald-950\/30,
+  html.light .bg-emerald-900\/60 {
+    background-color: #ecfdf5;
+  }
+  html.light .bg-red-950,
+  html.light .bg-red-950\/80,
+  html.light .bg-red-950\/60,
+  html.light .bg-red-950\/50,
+  html.light .bg-red-950\/40,
+  html.light .bg-red-950\/30,
+  html.light .bg-red-900\/50 {
+    background-color: #fef2f2;
+  }
+  html.light .bg-amber-950,
+  html.light .bg-amber-950\/80,
+  html.light .bg-amber-950\/50,
+  html.light .bg-amber-950\/40,
+  html.light .bg-amber-950\/25,
+  html.light .bg-amber-950\/20,
+  html.light .bg-amber-950\/15 {
+    background-color: #fffbeb;
+  }
+  html.light .bg-blue-950,
+  html.light .bg-blue-950\/80,
+  html.light .bg-blue-950\/50 {
+    background-color: #eff6ff;
+  }
+  html.light .bg-cyan-950,
+  html.light .bg-cyan-950\/80,
+  html.light .bg-cyan-950\/60,
+  html.light .bg-cyan-950\/40 {
+    background-color: #ecfeff;
+  }
+  html.light .bg-orange-950,
+  html.light .bg-orange-950\/30,
+  html.light .bg-orange-950\/15,
+  html.light .bg-orange-950\/10 {
+    background-color: #fff7ed;
+  }
+  html.light .bg-purple-950 {
+    background-color: #faf5ff;
+  }
+
+  /* High-Contrast Semantic Accent Text on Light Surfaces */
+  html.light .text-red-400,
+  html.light .text-red-300 {
+    color: #dc2626;
+  }
+  html.light .text-emerald-400,
+  html.light .text-emerald-300,
+  html.light .text-emerald-200 {
+    color: #047857;
+  }
+  html.light .text-amber-400,
+  html.light .text-amber-300,
+  html.light .text-amber-300\/90,
+  html.light .text-amber-200 {
+    color: #b45309;
+  }
+  html.light .text-blue-400,
+  html.light .text-blue-300 {
+    color: #1d4ed8;
+  }
+  html.light .text-cyan-400,
+  html.light .text-cyan-300 {
+    color: #0e7490;
+  }
+  html.light .text-orange-400,
+  html.light .text-orange-300,
+  html.light .text-orange-200 {
+    color: #c2410c;
+  }
+  html.light .text-purple-400,
+  html.light .text-purple-300 {
+    color: #7e22ce;
+  }
+
+  /* Preserve Red-Text-on-Black-Belt badge contrast */
+  html.light .belt-black {
+    background: #000000;
+    color: #ef4444;
+  }
 }
 
 /* Isolated Clean Print Mode for Official Receipts & Fee Due Notices */

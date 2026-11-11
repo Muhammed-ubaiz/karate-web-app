@@ -18,7 +18,7 @@ import { AddFeePlanModal } from './components/fees/AddFeePlanModal';
 import { StudentRegistrationModal } from './components/students/StudentRegistrationModal';
 import { RecordPaymentModal } from './components/fees/RecordPaymentModal';
 import { AdminLoginModal } from './components/auth/AdminLoginModal';
-import { Building, CalendarDays, CreditCard, ChevronRight } from 'lucide-react';
+import { Building, CalendarDays, CreditCard, ChevronRight, Sun, Moon } from 'lucide-react';
 
 const MainContent = () => {
   const {
@@ -28,22 +28,26 @@ const MainContent = () => {
     setModalState,
     isAdminLoginOpen,
     closeAdminLoginModal,
-    pendingAdminAction
+    pendingAdminAction,
+    theme,
+    toggleTheme
   } = useDojo();
 
+  const isLight = theme === 'light';
+
   return (
-    <div className="min-h-screen w-full bg-dojo-bg text-white pb-24 sm:pb-12 overflow-x-hidden">
+    <div className="min-h-screen w-full bg-dojo-bg text-slate-900 dark:text-white pb-24 md:pb-12 overflow-x-hidden transition-colors duration-200">
       {/* Toast Notifications */}
       <Toast />
 
       {/* Top Navigation */}
       <Navbar />
 
-      {/* Desktop Navigation Tabs */}
+      {/* Tablet & Desktop Navigation Tabs */}
       <DesktopTabs />
 
       {/* Main View Container */}
-      <main className="w-full max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 py-4 sm:py-8">
+      <main className="w-full max-w-7xl mx-auto px-3 sm:px-5 lg:px-8 py-4 sm:py-6 lg:py-8">
         {activeTab === 'dashboard' && <DashboardView />}
         {activeTab === 'attendance' && <AttendanceView />}
         {activeTab === 'students' && <StudentListView />}
@@ -105,6 +109,29 @@ const MainContent = () => {
                   </div>
                 </div>
                 <ChevronRight className="w-4 h-4 text-zinc-500" />
+              </button>
+
+              <button
+                type="button"
+                onClick={toggleTheme}
+                className="sm:col-span-3 flex items-center justify-between p-4 bg-dojo-card border border-dojo-border rounded-2xl hover:border-zinc-700 active:scale-[0.99] transition-all cursor-pointer"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-500 flex items-center justify-center shrink-0">
+                    {isLight ? <Moon className="w-5 h-5 text-indigo-600" /> : <Sun className="w-5 h-5 text-amber-400" />}
+                  </div>
+                  <div className="text-left">
+                    <h4 className="text-sm font-bold text-white">
+                      Appearance: {isLight ? 'Light Mode' : 'Dark Mode'}
+                    </h4>
+                    <p className="text-xs text-zinc-400">
+                      Tap to switch to {isLight ? 'Dark' : 'Light'} theme
+                    </p>
+                  </div>
+                </div>
+                <span className="text-xs font-bold px-2.5 py-1 rounded-lg bg-zinc-800 text-zinc-200 border border-zinc-700 shrink-0">
+                  {isLight ? 'Dark 🌙' : 'Light ☀️'}
+                </span>
               </button>
             </div>
           </div>

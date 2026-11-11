@@ -441,6 +441,35 @@ export const DojoProvider = ({ children, initialFeesSubTab = 'plans' }) => {
   // Sub-tab inside Fees & Billing: 'plans' | 'ledger' | 'logs'
   const [activeFeesSubTab, setActiveFeesSubTab] = useState(initialFeesSubTab);
 
+  // Theme Mode: 'dark' | 'light' (persisted cleanly in localStorage)
+  const [theme, setTheme] = useState(() => {
+    try {
+      return localStorage.getItem('sensei_theme') === 'light' ? 'light' : 'dark';
+    } catch {
+      return 'dark';
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('sensei_theme', theme);
+    } catch {}
+    if (typeof document !== 'undefined') {
+      const root = document.documentElement;
+      root.classList.remove('dark', 'light');
+      root.classList.add(theme);
+      root.style.colorScheme = theme;
+      const meta = document.querySelector('meta[name="theme-color"]');
+      if (meta) {
+        meta.setAttribute('content', theme === 'light' ? '#ffffff' : '#121214');
+      }
+    }
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => (prev === 'dark' ? 'light' : 'dark'));
+  };
+
   // Active user / role: 'Admin' | 'Sensei' | 'Staff'
   const [isAdmin, setIsAdmin] = useState(() => {
     return localStorage.getItem('sensei_is_admin') === 'true';
@@ -2580,7 +2609,10 @@ export const DojoProvider = ({ children, initialFeesSubTab = 'plans' }) => {
         fetchBatchAttendanceFromFirestore,
         clearActivities,
         resetAllDataToCleanSlate,
-        isFirebaseConfigured
+        isFirebaseConfigured,
+        theme,
+        setTheme,
+        toggleTheme
       }}
     >
       {children}

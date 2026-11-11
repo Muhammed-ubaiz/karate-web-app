@@ -120,29 +120,29 @@ export const AdminLoginModal = ({ isOpen, onClose, pendingAction }) => {
           handleClose();
         }
       }}
-      className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in"
+      className="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-fade-in"
     >
-      <div className="w-full max-w-md bg-[#16161a] border border-zinc-700/90 rounded-3xl shadow-2xl overflow-hidden relative">
+      <div className="w-full max-w-md bg-[#16161a] border border-zinc-700/90 rounded-2xl sm:rounded-3xl shadow-2xl max-h-dvh-92 overflow-y-auto relative">
         
         {/* Top Gradient Stripe */}
         <div className="h-1 bg-gradient-to-r from-red-600 via-red-500 to-amber-500 w-full" />
 
         {/* Modal Header */}
-        <div className="p-5 pb-4 border-b border-zinc-800 bg-[#121215] flex items-center justify-between">
-          <div className="flex items-center gap-3">
+        <div className="p-4 sm:p-5 pb-3.5 sm:pb-4 border-b border-zinc-800 bg-[#121215] flex items-center justify-between gap-2">
+          <div className="flex items-center gap-3 min-w-0">
             <div className="w-10 h-10 rounded-2xl bg-red-600/20 text-red-500 border border-red-500/30 flex items-center justify-center shadow-inner shrink-0">
               <Lock className="w-5 h-5" />
             </div>
-            <div>
-              <h3 className="text-base font-bold text-white tracking-tight">Authorized Staff Login</h3>
-              <p className="text-[11px] text-zinc-400">Sign in to manage academy, fees &amp; bills</p>
+            <div className="min-w-0">
+              <h3 className="text-base font-bold text-white tracking-tight truncate">Authorized Staff Login</h3>
+              <p className="text-[11px] text-zinc-400 truncate">Sign in to manage academy, fees &amp; bills</p>
             </div>
           </div>
 
           <button
             type="button"
             onClick={handleClose}
-            className="p-2 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer"
+            className="p-2 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer shrink-0"
             aria-label="Close"
           >
             <X className="w-5 h-5" />
@@ -150,21 +150,21 @@ export const AdminLoginModal = ({ isOpen, onClose, pendingAction }) => {
         </div>
 
         {/* Info Banner */}
-        <div className="px-5 py-2.5 bg-zinc-900 border-b border-zinc-800 flex items-center justify-between text-xs text-zinc-400">
-          <div className="flex items-center gap-1.5 text-zinc-300 font-medium">
+        <div className="px-4 sm:px-5 py-2.5 bg-zinc-900 border-b border-zinc-800 flex items-center justify-between gap-2 text-xs text-zinc-400">
+          <div className="flex items-center gap-1.5 text-zinc-300 font-medium min-w-0">
             <Building className="w-3.5 h-3.5 text-red-500 shrink-0" />
-            <span className="truncate max-w-[220px]">
+            <span className="truncate">
               {activeDojo ? activeDojo.name : 'All Academy Branches'}
             </span>
           </div>
-          <span className="text-[11px] text-emerald-400 font-semibold flex items-center gap-1">
+          <span className="text-[11px] text-emerald-400 font-semibold flex items-center gap-1 shrink-0">
             <ShieldCheck className="w-3.5 h-3.5" />
             <span>Secure</span>
           </span>
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-5 sm:p-6 space-y-4 bg-[#16161a]">
+        <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 bg-[#16161a]">
           {adminPromptMessage && (
             <div className="p-3 bg-amber-950/40 border border-amber-500/40 rounded-xl text-xs text-amber-200 font-medium">
               🔒 {adminPromptMessage}

@@ -498,47 +498,50 @@ export const AttendanceView = () => {
         </div>
 
         {/* Top 3 Navigation Tabs */}
-        <div className="grid grid-cols-3 sm:inline-flex items-center gap-1 sm:gap-1.5 p-1 bg-zinc-900 border border-zinc-800 rounded-2xl w-full sm:w-auto lg:self-auto">
+        <div className="grid grid-cols-3 md:inline-flex items-center gap-1 sm:gap-1.5 p-1 bg-zinc-900 border border-zinc-800 rounded-2xl w-full md:w-auto lg:self-auto">
           <button
             type="button"
             onClick={() => setActiveAttendanceTab('register')}
-            className={`flex items-center justify-center sm:justify-start gap-1 sm:gap-1.5 px-2 sm:px-3.5 py-2 rounded-xl text-[11px] sm:text-xs font-bold transition-all cursor-pointer whitespace-nowrap min-w-0 ${
+            className={`flex items-center justify-center md:justify-start gap-1 sm:gap-1.5 px-2 sm:px-3.5 py-2 rounded-xl text-[11px] sm:text-xs font-bold transition-all cursor-pointer whitespace-nowrap min-w-0 ${
               activeAttendanceTab === 'register'
                 ? 'bg-dojo-red text-white shadow-lg shadow-red-600/30'
-                : 'text-zinc-400 hover:text-white hover:bg-zinc-850'
+                : 'text-zinc-400 hover:text-white hover:bg-zinc-800/70'
             }`}
           >
             <ClipboardCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-            <span className="sm:hidden truncate">Roll Call</span>
-            <span className="hidden sm:inline">Daily Roll Call Register</span>
+            <span className="md:hidden truncate">Roll Call</span>
+            <span className="hidden md:inline lg:hidden">Roll Call</span>
+            <span className="hidden lg:inline">Daily Roll Call Register</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveAttendanceTab('monthly')}
-            className={`flex items-center justify-center sm:justify-start gap-1 sm:gap-1.5 px-2 sm:px-3.5 py-2 rounded-xl text-[11px] sm:text-xs font-bold transition-all cursor-pointer whitespace-nowrap min-w-0 ${
+            className={`flex items-center justify-center md:justify-start gap-1 sm:gap-1.5 px-2 sm:px-3.5 py-2 rounded-xl text-[11px] sm:text-xs font-bold transition-all cursor-pointer whitespace-nowrap min-w-0 ${
               activeAttendanceTab === 'monthly'
                 ? 'bg-dojo-red text-white shadow-lg shadow-red-600/30'
-                : 'text-zinc-400 hover:text-white hover:bg-zinc-850'
+                : 'text-zinc-400 hover:text-white hover:bg-zinc-800/70'
             }`}
           >
             <CalendarDays className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-            <span className="sm:hidden truncate">Month Log</span>
-            <span className="hidden sm:inline">Month-wise Student History</span>
+            <span className="md:hidden truncate">Month Log</span>
+            <span className="hidden md:inline lg:hidden">Month History</span>
+            <span className="hidden lg:inline">Month-wise Student History</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveAttendanceTab('pastSessions')}
-            className={`flex items-center justify-center sm:justify-start gap-1 sm:gap-1.5 px-2 sm:px-3.5 py-2 rounded-xl text-[11px] sm:text-xs font-bold transition-all cursor-pointer whitespace-nowrap min-w-0 ${
+            className={`flex items-center justify-center md:justify-start gap-1 sm:gap-1.5 px-2 sm:px-3.5 py-2 rounded-xl text-[11px] sm:text-xs font-bold transition-all cursor-pointer whitespace-nowrap min-w-0 ${
               activeAttendanceTab === 'pastSessions'
                 ? 'bg-dojo-red text-white shadow-lg shadow-red-600/30'
-                : 'text-zinc-400 hover:text-white hover:bg-zinc-850'
+                : 'text-zinc-400 hover:text-white hover:bg-zinc-800/70'
             }`}
           >
             <History className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-            <span className="sm:hidden truncate">Past ({attendanceHistory.length})</span>
-            <span className="hidden sm:inline">Past Sessions Log ({attendanceHistory.length})</span>
+            <span className="md:hidden truncate">Past ({attendanceHistory.length})</span>
+            <span className="hidden md:inline lg:hidden">Past Log ({attendanceHistory.length})</span>
+            <span className="hidden lg:inline">Past Sessions Log ({attendanceHistory.length})</span>
           </button>
         </div>
       </div>
@@ -550,9 +553,9 @@ export const AttendanceView = () => {
         <div className="space-y-6">
           {/* Action Bar: Absentee Notify & Save Button */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-zinc-900/60 p-3 rounded-2xl border border-zinc-800">
-            <div className="flex items-center gap-2">
-              <span className={`w-2.5 h-2.5 rounded-full ${isExistingSession ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400'}`} />
-              <span className="text-xs font-bold text-zinc-300">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${isExistingSession ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400'}`} />
+              <span className="text-xs font-bold text-zinc-300 truncate">
                 {isExistingSession ? 'Previously Saved Record Loaded' : (selectedDate < todayStr ? 'Missed / Past Date Roll Call' : 'Daily Active Roll Call')}
               </span>
             </div>
@@ -592,9 +595,9 @@ export const AttendanceView = () => {
           </div>
 
           {/* Selectors Bar: Branch, Batch, Date with Fast-Pickers, Bulk Actions */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 bg-dojo-card p-4 rounded-2xl border border-dojo-border shadow-md">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 bg-dojo-card p-3.5 sm:p-4 rounded-2xl border border-dojo-border shadow-md">
             {/* 1. Branch Selector */}
-            <div>
+            <div className="min-w-0">
               <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-1">
                 🏢 Dojo Branch
               </label>
@@ -605,7 +608,7 @@ export const AttendanceView = () => {
                   const nextBatches = e.target.value === 'all' ? batches : batches.filter(b => b.dojoId === e.target.value);
                   if (nextBatches[0]) setSelectedBatchId(nextBatches[0].id);
                 }}
-                className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-red-500 cursor-pointer truncate"
+                className="w-full min-w-0 bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-red-500 cursor-pointer truncate"
               >
                 <option value="all">🏢 All Branches</option>
                 {dojos.map(d => (
@@ -615,14 +618,14 @@ export const AttendanceView = () => {
             </div>
 
             {/* 2. Batch Selector */}
-            <div>
+            <div className="min-w-0">
               <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-1">
                 🥋 Training Batch
               </label>
               <select
                 value={selectedBatchId}
                 onChange={(e) => setSelectedBatchId(e.target.value)}
-                className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-red-500 cursor-pointer truncate"
+                className="w-full min-w-0 bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-red-500 cursor-pointer truncate"
               >
                 {branchBatches.map(b => {
                   const isScheduled = Array.isArray(b.scheduleDays) &&
@@ -637,8 +640,8 @@ export const AttendanceView = () => {
             </div>
 
             {/* 3. Session Date with Quick Past-Date Shortcuts */}
-            <div>
-              <div className="flex items-center justify-between mb-1">
+            <div className="min-w-0">
+              <div className="flex items-center justify-between gap-1 mb-1 flex-wrap">
                 <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
                   📅 Session Date
                 </label>
@@ -646,14 +649,14 @@ export const AttendanceView = () => {
                   <button
                     type="button"
                     onClick={setDateToToday}
-                    className={`px-1.5 py-0.5 rounded ${selectedDate === todayStr ? 'bg-red-600 text-white font-bold' : 'bg-zinc-800 text-zinc-400 hover:text-white'}`}
+                    className={`px-1.5 py-0.5 rounded cursor-pointer ${selectedDate === todayStr ? 'bg-red-600 text-white font-bold' : 'bg-zinc-800 text-zinc-400 hover:text-white'}`}
                   >
                     Today
                   </button>
                   <button
                     type="button"
                     onClick={setDateToYesterday}
-                    className="px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 hover:text-white"
+                    className="px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 hover:text-white cursor-pointer"
                   >
                     Yesterday
                   </button>
@@ -663,12 +666,12 @@ export const AttendanceView = () => {
                 type="date"
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
-                className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-red-500 cursor-pointer font-medium"
+                className="w-full min-w-0 bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-red-500 cursor-pointer font-medium"
               />
             </div>
 
             {/* 4. Quick Bulk Roll Call */}
-            <div>
+            <div className="min-w-0">
               <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-1">
                 ⚡ Rapid Bulk Action
               </label>
@@ -807,7 +810,7 @@ export const AttendanceView = () => {
                         key={s.id}
                         type="button"
                         onClick={() => handleAddGuestStudent(s.id)}
-                        className="p-2.5 rounded-xl bg-zinc-850 hover:bg-zinc-800 border border-zinc-750 hover:border-red-500/50 text-left transition-all flex items-center justify-between gap-2 group cursor-pointer"
+                        className="p-2.5 rounded-xl bg-zinc-800/70 hover:bg-zinc-800 border border-zinc-700 hover:border-red-500/50 text-left transition-all flex items-center justify-between gap-2 group cursor-pointer min-w-0"
                       >
                         <div className="min-w-0">
                           <p className="text-xs font-bold text-white group-hover:text-red-400 truncate">
@@ -873,7 +876,7 @@ export const AttendanceView = () => {
           {otherBatchMatches.length > 0 && (
             <div className="p-3 bg-red-950/30 border border-red-500/40 rounded-xl space-y-2">
               <p className="text-[11px] font-bold text-red-300 flex items-center gap-1.5">
-                <RefreshCw className="w-3.5 h-3.5" />
+                <RefreshCw className="w-3.5 h-3.5 shrink-0" />
                 <span>Found active students from other batches. Tap "+ Check-in" to mark attendance for this session:</span>
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -882,7 +885,7 @@ export const AttendanceView = () => {
                   return (
                     <div
                       key={s.id}
-                      className="p-2.5 bg-zinc-900/90 rounded-xl border border-zinc-750 flex items-center justify-between gap-2"
+                      className="p-2.5 bg-zinc-900/90 rounded-xl border border-zinc-700 flex items-center justify-between gap-2 min-w-0"
                     >
                       <div className="min-w-0">
                         <p className="text-xs font-bold text-white truncate">{s.fullName} ({s.beltRank})</p>
@@ -902,7 +905,7 @@ export const AttendanceView = () => {
             </div>
           )}
 
-          {/* Roster Roll Call List */}
+          {/* Roster Roll Call List: Mobile Cards (<md) & Semantic Desktop/Tablet Table (md+) */}
           <div className="bg-dojo-card border border-dojo-border rounded-2xl overflow-hidden shadow-lg">
             {filteredSessionStudents.length === 0 ? (
               <div className="p-12 text-center text-zinc-500">
@@ -915,117 +918,279 @@ export const AttendanceView = () => {
                 </p>
               </div>
             ) : (
-              <div className="divide-y divide-zinc-800/80">
-                {filteredSessionStudents.map((student) => {
-                  const currentStatus = attendanceRecords[student.id] || 'Present';
-                  const isGuest = guestStudentIds.includes(student.id) && student.batchId !== currentBatch?.id;
-                  const regularBatch = batches.find(b => b.id === student.batchId);
+              <>
+                {/* Mobile Card Roll Call List */}
+                <div className="md:hidden divide-y divide-zinc-800/80">
+                  {filteredSessionStudents.map((student) => {
+                    const currentStatus = attendanceRecords[student.id] || 'Present';
+                    const isGuest = guestStudentIds.includes(student.id) && student.batchId !== currentBatch?.id;
+                    const regularBatch = batches.find(b => b.id === student.batchId);
 
-                  return (
-                    <div
-                      key={student.id}
-                      className={`p-3 sm:px-5 sm:py-3.5 flex items-center justify-between gap-2 sm:gap-3 transition-colors ${
-                        isGuest ? 'bg-amber-950/15 hover:bg-amber-950/25' : 'hover:bg-zinc-850/50'
-                      }`}
-                    >
-                      {/* Student Info */}
+                    return (
                       <div
-                        onClick={() => setActiveStudentProfile(student)}
-                        className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1 cursor-pointer group"
-                        title="View student profile, month-wise attendance & payment ledger"
+                        key={student.id}
+                        className={`p-3 flex items-center justify-between gap-2 transition-colors ${
+                          isGuest ? 'bg-amber-950/15 hover:bg-amber-950/25' : 'hover:bg-zinc-800/50'
+                        }`}
                       >
-                        <img
-                          src={student.photoUrl}
-                          alt={student.fullName}
-                          className="w-10 h-10 rounded-xl object-cover border border-zinc-700 shrink-0 group-hover:border-red-500 transition-colors"
-                        />
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <h4 className="text-xs sm:text-sm font-bold text-white truncate group-hover:text-red-400 transition-colors flex items-center gap-1.5">
-                              <span>{student.fullName}</span>
-                              <Eye className="w-3 h-3 text-zinc-500 opacity-0 group-hover:opacity-100 transition-opacity" />
-                            </h4>
-                            {student.status === 'Frozen' && (
-                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-cyan-950 text-cyan-300 border border-cyan-500/40 shrink-0">
-                                ❄️ On Break
-                              </span>
-                            )}
-                            {isGuest && (
-                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-950 text-amber-300 border border-amber-500/40 shrink-0 flex items-center gap-1">
-                                <RefreshCw className="w-2.5 h-2.5" />
-                                <span>Make-up ({regularBatch?.name?.split('(')[0] || 'Other Batch'})</span>
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-2 mt-0.5">
-                            <span className="text-[10px] font-bold text-amber-400">
-                              🥋 {student.beltRank}
-                            </span>
-                            <span className="text-[10px] text-zinc-400 hidden sm:inline">
-                              • {student.attendanceRate || 100}% avg rate
-                            </span>
-                            {isGuest && (
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleRemoveGuestStudent(student.id);
+                        <div
+                          onClick={() => setActiveStudentProfile(student)}
+                          className="flex items-center gap-2.5 min-w-0 flex-1 cursor-pointer group"
+                          title="View student profile, month-wise attendance & payment ledger"
+                        >
+                          <div className="relative shrink-0 w-10 h-10">
+                            {student.photoUrl ? (
+                              <img
+                                src={student.photoUrl}
+                                alt={student.fullName}
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none';
+                                  if (e.currentTarget.nextElementSibling) {
+                                    e.currentTarget.nextElementSibling.classList.remove('hidden');
+                                    e.currentTarget.nextElementSibling.classList.add('flex');
+                                  }
                                 }}
-                                className="text-[10px] text-red-400 hover:text-red-300 ml-1 underline cursor-pointer"
-                                title="Remove make-up attendee from this session"
-                              >
-                                Remove
-                              </button>
-                            )}
+                                className="w-full h-full rounded-xl object-cover border border-zinc-700 group-hover:border-red-500 transition-colors block"
+                              />
+                            ) : null}
+                            <div
+                              className={`w-full h-full rounded-xl border border-zinc-700 bg-zinc-800 items-center justify-center text-xs font-black text-zinc-200 select-none ${
+                                student.photoUrl ? 'hidden' : 'flex'
+                              }`}
+                            >
+                              {(student.fullName || 'S').trim().charAt(0).toUpperCase()}
+                            </div>
+                          </div>
+
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <h4 className="text-xs font-bold text-white truncate group-hover:text-red-400 transition-colors">
+                                {student.fullName}
+                              </h4>
+                              {student.status === 'Frozen' && (
+                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-cyan-950 text-cyan-300 border border-cyan-500/40 shrink-0">
+                                  ❄️ Break
+                                </span>
+                              )}
+                              {isGuest && (
+                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-amber-950 text-amber-300 border border-amber-500/40 shrink-0 flex items-center gap-1">
+                                  <RefreshCw className="w-2.5 h-2.5" />
+                                  <span>Make-up</span>
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                              <span className="text-[10px] font-bold text-amber-400">
+                                🥋 {student.beltRank}
+                              </span>
+                              {isGuest && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleRemoveGuestStudent(student.id);
+                                  }}
+                                  className="text-[10px] text-red-400 hover:text-red-300 underline cursor-pointer"
+                                >
+                                  Remove
+                                </button>
+                              )}
+                            </div>
                           </div>
                         </div>
+
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => setStatus(student.id, 'Present')}
+                            className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
+                              currentStatus === 'Present'
+                                ? 'bg-emerald-600 text-white border-emerald-500 shadow-md shadow-emerald-950/40'
+                                : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-white'
+                            }`}
+                            title="Mark Present"
+                          >
+                            P
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => setStatus(student.id, 'Absent')}
+                            className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
+                              currentStatus === 'Absent'
+                                ? 'bg-red-600 text-white border-red-500 shadow-md shadow-red-950/40'
+                                : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-white'
+                            }`}
+                            title="Mark Absent"
+                          >
+                            A
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => setStatus(student.id, 'Late')}
+                            className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
+                              currentStatus === 'Late'
+                                ? 'bg-amber-600 text-white border-amber-500 shadow-md shadow-amber-950/40'
+                                : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-white'
+                            }`}
+                            title="Mark Late"
+                          >
+                            L
+                          </button>
+                        </div>
                       </div>
+                    );
+                  })}
+                </div>
 
-                      {/* 1-Tap Toggle Pill Buttons: Present, Absent, Late */}
-                      <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
-                        <button
-                          type="button"
-                          onClick={() => setStatus(student.id, 'Present')}
-                          className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
-                            currentStatus === 'Present'
-                              ? 'bg-emerald-600 text-white border-emerald-500 shadow-md shadow-emerald-950/40'
-                              : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-white'
-                          }`}
-                          title="Mark Present"
-                        >
-                          P
-                        </button>
+                {/* Desktop/Tablet Semantic Table View */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="w-full min-w-[680px] text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-zinc-800 bg-zinc-900/70 text-[10px] uppercase font-bold tracking-wider text-zinc-400">
+                        <th className="py-3 px-4 w-10">#</th>
+                        <th className="py-3 px-3">Student</th>
+                        <th className="py-3 px-3">Belt Rank</th>
+                        <th className="py-3 px-3 text-right">Avg Turnout</th>
+                        <th className="py-3 px-4 text-right">Attendance Mark</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-zinc-800/80 text-xs">
+                      {filteredSessionStudents.map((student, idx) => {
+                        const currentStatus = attendanceRecords[student.id] || 'Present';
+                        const isGuest = guestStudentIds.includes(student.id) && student.batchId !== currentBatch?.id;
+                        const regularBatch = batches.find(b => b.id === student.batchId);
 
-                        <button
-                          type="button"
-                          onClick={() => setStatus(student.id, 'Absent')}
-                          className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
-                            currentStatus === 'Absent'
-                              ? 'bg-red-600 text-white border-red-500 shadow-md shadow-red-950/40'
-                              : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-white'
-                          }`}
-                          title="Mark Absent"
-                        >
-                          A
-                        </button>
+                        return (
+                          <tr
+                            key={student.id}
+                            className={`transition-colors ${
+                              isGuest ? 'bg-amber-950/15 hover:bg-amber-950/25' : 'hover:bg-zinc-800/50'
+                            }`}
+                          >
+                            <td className="py-3 px-4 text-zinc-500 font-mono text-[11px]">
+                              {idx + 1}
+                            </td>
 
-                        <button
-                          type="button"
-                          onClick={() => setStatus(student.id, 'Late')}
-                          className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
-                            currentStatus === 'Late'
-                              ? 'bg-amber-600 text-white border-amber-500 shadow-md shadow-amber-950/40'
-                              : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-white'
-                          }`}
-                          title="Mark Late"
-                        >
-                          L
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+                            <td className="py-3 px-3">
+                              <div
+                                onClick={() => setActiveStudentProfile(student)}
+                                className="flex items-center gap-3 min-w-0 cursor-pointer group"
+                                title="View student profile & history"
+                              >
+                                <div className="relative shrink-0 w-9 h-9">
+                                  {student.photoUrl ? (
+                                    <img
+                                      src={student.photoUrl}
+                                      alt={student.fullName}
+                                      onError={(e) => {
+                                        e.currentTarget.style.display = 'none';
+                                        if (e.currentTarget.nextElementSibling) {
+                                          e.currentTarget.nextElementSibling.classList.remove('hidden');
+                                          e.currentTarget.nextElementSibling.classList.add('flex');
+                                        }
+                                      }}
+                                      className="w-full h-full rounded-xl object-cover border border-zinc-700 group-hover:border-red-500 transition-colors block"
+                                    />
+                                  ) : null}
+                                  <div
+                                    className={`w-full h-full rounded-xl border border-zinc-700 bg-zinc-800 items-center justify-center text-xs font-black text-zinc-200 select-none ${
+                                      student.photoUrl ? 'hidden' : 'flex'
+                                    }`}
+                                  >
+                                    {(student.fullName || 'S').trim().charAt(0).toUpperCase()}
+                                  </div>
+                                </div>
+
+                                <div className="min-w-0">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="font-bold text-white group-hover:text-red-400 transition-colors flex items-center gap-1.5">
+                                      <span>{student.fullName}</span>
+                                      <Eye className="w-3 h-3 text-zinc-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                    </span>
+                                    {student.status === 'Frozen' && (
+                                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-500/40 shrink-0">
+                                        ❄️ On Break
+                                      </span>
+                                    )}
+                                    {isGuest && (
+                                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-500/40 shrink-0 inline-flex items-center gap-1">
+                                        <RefreshCw className="w-2.5 h-2.5" />
+                                        <span>Make-up ({regularBatch?.name?.split('(')[0] || 'Other'})</span>
+                                      </span>
+                                    )}
+                                  </div>
+                                  {isGuest && (
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleRemoveGuestStudent(student.id);
+                                      }}
+                                      className="text-[10px] text-red-400 hover:text-red-300 underline cursor-pointer mt-0.5"
+                                    >
+                                      Remove make-up student
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            </td>
+
+                            <td className="py-3 px-3 whitespace-nowrap">
+                              <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-zinc-800 text-amber-400 border border-zinc-700 inline-block">
+                                🥋 {student.beltRank}
+                              </span>
+                            </td>
+
+                            <td className="py-3 px-3 text-right whitespace-nowrap text-zinc-300 font-semibold">
+                              {student.attendanceRate || 100}%
+                            </td>
+
+                            <td className="py-3 px-4 text-right whitespace-nowrap">
+                              <div className="inline-flex items-center gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => setStatus(student.id, 'Present')}
+                                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
+                                    currentStatus === 'Present'
+                                      ? 'bg-emerald-600 text-white border-emerald-500 shadow-md shadow-emerald-950/40'
+                                      : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-white'
+                                  }`}
+                                >
+                                  Present
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setStatus(student.id, 'Absent')}
+                                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
+                                    currentStatus === 'Absent'
+                                      ? 'bg-red-600 text-white border-red-500 shadow-md shadow-red-950/40'
+                                      : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-white'
+                                  }`}
+                                >
+                                  Absent
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setStatus(student.id, 'Late')}
+                                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
+                                    currentStatus === 'Late'
+                                      ? 'bg-amber-600 text-white border-amber-500 shadow-md shadow-amber-950/40'
+                                      : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-white'
+                                  }`}
+                                >
+                                  Late
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </>
             )}
           </div>
         </div>
@@ -1089,7 +1254,7 @@ export const AttendanceView = () => {
                   <select
                     value={selectedMonth}
                     onChange={(e) => setSelectedMonth(Number(e.target.value))}
-                    className="flex-1 min-w-[110px] bg-zinc-900 border border-zinc-700 rounded-xl px-2.5 py-2 text-xs sm:text-sm text-white font-bold focus:outline-none focus:border-red-500 cursor-pointer"
+                    className="flex-1 min-w-0 bg-zinc-900 border border-zinc-700 rounded-xl px-2.5 py-2 text-xs sm:text-sm text-white font-bold focus:outline-none focus:border-red-500 cursor-pointer"
                   >
                     {MONTH_NAMES.map((name, idx) => (
                       <option key={name} value={idx + 1}>{name}</option>
@@ -1146,7 +1311,7 @@ export const AttendanceView = () => {
                     className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                       selectedMonth === p.month && selectedYear === p.year
                         ? 'bg-red-600 text-white shadow-md shadow-red-600/30'
-                        : 'bg-zinc-850 hover:bg-zinc-800 text-zinc-300 border border-zinc-750'
+                        : 'bg-zinc-800/70 hover:bg-zinc-800 text-zinc-300 border border-zinc-700'
                     }`}
                   >
                     {p.label}
@@ -1162,51 +1327,69 @@ export const AttendanceView = () => {
               {/* Student Header Card */}
               <div className="bg-gradient-to-r from-zinc-900 via-dojo-card to-zinc-900 border border-dojo-border rounded-2xl p-4 sm:p-5 shadow-lg flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-3.5 min-w-0">
-                  <img
-                    src={selectedStudent.photoUrl}
-                    alt={selectedStudent.fullName}
-                    className="w-14 h-14 rounded-2xl object-cover border-2 border-red-500/40 shadow-md shrink-0"
-                  />
-                  <div className="min-w-0">
+                  <div className="relative shrink-0 w-12 h-12 sm:w-14 sm:h-14">
+                    {selectedStudent.photoUrl ? (
+                      <img
+                        src={selectedStudent.photoUrl}
+                        alt={selectedStudent.fullName}
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                          if (e.currentTarget.nextElementSibling) {
+                            e.currentTarget.nextElementSibling.classList.remove('hidden');
+                            e.currentTarget.nextElementSibling.classList.add('flex');
+                          }
+                        }}
+                        className="w-full h-full rounded-2xl object-cover border-2 border-red-500/40 shadow-md block"
+                      />
+                    ) : null}
+                    <div
+                      className={`w-full h-full rounded-2xl border-2 border-red-500/40 bg-zinc-800 items-center justify-center text-base font-black text-zinc-200 select-none ${
+                        selectedStudent.photoUrl ? 'hidden' : 'flex'
+                      }`}
+                    >
+                      {(selectedStudent.fullName || 'S').trim().charAt(0).toUpperCase()}
+                    </div>
+                  </div>
+                  <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="text-base sm:text-lg font-black text-white truncate">
+                      <h3 className="text-base sm:text-lg font-black text-white break-words">
                         {selectedStudent.fullName}
                       </h3>
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-zinc-800 text-amber-400 border border-zinc-700">
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-zinc-800 text-amber-400 border border-zinc-700 shrink-0">
                         🥋 {selectedStudent.beltRank}
                       </span>
                       {selectedStudent.status === 'Inactive' || selectedStudent.status === 'Stopped' ? (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-950 text-amber-300 border border-amber-500/40">
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-950 text-amber-300 border border-amber-500/40 shrink-0">
                           ⏸️ {selectedStudent.status}
                         </span>
                       ) : (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-500/40">
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-500/40 shrink-0">
                           Active
                         </span>
                       )}
                     </div>
-                    <p className="text-xs text-zinc-400 mt-1">
+                    <p className="text-xs text-zinc-400 mt-1 truncate">
                       Assigned Batch: <span className="text-zinc-200 font-semibold">{batches.find(b => b.id === selectedStudent.batchId)?.name || 'General Batch'}</span>
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 self-start sm:self-auto">
+                <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                   <button
                     type="button"
                     onClick={() => setActiveStudentProfile(selectedStudent)}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-bold rounded-xl border border-zinc-700 cursor-pointer shadow transition-all"
+                    className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-bold rounded-xl border border-zinc-700 cursor-pointer shadow transition-all"
                   >
-                    <Eye className="w-3.5 h-3.5 text-zinc-400" />
-                    <span>View Profile & Ledger</span>
+                    <Eye className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                    <span>View Profile &amp; Ledger</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setIsAddingMissedRecord(!isAddingMissedRecord)}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow cursor-pointer transition-all active:scale-95"
+                    className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow cursor-pointer transition-all active:scale-95"
                   >
-                    <Plus className="w-3.5 h-3.5" />
+                    <Plus className="w-3.5 h-3.5 shrink-0" />
                     <span>{isAddingMissedRecord ? 'Close Form' : '+ Add Missed Record'}</span>
                   </button>
                 </div>
@@ -1215,11 +1398,11 @@ export const AttendanceView = () => {
               {/* 4 Core Monthly Attendance Metric Cards (Requirement 2) */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 {/* 1. Classes Attended */}
-                <div className="bg-dojo-card border border-emerald-500/30 rounded-2xl p-4 text-center shadow-lg relative overflow-hidden">
+                <div className="bg-dojo-card border border-emerald-500/30 rounded-2xl p-3.5 sm:p-4 text-center shadow-lg relative overflow-hidden">
                   <span className="text-[10px] uppercase font-bold text-emerald-400 tracking-wider">
                     🥋 Classes Attended
                   </span>
-                  <p className="text-3xl font-black text-white mt-1">
+                  <p className="text-2xl sm:text-3xl font-black text-white mt-1">
                     {monthlyStats.attended}
                   </p>
                   <p className="text-[11px] text-zinc-400 mt-0.5">
@@ -1228,11 +1411,11 @@ export const AttendanceView = () => {
                 </div>
 
                 {/* 2. Classes Missed */}
-                <div className="bg-dojo-card border border-red-500/30 rounded-2xl p-4 text-center shadow-lg relative overflow-hidden">
+                <div className="bg-dojo-card border border-red-500/30 rounded-2xl p-3.5 sm:p-4 text-center shadow-lg relative overflow-hidden">
                   <span className="text-[10px] uppercase font-bold text-red-400 tracking-wider">
                     ❌ Classes Missed
                   </span>
-                  <p className="text-3xl font-black text-red-400 mt-1">
+                  <p className="text-2xl sm:text-3xl font-black text-red-400 mt-1">
                     {monthlyStats.absent}
                   </p>
                   <p className="text-[11px] text-zinc-400 mt-0.5">
@@ -1241,11 +1424,11 @@ export const AttendanceView = () => {
                 </div>
 
                 {/* 3. Monthly Attendance Rate */}
-                <div className="bg-dojo-card border border-dojo-border rounded-2xl p-4 text-center shadow-lg relative overflow-hidden">
+                <div className="bg-dojo-card border border-dojo-border rounded-2xl p-3.5 sm:p-4 text-center shadow-lg relative overflow-hidden">
                   <span className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider">
                     📊 Monthly Turnout %
                   </span>
-                  <p className={`text-3xl font-black mt-1 ${
+                  <p className={`text-2xl sm:text-3xl font-black mt-1 ${
                     monthlyStats.attendanceRate >= 80
                       ? 'text-emerald-400'
                       : monthlyStats.attendanceRate >= 60
@@ -1260,11 +1443,11 @@ export const AttendanceView = () => {
                 </div>
 
                 {/* 4. Total Classes Conducted */}
-                <div className="bg-dojo-card border border-dojo-border rounded-2xl p-4 text-center shadow-lg relative overflow-hidden">
+                <div className="bg-dojo-card border border-dojo-border rounded-2xl p-3.5 sm:p-4 text-center shadow-lg relative overflow-hidden">
                   <span className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider">
                     📅 Total Conducted
                   </span>
-                  <p className="text-3xl font-black text-white mt-1">
+                  <p className="text-2xl sm:text-3xl font-black text-white mt-1">
                     {monthlyStats.totalSessions}
                   </p>
                   <p className="text-[11px] text-zinc-400 mt-0.5">
@@ -1279,22 +1462,22 @@ export const AttendanceView = () => {
                   onSubmit={handleSaveMissedRecord}
                   className="bg-zinc-900 border border-emerald-500/40 p-4 rounded-2xl shadow-xl space-y-3 animate-fade-in"
                 >
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-xs sm:text-sm font-bold text-emerald-400 flex items-center gap-1.5">
-                      <CheckCircle2 className="w-4 h-4" />
-                      <span>Log Missed Attendance Record for {selectedStudent.fullName}</span>
+                  <div className="flex items-center justify-between gap-2">
+                    <h4 className="text-xs sm:text-sm font-bold text-emerald-400 flex items-center gap-1.5 min-w-0">
+                      <CheckCircle2 className="w-4 h-4 shrink-0" />
+                      <span className="truncate">Log Missed Attendance Record for {selectedStudent.fullName}</span>
                     </h4>
                     <button
                       type="button"
                       onClick={() => setIsAddingMissedRecord(false)}
-                      className="text-zinc-400 hover:text-white p-1"
+                      className="text-zinc-400 hover:text-white p-1 shrink-0"
                     >
                       <X className="w-4 h-4" />
                     </button>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-                    <div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                    <div className="min-w-0">
                       <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1">
                         📅 Session Date
                       </label>
@@ -1302,19 +1485,19 @@ export const AttendanceView = () => {
                         type="date"
                         value={missedRecordDate}
                         onChange={(e) => setMissedRecordDate(e.target.value)}
-                        className="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500 cursor-pointer"
+                        className="w-full min-w-0 bg-zinc-950 border border-zinc-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500 cursor-pointer"
                         required
                       />
                     </div>
 
-                    <div>
+                    <div className="min-w-0">
                       <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1">
                         🥋 Training Batch
                       </label>
                       <select
                         value={missedRecordBatchId || selectedStudent.batchId}
                         onChange={(e) => setMissedRecordBatchId(e.target.value)}
-                        className="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500 cursor-pointer"
+                        className="w-full min-w-0 bg-zinc-950 border border-zinc-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500 cursor-pointer truncate"
                       >
                         {batches.map(b => (
                           <option key={b.id} value={b.id}>{b.name}</option>
@@ -1322,14 +1505,14 @@ export const AttendanceView = () => {
                       </select>
                     </div>
 
-                    <div>
+                    <div className="min-w-0">
                       <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1">
                         Status
                       </label>
                       <select
                         value={missedRecordStatus}
                         onChange={(e) => setMissedRecordStatus(e.target.value)}
-                        className="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-3 py-2 text-xs text-white font-bold focus:outline-none focus:border-emerald-500 cursor-pointer"
+                        className="w-full min-w-0 bg-zinc-950 border border-zinc-700 rounded-xl px-3 py-2 text-xs text-white font-bold focus:outline-none focus:border-emerald-500 cursor-pointer"
                       >
                         <option value="Present">Present 🥋</option>
                         <option value="Late">Late ⏰</option>
@@ -1337,7 +1520,7 @@ export const AttendanceView = () => {
                       </select>
                     </div>
 
-                    <div>
+                    <div className="min-w-0">
                       <label className="block text-[10px] font-bold text-zinc-400 uppercase mb-1">
                         Session Note (Optional)
                       </label>
@@ -1346,7 +1529,7 @@ export const AttendanceView = () => {
                         placeholder="e.g. Regular class / make-up"
                         value={missedRecordNotes}
                         onChange={(e) => setMissedRecordNotes(e.target.value)}
-                        className="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-3 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-500"
+                        className="w-full min-w-0 bg-zinc-950 border border-zinc-700 rounded-xl px-3 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-500"
                       />
                     </div>
                   </div>
@@ -1392,63 +1575,59 @@ export const AttendanceView = () => {
                     </p>
                   </div>
                 ) : (
-                  <div className="divide-y divide-zinc-800/80">
-                    {monthlyStats.records.map((record) => (
-                      <div
-                        key={record.id}
-                        className="p-3 sm:px-5 sm:py-3.5 flex items-center justify-between gap-2 sm:gap-3 hover:bg-zinc-850/50 transition-colors"
-                      >
-                        {/* Session Details */}
-                        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
-                          <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold shrink-0 ${
-                            record.status === 'Present'
-                              ? 'bg-emerald-950 text-emerald-400 border border-emerald-500/30'
-                              : record.status === 'Absent'
-                              ? 'bg-red-950 text-red-400 border border-red-500/30'
-                              : 'bg-amber-950 text-amber-400 border border-amber-500/30'
-                          }`}>
-                            {record.status === 'Present' ? (
-                              <CheckCircle2 className="w-4 h-4" />
-                            ) : record.status === 'Absent' ? (
-                              <XCircle className="w-4 h-4" />
-                            ) : (
-                              <Clock className="w-4 h-4" />
-                            )}
-                          </div>
-
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span className="font-bold text-white text-xs sm:text-sm">
-                                {formatDisplayDate(record.date)}
-                              </span>
-                              <span className="text-[10px] text-zinc-400 font-medium">
-                                ({getDateDayAbbr(record.date)})
-                              </span>
-                              {record.isGuest && (
-                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-purple-950 text-purple-300 border border-purple-500/30">
-                                  Make-up
-                                </span>
+                  <>
+                    {/* Mobile Compact Card List */}
+                    <div className="md:hidden divide-y divide-zinc-800/80">
+                      {monthlyStats.records.map((record) => (
+                        <div
+                          key={record.id}
+                          className="p-3 flex items-center justify-between gap-2 hover:bg-zinc-800/50 transition-colors"
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                            <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold shrink-0 ${
+                              record.status === 'Present'
+                                ? 'bg-emerald-950 text-emerald-400 border border-emerald-500/30'
+                                : record.status === 'Absent'
+                                ? 'bg-red-950 text-red-400 border border-red-500/30'
+                                : 'bg-amber-950 text-amber-400 border border-amber-500/30'
+                            }`}>
+                              {record.status === 'Present' ? (
+                                <CheckCircle2 className="w-4 h-4" />
+                              ) : record.status === 'Absent' ? (
+                                <XCircle className="w-4 h-4" />
+                              ) : (
+                                <Clock className="w-4 h-4" />
                               )}
                             </div>
-                            <p className="text-[11px] text-zinc-400 truncate mt-0.5">
-                              {record.batchName || 'General Batch'} {record.notes ? `• Note: ${record.notes}` : ''}
-                            </p>
-                          </div>
-                        </div>
 
-                        {/* Authorised Staff In-line Correction Pill Buttons */}
-                        <div className="flex items-center gap-2 shrink-0">
-                          <span className="text-[10px] font-bold text-zinc-500 hidden sm:inline">
-                            Correction:
-                          </span>
-                          <div className="flex items-center gap-1 bg-zinc-950 p-1 rounded-xl border border-zinc-800">
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="font-bold text-white text-xs">
+                                  {formatDisplayDate(record.date)}
+                                </span>
+                                <span className="text-[10px] text-zinc-400 font-medium">
+                                  ({getDateDayAbbr(record.date)})
+                                </span>
+                                {record.isGuest && (
+                                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-500/30">
+                                    Make-up
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-[11px] text-zinc-400 truncate mt-0.5">
+                                {record.batchName || 'General Batch'} {record.notes ? `• Note: ${record.notes}` : ''}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-1 bg-zinc-950 p-1 rounded-xl border border-zinc-800 shrink-0">
                             <button
                               type="button"
                               onClick={() => handleQuickStatusCorrection(record, 'Present')}
-                              className={`px-2 sm:px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                              className={`px-2 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                                 record.status === 'Present'
                                   ? 'bg-emerald-600 text-white shadow'
-                                  : 'text-zinc-500 hover:text-white hover:bg-zinc-850'
+                                  : 'text-zinc-500 hover:text-white hover:bg-zinc-800'
                               }`}
                               title="Set Present"
                             >
@@ -1457,10 +1636,10 @@ export const AttendanceView = () => {
                             <button
                               type="button"
                               onClick={() => handleQuickStatusCorrection(record, 'Absent')}
-                              className={`px-2 sm:px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                              className={`px-2 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                                 record.status === 'Absent'
                                   ? 'bg-red-600 text-white shadow'
-                                  : 'text-zinc-500 hover:text-white hover:bg-zinc-850'
+                                  : 'text-zinc-500 hover:text-white hover:bg-zinc-800'
                               }`}
                               title="Set Absent"
                             >
@@ -1469,10 +1648,10 @@ export const AttendanceView = () => {
                             <button
                               type="button"
                               onClick={() => handleQuickStatusCorrection(record, 'Late')}
-                              className={`px-2 sm:px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                              className={`px-2 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                                 record.status === 'Late'
                                   ? 'bg-amber-600 text-white shadow'
-                                  : 'text-zinc-500 hover:text-white hover:bg-zinc-850'
+                                  : 'text-zinc-500 hover:text-white hover:bg-zinc-800'
                               }`}
                               title="Set Late"
                             >
@@ -1480,9 +1659,104 @@ export const AttendanceView = () => {
                             </button>
                           </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+
+                    {/* Desktop/Tablet Semantic Table View */}
+                    <div className="hidden md:block overflow-x-auto">
+                      <table className="w-full min-w-[660px] text-left border-collapse">
+                        <thead>
+                          <tr className="border-b border-zinc-800 bg-zinc-900/70 text-[10px] uppercase font-bold tracking-wider text-zinc-400">
+                            <th className="py-3 px-4">Date &amp; Day</th>
+                            <th className="py-3 px-3">Batch &amp; Notes</th>
+                            <th className="py-3 px-3">Recorded Status</th>
+                            <th className="py-3 px-4 text-right">Quick Correction</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-zinc-800/80 text-xs">
+                          {monthlyStats.records.map((record) => (
+                            <tr key={record.id} className="hover:bg-zinc-800/50 transition-colors">
+                              <td className="py-3 px-4 whitespace-nowrap">
+                                <span className="font-bold text-white">{formatDisplayDate(record.date)}</span>
+                                <span className="text-[11px] text-zinc-400 ml-1.5">({getDateDayAbbr(record.date)})</span>
+                              </td>
+
+                              <td className="py-3 px-3">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="text-zinc-200 font-medium">{record.batchName || 'General Batch'}</span>
+                                  {record.isGuest && (
+                                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-500/30">
+                                      Make-up
+                                    </span>
+                                  )}
+                                </div>
+                                {record.notes && (
+                                  <p className="text-[11px] text-zinc-400 mt-0.5">Note: {record.notes}</p>
+                                )}
+                              </td>
+
+                              <td className="py-3 px-3 whitespace-nowrap">
+                                <span className={`inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-lg border ${
+                                  record.status === 'Present'
+                                    ? 'bg-emerald-950 text-emerald-400 border-emerald-500/30'
+                                    : record.status === 'Absent'
+                                    ? 'bg-red-950 text-red-400 border-red-500/30'
+                                    : 'bg-amber-950 text-amber-400 border-amber-500/30'
+                                }`}>
+                                  {record.status === 'Present' ? (
+                                    <CheckCircle2 className="w-3.5 h-3.5" />
+                                  ) : record.status === 'Absent' ? (
+                                    <XCircle className="w-3.5 h-3.5" />
+                                  ) : (
+                                    <Clock className="w-3.5 h-3.5" />
+                                  )}
+                                  <span>{record.status}</span>
+                                </span>
+                              </td>
+
+                              <td className="py-3 px-4 text-right whitespace-nowrap">
+                                <div className="inline-flex items-center gap-1 bg-zinc-950 p-1 rounded-xl border border-zinc-800">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleQuickStatusCorrection(record, 'Present')}
+                                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                                      record.status === 'Present'
+                                        ? 'bg-emerald-600 text-white shadow'
+                                        : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
+                                    }`}
+                                  >
+                                    Present
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleQuickStatusCorrection(record, 'Absent')}
+                                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                                      record.status === 'Absent'
+                                        ? 'bg-red-600 text-white shadow'
+                                        : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
+                                    }`}
+                                  >
+                                    Absent
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleQuickStatusCorrection(record, 'Late')}
+                                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                                      record.status === 'Late'
+                                        ? 'bg-amber-600 text-white shadow'
+                                        : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
+                                    }`}
+                                  >
+                                    Late
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </>
                 )}
               </div>
             </div>
@@ -1496,10 +1770,10 @@ export const AttendanceView = () => {
       {activeAttendanceTab === 'pastSessions' && (
         <div className="space-y-4">
           {/* Filter Bar */}
-          <div className="bg-dojo-card border border-dojo-border rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md">
-            <div>
+          <div className="bg-dojo-card border border-dojo-border rounded-2xl p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-3 shadow-md">
+            <div className="min-w-0">
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <History className="w-4 h-4 text-red-500" />
+                <History className="w-4 h-4 text-red-500 shrink-0" />
                 <span>Recorded Sessions Archive ({recordedPastSessions.length})</span>
               </h3>
               <p className="text-xs text-zinc-400 mt-0.5">
@@ -1507,11 +1781,11 @@ export const AttendanceView = () => {
               </p>
             </div>
 
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="grid grid-cols-1 sm:flex sm:items-center gap-2 flex-wrap w-full lg:w-auto">
               <select
                 value={sessionFilterBranch}
                 onChange={(e) => setSessionFilterBranch(e.target.value)}
-                className="bg-zinc-900 border border-zinc-700 rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-red-500 cursor-pointer"
+                className="w-full sm:w-auto min-w-0 bg-zinc-900 border border-zinc-700 rounded-xl px-2.5 py-2 sm:py-1.5 text-xs text-white focus:outline-none focus:border-red-500 cursor-pointer truncate"
               >
                 <option value="all">All Branches</option>
                 {dojos.map(d => (
@@ -1522,7 +1796,7 @@ export const AttendanceView = () => {
               <select
                 value={sessionFilterBatch}
                 onChange={(e) => setSessionFilterBatch(e.target.value)}
-                className="bg-zinc-900 border border-zinc-700 rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-red-500 cursor-pointer"
+                className="w-full sm:w-auto min-w-0 bg-zinc-900 border border-zinc-700 rounded-xl px-2.5 py-2 sm:py-1.5 text-xs text-white focus:outline-none focus:border-red-500 cursor-pointer truncate"
               >
                 <option value="all">All Batches</option>
                 {batches.map(b => (
@@ -1534,10 +1808,10 @@ export const AttendanceView = () => {
                 <button
                   type="button"
                   onClick={handleClearAllAttendance}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-500/10 hover:bg-red-600 text-red-400 hover:text-white border border-red-500/30 rounded-xl text-xs font-bold transition-all cursor-pointer shadow"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 sm:py-1.5 bg-red-500/10 hover:bg-red-600 text-red-400 hover:text-white border border-red-500/30 rounded-xl text-xs font-bold transition-all cursor-pointer shadow"
                   title="Clear all recorded attendance logs (keeps students and fees safe)"
                 >
-                  <Trash2 className="w-3.5 h-3.5" />
+                  <Trash2 className="w-3.5 h-3.5 shrink-0" />
                   <span>Clear All Attendance</span>
                 </button>
               )}
@@ -1553,7 +1827,7 @@ export const AttendanceView = () => {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
               {recordedPastSessions.map((session) => {
                 const recs = session.records || {};
                 const presentC = Object.values(recs).filter(s => s === 'Present' || s === 'Late').length;
@@ -1565,22 +1839,22 @@ export const AttendanceView = () => {
                 return (
                   <div
                     key={session.id || `${session.batchId}_${session.date}`}
-                    className="p-4 bg-dojo-card border border-dojo-border hover:border-zinc-700 rounded-2xl shadow-md space-y-3 transition-colors"
+                    className="p-4 bg-dojo-card border border-dojo-border hover:border-zinc-700 rounded-2xl shadow-md space-y-3 transition-colors min-w-0"
                   >
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-zinc-800 text-zinc-300 border border-zinc-700">
+                    <div className="flex items-start justify-between gap-2 min-w-0">
+                      <div className="min-w-0 flex-1">
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-zinc-800 text-zinc-300 border border-zinc-700 inline-block">
                           {formatDisplayDate(session.date)} ({getDateDayAbbr(session.date)})
                         </span>
-                        <h4 className="text-sm font-bold text-white mt-1.5">
+                        <h4 className="text-sm font-bold text-white mt-1.5 break-words">
                           {session.batchName || 'Training Session'}
                         </h4>
-                        <p className="text-[11px] text-zinc-400 mt-0.5">
+                        <p className="text-[11px] text-zinc-400 mt-0.5 truncate">
                           {dojo?.name || 'Main Dojo'}
                         </p>
                       </div>
 
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1.5 shrink-0">
                         <button
                           type="button"
                           onClick={() => handleEditPastSession(session)}

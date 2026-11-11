@@ -56,7 +56,9 @@ import {
   Lock,
   ArrowRight,
   Layers,
-  X
+  X,
+  LayoutGrid,
+  Table2
 } from 'lucide-react';
 
 export const FeePlansView = () => {
@@ -89,6 +91,7 @@ export const FeePlansView = () => {
 
   // Payment Ledger & Bill Tracker States
   const [quickBillTrack, setQuickBillTrack] = useState('');
+  const [ledgerLayout, setLedgerLayout] = useState('auto'); // 'auto' | 'cards' | 'table'
   const [ledgerSearch, setLedgerSearch] = useState('');
   const [ledgerStudentId, setLedgerStudentId] = useState('all');
   const [ledgerMonthFilter, setLedgerMonthFilter] = useState('all'); // 'all' | 'YYYY-MM'
@@ -486,14 +489,178 @@ export const FeePlansView = () => {
     );
   };
 
+  const renderLedgerTable = (txList) => (
+    <div className="overflow-x-auto">
+      <table className="w-full min-w-[880px] text-left border-collapse">
+        <thead>
+          <tr className="border-b border-zinc-800 bg-zinc-900/70 text-[10px] uppercase font-bold tracking-wider text-zinc-400">
+            <th className="py-3 px-4">Bill No.</th>
+            <th className="py-3 px-3">Student &amp; Type</th>
+            <th className="py-3 px-3">Date &amp; Cycle</th>
+            <th className="py-3 px-3">Method &amp; Plan</th>
+            <th className="py-3 px-3 text-right">Amount</th>
+            <th className="py-3 px-4 text-right">Staff Actions</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-zinc-800/80 text-xs">
+          {txList.map((payment) => {
+            const billNo = payment.billNumber || payment.receiptNumber || `BILL-${payment.id?.slice(-4) || '0000'}`;
+            const studentObj = students.find(s => s.id === payment.studentId);
+            const isReset = payment.status === 'Reset';
+
+            return (
+              <tr
+                key={payment.id}
+                className={`transition-colors ${
+                  isReset ? 'bg-orange-950/10 opacity-85' : 'hover:bg-zinc-900/50'
+                }`}
+              >
+                <td className="py-3 px-4 whitespace-nowrap">
+                  <div className="flex flex-col gap-1 items-start">
+                    <span className="inline-flex items-center gap-1 font-mono font-bold text-xs px-2 py-0.5 rounded-lg bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                      <Hash className="w-3 h-3 text-amber-400" />
+                      <span>{billNo}</span>
+                    </span>
+                    {payment.isEdited && (
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                        ✏️ Corrected
+                      </span>
+                    )}
+                    {isReset && (
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-orange-600/25 text-orange-300 border border-orange-500/50">
+                        ↺ Voided
+                      </span>
+                    )}
+                  </div>
+                </td>
+
+                <td className="py-3 px-3">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => setLedgerStudentId(payment.studentId || 'all')}
+                      className="font-bold text-white hover:text-amber-400 transition-colors flex items-center gap-1 cursor-pointer text-left"
+                      title="Filter ledger to view this student's complete payment history"
+                    >
+                      <User className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
+                      <span className="truncate max-w-[160px]">{payment.studentName || studentObj?.fullName || 'Unknown Student'}</span>
+                    </button>
+                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full border shrink-0 ${
+                      payment.renewalType === 'restart'
+                        ? 'bg-amber-950/80 text-amber-300 border-amber-500/40'
+                        : payment.renewalType === 'initial'
+                        ? 'bg-emerald-950/80 text-emerald-300 border-emerald-500/40'
+                        : 'bg-blue-950/80 text-blue-300 border-blue-500/40'
+                    }`}>
+                      {payment.renewalType === 'restart'
+                        ? 'Resumed'
+                        : payment.renewalType === 'initial'
+                        ? 'Initial'
+                        : 'Renewal'}
+                    </span>
+                  </div>
+                  {(payment.notes || payment.editReason || payment.resetReason) && (
+                    <p className="text-[11px] text-zinc-500 truncate max-w-[230px] mt-0.5">
+                      {payment.notes}
+                      {payment.editReason ? ` • Edit: "${payment.editReason}"` : ''}
+                      {payment.resetReason ? ` • Reset: "${payment.resetReason}"` : ''}
+                    </p>
+                  )}
+                </td>
+
+                <td className="py-3 px-3 whitespace-nowrap">
+                  <p className="font-semibold text-zinc-200">
+                    {formatDisplayDate(payment.paymentDate || payment.createdAt)}
+                  </p>
+                  {(payment.subscriptionStartDate || payment.nextDueDate) && (
+                    <p className="text-[11px] text-zinc-400 mt-0.5">
+                      {formatDisplayDate(payment.subscriptionStartDate)} ➔ <strong className="text-amber-400">{formatDisplayDate(payment.nextDueDate)}</strong>
+                    </p>
+                  )}
+                </td>
+
+                <td className="py-3 px-3">
+                  <p className="font-semibold text-zinc-200 whitespace-nowrap">{payment.paymentMethod || 'Cash'}</p>
+                  {payment.planName && (
+                    <p className="text-[11px] text-zinc-400 truncate max-w-[150px] mt-0.5">{payment.planName}</p>
+                  )}
+                </td>
+
+                <td className="py-3 px-3 text-right whitespace-nowrap">
+                  <span className={`text-sm font-black block ${
+                    isReset ? 'text-zinc-500 line-through' : 'text-emerald-400'
+                  }`}>
+                    AED {formatCurrencyAmount(payment.amount)}
+                  </span>
+                  <span className="text-[10px] text-zinc-500">
+                    {isReset ? 'Reverted' : 'Paid'}
+                  </span>
+                </td>
+
+                <td className="py-3 px-4 text-right whitespace-nowrap">
+                  <div className="inline-flex items-center gap-1.5 justify-end">
+                    <button
+                      type="button"
+                      onClick={() => handleOpenReceipt(payment)}
+                      className="inline-flex items-center gap-1 px-2 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg text-[11px] font-bold border border-zinc-700 transition-colors cursor-pointer"
+                      title="Open Printable Receipt"
+                    >
+                      <Printer className="w-3 h-3 text-amber-400" />
+                      <span>Receipt</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleEditPayment(payment)}
+                      className="inline-flex items-center gap-1 px-2 py-1.5 bg-zinc-800 hover:bg-amber-500/20 text-zinc-300 hover:text-amber-300 rounded-lg text-[11px] font-bold border border-zinc-700 hover:border-amber-500/40 transition-colors cursor-pointer"
+                      title={isAdmin ? 'Edit Payment' : 'Authorized Staff Only — Edit Payment'}
+                    >
+                      <Pencil className="w-3 h-3" />
+                      <span className="hidden xl:inline">Edit</span>
+                      {!isAdmin && <Lock className="w-2.5 h-2.5 text-amber-400" />}
+                    </button>
+
+                    {!isReset && (
+                      <button
+                        type="button"
+                        onClick={() => handleResetPayment(payment)}
+                        className="inline-flex items-center gap-1 px-2 py-1.5 bg-zinc-800 hover:bg-orange-500/20 text-zinc-300 hover:text-orange-300 rounded-lg text-[11px] font-bold border border-zinc-700 hover:border-orange-500/40 transition-colors cursor-pointer"
+                        title={isAdmin ? 'Reset / Void Payment' : 'Authorized Staff Only — Reset Payment'}
+                      >
+                        <RotateCcw className="w-3 h-3" />
+                        <span className="hidden xl:inline">Reset</span>
+                        {!isAdmin && <Lock className="w-2.5 h-2.5 text-orange-400" />}
+                      </button>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => handleDeletePayment(payment)}
+                      className="inline-flex items-center gap-1 px-2 py-1.5 bg-zinc-800 hover:bg-red-500/20 text-zinc-400 hover:text-red-400 rounded-lg text-[11px] font-bold border border-zinc-700 hover:border-red-500/40 transition-colors cursor-pointer"
+                      title={isAdmin ? 'Delete Payment' : 'Authorized Staff Only — Delete Payment'}
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      <span className="hidden xl:inline">Delete</span>
+                      {!isAdmin && <Lock className="w-2.5 h-2.5 text-red-400" />}
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+
   return (
     <div className="space-y-6">
       {/* Top Banner & Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
+        <div className="min-w-0">
           <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center gap-2 flex-wrap">
             <span>Fees, Bills &amp; Payment History</span>
-            <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-950/80 text-emerald-400 border border-emerald-500/30">
+            <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-950/80 text-emerald-400 border border-emerald-500/30 shrink-0">
               5% VAT Included
             </span>
           </h2>
@@ -502,56 +669,58 @@ export const FeePlansView = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5 flex-wrap">
+        <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto">
           <button
             onClick={() => requireAdmin(() => setIsRecordModalOpen(true), 'Authorized staff verification required to record fee payments.')}
-            className="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 bg-zinc-800 hover:bg-zinc-700 active:scale-95 text-xs font-semibold text-white rounded-xl border border-zinc-700 transition-all shadow cursor-pointer"
+            className="inline-flex items-center justify-center gap-2 px-3 sm:px-3.5 py-2.5 bg-zinc-800 hover:bg-zinc-700 active:scale-95 text-xs font-semibold text-white rounded-xl border border-zinc-700 transition-all shadow cursor-pointer"
           >
-            <CreditCard className="w-4 h-4 text-amber-400" />
-            <span>{isAdmin ? 'Record Payment' : 'Record Fee 🔒'}</span>
+            <CreditCard className="w-4 h-4 text-amber-400 shrink-0" />
+            <span className="truncate">{isAdmin ? 'Record Payment' : 'Record Fee 🔒'}</span>
           </button>
 
           <button
             onClick={() => requireAdmin(() => setIsAddPlanModalOpen(true), 'Authorized staff verification required to create fee plans.')}
-            className={`inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold shadow-lg transition-all cursor-pointer ${
+            className={`inline-flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 rounded-xl text-xs font-bold shadow-lg transition-all cursor-pointer ${
               isAdmin
                 ? 'bg-dojo-red hover:bg-dojo-redHover active:scale-95 text-white shadow-red-600/30'
                 : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700'
             }`}
           >
-            <Plus className="w-4 h-4" />
-            <span>{isAdmin ? 'Create New Plan' : 'Plan Builder 🔒'}</span>
+            <Plus className="w-4 h-4 shrink-0" />
+            <span className="truncate">{isAdmin ? 'Create New Plan' : 'Plan Builder 🔒'}</span>
           </button>
         </div>
       </div>
 
       {/* Sub-Navigation Tabs inside Fees & Billing */}
-      <div className="flex items-center gap-1.5 p-1.5 bg-zinc-900 border border-zinc-800 rounded-2xl w-full sm:w-fit flex-wrap">
+      <div className="grid grid-cols-3 md:inline-flex items-center gap-1 sm:gap-1.5 p-1 sm:p-1.5 bg-zinc-900 border border-zinc-800 rounded-2xl w-full md:w-fit">
         <button
           type="button"
           onClick={() => setActiveFeesSubTab('plans')}
-          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+          className={`flex items-center justify-center md:justify-start gap-1.5 px-2 sm:px-3.5 py-2 rounded-xl text-[11px] sm:text-xs font-bold transition-all cursor-pointer min-w-0 ${
             activeFeesSubTab === 'plans'
               ? 'bg-dojo-red text-white shadow-lg shadow-red-600/30'
               : 'text-zinc-400 hover:text-white hover:bg-zinc-800/70'
           }`}
         >
-          <Layers className="w-3.5 h-3.5" />
-          <span>Fee Packages &amp; Dues</span>
+          <Layers className="w-3.5 h-3.5 shrink-0" />
+          <span className="md:hidden truncate">Plans</span>
+          <span className="hidden md:inline">Fee Packages &amp; Dues</span>
         </button>
 
         <button
           type="button"
           onClick={() => setActiveFeesSubTab('ledger')}
-          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+          className={`flex items-center justify-center md:justify-start gap-1.5 px-2 sm:px-3.5 py-2 rounded-xl text-[11px] sm:text-xs font-bold transition-all cursor-pointer min-w-0 ${
             activeFeesSubTab === 'ledger'
               ? 'bg-amber-600 text-white shadow-lg shadow-amber-600/30'
               : 'text-zinc-400 hover:text-white hover:bg-zinc-800/70'
           }`}
         >
-          <Receipt className="w-3.5 h-3.5" />
-          <span>Payment History &amp; Bill Ledger</span>
-          <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-black/40">
+          <Receipt className="w-3.5 h-3.5 shrink-0" />
+          <span className="md:hidden truncate">Ledger</span>
+          <span className="hidden md:inline">Payment History &amp; Bill Ledger</span>
+          <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-black/40 shrink-0">
             {activePaymentsCount}
           </span>
         </button>
@@ -559,15 +728,16 @@ export const FeePlansView = () => {
         <button
           type="button"
           onClick={() => setActiveFeesSubTab('logs')}
-          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+          className={`flex items-center justify-center md:justify-start gap-1.5 px-2 sm:px-3.5 py-2 rounded-xl text-[11px] sm:text-xs font-bold transition-all cursor-pointer min-w-0 ${
             activeFeesSubTab === 'logs'
               ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30'
               : 'text-zinc-400 hover:text-white hover:bg-zinc-800/70'
           }`}
         >
-          <History className="w-3.5 h-3.5" />
-          <span>Activity &amp; Audit Log</span>
-          <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-black/40">
+          <History className="w-3.5 h-3.5 shrink-0" />
+          <span className="md:hidden truncate">Audit</span>
+          <span className="hidden md:inline">Activity &amp; Audit Log</span>
+          <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-black/40 shrink-0">
             {paymentAuditLogs.length}
           </span>
         </button>
@@ -579,11 +749,11 @@ export const FeePlansView = () => {
           {/* Quick Bill Number Tracker Bar */}
           <div className="p-4 bg-dojo-card border border-dojo-border rounded-2xl space-y-3 shadow-lg">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex items-center gap-2.5">
+              <div className="flex items-center gap-2.5 min-w-0">
                 <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center shrink-0">
                   <Hash className="w-4 h-4" />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <h3 className="text-xs sm:text-sm font-bold text-white">Quick Bill Number Search &amp; Tracker</h3>
                   <p className="text-[11px] text-zinc-400">
                     Instantly look up any payment by its Bill / Receipt Number (e.g. BILL-0001) or student name.
@@ -591,8 +761,8 @@ export const FeePlansView = () => {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 flex-1 min-w-0 w-full sm:max-w-md">
-                <div className="relative flex-1 min-w-0">
+              <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 flex-1 min-w-0 w-full sm:max-w-md">
+                <div className="relative flex-1 min-w-[160px]">
                   <Search className="w-3.5 h-3.5 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
@@ -605,7 +775,7 @@ export const FeePlansView = () => {
                       }
                     }}
                     placeholder="Enter Bill No. (BILL-0001) or Student..."
-                    className="w-full bg-zinc-900 border border-zinc-700 rounded-xl pl-8 pr-3 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-amber-400"
+                    className="w-full min-w-0 bg-zinc-900 border border-zinc-700 rounded-xl pl-8 pr-3 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-amber-400"
                   />
                 </div>
                 <button
@@ -614,7 +784,7 @@ export const FeePlansView = () => {
                     setLedgerSearch(quickBillTrack.trim());
                     setActiveFeesSubTab('ledger');
                   }}
-                  className="px-3 py-2 bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold rounded-xl transition-all shrink-0 cursor-pointer"
+                  className="w-full sm:w-auto px-3 py-2 bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold rounded-xl transition-all shrink-0 cursor-pointer"
                 >
                   Open Ledger
                 </button>
@@ -865,16 +1035,16 @@ export const FeePlansView = () => {
               return (
                 <div
                   key={plan.id}
-                  className={`bg-dojo-card border rounded-2xl p-5 transition-all flex flex-col justify-between group relative ${
+                  className={`bg-dojo-card border rounded-2xl p-4 sm:p-5 transition-all flex flex-col justify-between group relative min-w-0 ${
                     plan.isDefault
                       ? 'border-amber-500/50 shadow-lg shadow-amber-950/20'
                       : 'border-dojo-border hover:border-zinc-700'
                   }`}
                 >
-                  <div>
+                  <div className="min-w-0">
                     {/* Header: Badges & Edit Button */}
-                    <div className="flex items-center justify-between gap-2 mb-3">
-                      <div className="flex items-center gap-1.5 flex-wrap">
+                    <div className="flex items-start justify-between gap-2 mb-3">
+                      <div className="flex items-center gap-1.5 flex-wrap min-w-0">
                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-300 border border-zinc-700">
                           {plan.billingCycle || `${plan.durationMonths || 1} Month`}
                         </span>
@@ -888,7 +1058,7 @@ export const FeePlansView = () => {
                       </div>
 
                       {/* Quick Edit & Delete Controls */}
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1 shrink-0">
                         <button
                           type="button"
                           onClick={() => requireAdmin(() => setEditingPlan(plan))}
@@ -1054,17 +1224,17 @@ export const FeePlansView = () => {
           </div>
 
           {/* Ledger Filter, Month Selector & Student Lookup Bar */}
-          <div className="bg-dojo-card border border-dojo-border rounded-2xl p-4 space-y-3 shadow-lg">
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
+          <div className="bg-dojo-card border border-dojo-border rounded-2xl p-3.5 sm:p-4 space-y-3 shadow-lg">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-2.5 sm:gap-3">
               {/* Search by Bill Number, Student Name */}
-              <div className="md:col-span-4 relative">
+              <div className="sm:col-span-2 lg:col-span-4 relative min-w-0">
                 <Search className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   value={ledgerSearch}
                   onChange={(e) => setLedgerSearch(e.target.value)}
                   placeholder="Search Bill No. (BILL-0001) or student name..."
-                  className="w-full bg-zinc-900 border border-zinc-700/80 rounded-xl pl-9 pr-8 py-2 text-xs sm:text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-amber-400"
+                  className="w-full min-w-0 bg-zinc-900 border border-zinc-700/80 rounded-xl pl-9 pr-8 py-2 text-xs sm:text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-amber-400"
                 />
                 {ledgerSearch && (
                   <button
@@ -1079,12 +1249,12 @@ export const FeePlansView = () => {
               </div>
 
               {/* Month Selector (View Month-by-Month or Specific Month) */}
-              <div className="md:col-span-3">
+              <div className="min-w-0 lg:col-span-3">
                 <select
                   aria-label="Filter ledger by month"
                   value={ledgerMonthFilter}
                   onChange={(e) => setLedgerMonthFilter(e.target.value)}
-                  className="w-full bg-zinc-900 border border-zinc-700/80 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:outline-none focus:border-amber-400 cursor-pointer"
+                  className="w-full min-w-0 bg-zinc-900 border border-zinc-700/80 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:outline-none focus:border-amber-400 cursor-pointer truncate"
                 >
                   <option value="all">📅 All Months (Month-by-Month • {ledgerMonthGroups.length})</option>
                   {ledgerMonthGroups.map(g => (
@@ -1096,12 +1266,12 @@ export const FeePlansView = () => {
               </div>
 
               {/* Individual Student Selector (Separate Student History Lookup) */}
-              <div className="md:col-span-3">
+              <div className="min-w-0 lg:col-span-3">
                 <select
                   aria-label="Filter ledger by student"
                   value={ledgerStudentId}
                   onChange={(e) => setLedgerStudentId(e.target.value)}
-                  className="w-full bg-zinc-900 border border-zinc-700/80 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:outline-none focus:border-amber-400 cursor-pointer"
+                  className="w-full min-w-0 bg-zinc-900 border border-zinc-700/80 rounded-xl px-3 py-2 text-xs text-white font-semibold focus:outline-none focus:border-amber-400 cursor-pointer truncate"
                 >
                   <option value="all">👤 All Students ({students.length})</option>
                   {sortedStudentsForFilter.map(s => {
@@ -1116,12 +1286,12 @@ export const FeePlansView = () => {
               </div>
 
               {/* Payment Method Filter + Status Filter */}
-              <div className="md:col-span-2 grid grid-cols-2 gap-2">
+              <div className="sm:col-span-2 lg:col-span-2 grid grid-cols-2 gap-2 min-w-0">
                 <select
                   aria-label="Filter ledger by method"
                   value={ledgerMethodFilter}
                   onChange={(e) => setLedgerMethodFilter(e.target.value)}
-                  className="w-full bg-zinc-900 border border-zinc-700/80 rounded-xl px-2 py-2 text-xs text-white font-semibold focus:outline-none focus:border-amber-400 cursor-pointer"
+                  className="w-full min-w-0 bg-zinc-900 border border-zinc-700/80 rounded-xl px-2 py-2 text-xs text-white font-semibold focus:outline-none focus:border-amber-400 cursor-pointer truncate"
                 >
                   <option value="all">All Modes</option>
                   {uniqueMethods.map(m => (
@@ -1133,7 +1303,7 @@ export const FeePlansView = () => {
                   aria-label="Filter ledger by status"
                   value={ledgerStatusFilter}
                   onChange={(e) => setLedgerStatusFilter(e.target.value)}
-                  className="w-full bg-zinc-900 border border-zinc-700/80 rounded-xl px-2 py-2 text-xs text-white font-semibold focus:outline-none focus:border-amber-400 cursor-pointer"
+                  className="w-full min-w-0 bg-zinc-900 border border-zinc-700/80 rounded-xl px-2 py-2 text-xs text-white font-semibold focus:outline-none focus:border-amber-400 cursor-pointer truncate"
                 >
                   <option value="all">Status</option>
                   <option value="Active">Valid</option>
@@ -1162,21 +1332,57 @@ export const FeePlansView = () => {
                 )}
               </div>
 
-              {(ledgerSearch || ledgerMonthFilter !== 'all' || ledgerStudentId !== 'all' || ledgerMethodFilter !== 'all' || ledgerStatusFilter !== 'all') && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setLedgerSearch('');
-                    setLedgerMonthFilter('all');
-                    setLedgerStudentId('all');
-                    setLedgerMethodFilter('all');
-                    setLedgerStatusFilter('all');
-                  }}
-                  className="text-amber-400 hover:underline font-semibold cursor-pointer"
-                >
-                  Reset Ledger Filters
-                </button>
-              )}
+              <div className="flex items-center gap-2.5 ml-auto flex-wrap">
+                {(ledgerSearch || ledgerMonthFilter !== 'all' || ledgerStudentId !== 'all' || ledgerMethodFilter !== 'all' || ledgerStatusFilter !== 'all') && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLedgerSearch('');
+                      setLedgerMonthFilter('all');
+                      setLedgerStudentId('all');
+                      setLedgerMethodFilter('all');
+                      setLedgerStatusFilter('all');
+                    }}
+                    className="text-amber-400 hover:underline font-semibold cursor-pointer"
+                  >
+                    Reset Ledger Filters
+                  </button>
+                )}
+
+                {/* Cards / Table Switcher */}
+                <div className="inline-flex items-center gap-1 p-0.5 bg-slate-200/80 dark:bg-zinc-900 border border-slate-300 dark:border-zinc-800 rounded-xl shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setLedgerLayout('cards')}
+                    className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                      ledgerLayout === 'cards'
+                        ? 'bg-white dark:bg-zinc-700 text-slate-900 dark:text-white shadow-sm'
+                        : ledgerLayout === 'auto'
+                        ? 'bg-white md:bg-transparent dark:bg-zinc-700 md:dark:bg-transparent text-slate-900 md:text-slate-600 dark:text-white md:dark:text-zinc-400 md:hover:text-slate-900 md:dark:hover:text-white shadow-sm md:shadow-none'
+                        : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+                    }`}
+                    title="Show Ledger Cards View"
+                  >
+                    <LayoutGrid className="w-3 h-3" />
+                    <span>Cards</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLedgerLayout('table')}
+                    className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                      ledgerLayout === 'table'
+                        ? 'bg-white dark:bg-zinc-700 text-slate-900 dark:text-white shadow-sm'
+                        : ledgerLayout === 'auto'
+                        ? 'md:bg-white md:dark:bg-zinc-700 md:text-slate-900 md:dark:text-white md:shadow-sm text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+                        : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
+                    }`}
+                    title="Show Ledger Table View"
+                  >
+                    <Table2 className="w-3 h-3" />
+                    <span>Table</span>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -1185,11 +1391,29 @@ export const FeePlansView = () => {
             <div className="p-4 sm:p-5 bg-gradient-to-r from-amber-950/30 via-zinc-900 to-zinc-950 border border-amber-500/40 rounded-2xl shadow-lg space-y-3">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="flex items-center gap-3 min-w-0">
-                  <img
-                    src={selectedLedgerStudent.photoUrl}
-                    alt={selectedLedgerStudent.fullName}
-                    className="w-12 h-12 rounded-xl object-cover border border-amber-500/40 shrink-0"
-                  />
+                  <div className="relative shrink-0 w-12 h-12">
+                    {selectedLedgerStudent.photoUrl ? (
+                      <img
+                        src={selectedLedgerStudent.photoUrl}
+                        alt={selectedLedgerStudent.fullName}
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                          if (e.currentTarget.nextElementSibling) {
+                            e.currentTarget.nextElementSibling.classList.remove('hidden');
+                            e.currentTarget.nextElementSibling.classList.add('flex');
+                          }
+                        }}
+                        className="w-full h-full rounded-xl object-cover border border-amber-500/40 block"
+                      />
+                    ) : null}
+                    <div
+                      className={`w-full h-full rounded-xl border border-amber-500/40 bg-zinc-800 items-center justify-center text-sm font-black text-zinc-200 select-none ${
+                        selectedLedgerStudent.photoUrl ? 'hidden' : 'flex'
+                      }`}
+                    >
+                      {(selectedLedgerStudent.fullName || 'S').trim().charAt(0).toUpperCase()}
+                    </div>
+                  </div>
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="text-sm sm:text-base font-black text-white break-words">
@@ -1317,8 +1541,30 @@ export const FeePlansView = () => {
                     </div>
                   </div>
 
-                  <div className="divide-y divide-zinc-800/80">
+                  {/* Cards Layout */}
+                  <div
+                    className={
+                      ledgerLayout === 'cards'
+                        ? 'divide-y divide-zinc-800/80'
+                        : ledgerLayout === 'table'
+                        ? 'hidden'
+                        : 'md:hidden divide-y divide-zinc-800/80'
+                    }
+                  >
                     {group.transactions.map(renderLedgerPaymentRow)}
+                  </div>
+
+                  {/* Semantic Table Layout */}
+                  <div
+                    className={
+                      ledgerLayout === 'table'
+                        ? 'block'
+                        : ledgerLayout === 'cards'
+                        ? 'hidden'
+                        : 'hidden md:block'
+                    }
+                  >
+                    {renderLedgerTable(group.transactions)}
                   </div>
                 </div>
               ))
@@ -1341,8 +1587,30 @@ export const FeePlansView = () => {
                   </div>
                 )}
 
-                <div className="divide-y divide-zinc-800/80">
+                {/* Cards Layout */}
+                <div
+                  className={
+                    ledgerLayout === 'cards'
+                      ? 'divide-y divide-zinc-800/80'
+                      : ledgerLayout === 'table'
+                      ? 'hidden'
+                      : 'md:hidden divide-y divide-zinc-800/80'
+                  }
+                >
                   {filteredPayments.map(renderLedgerPaymentRow)}
+                </div>
+
+                {/* Semantic Table Layout */}
+                <div
+                  className={
+                    ledgerLayout === 'table'
+                      ? 'block'
+                      : ledgerLayout === 'cards'
+                      ? 'hidden'
+                      : 'hidden md:block'
+                  }
+                >
+                  {renderLedgerTable(filteredPayments)}
                 </div>
               </div>
             )}
@@ -1355,9 +1623,9 @@ export const FeePlansView = () => {
         <div className="space-y-4 animate-fade-in">
           <div className="p-4 bg-dojo-card border border-dojo-border rounded-2xl space-y-3 shadow-lg">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <ShieldCheck className="w-5 h-5 text-emerald-400" />
-                <div>
+              <div className="flex items-center gap-2 min-w-0">
+                <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0" />
+                <div className="min-w-0">
                   <h3 className="text-sm font-bold text-white">
                     Permanent Payment Activity &amp; Audit Log
                   </h3>
@@ -1366,24 +1634,24 @@ export const FeePlansView = () => {
                   </p>
                 </div>
               </div>
-              <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-emerald-950/60 text-emerald-300 border border-emerald-500/30 self-start sm:self-auto">
+              <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-emerald-950/60 text-emerald-300 border border-emerald-500/30 self-start sm:self-auto shrink-0">
                 Immutable Audit Trail
               </span>
             </div>
 
-            <div className="flex flex-col md:flex-row gap-2.5">
-              <div className="relative flex-1">
+            <div className="flex flex-col lg:flex-row gap-2.5">
+              <div className="relative flex-1 min-w-0">
                 <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   value={auditSearch}
                   onChange={(e) => setAuditSearch(e.target.value)}
                   placeholder="Search audit log by Bill No., student name, staff, or reason..."
-                  className="w-full bg-zinc-900 border border-zinc-700 rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-400"
+                  className="w-full min-w-0 bg-zinc-900 border border-zinc-700 rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-400"
                 />
               </div>
 
-              <div className="flex items-center gap-1 bg-zinc-900 p-1 rounded-xl border border-zinc-800 flex-wrap">
+              <div className="flex items-center gap-1 bg-zinc-900 p-1 rounded-xl border border-zinc-800 overflow-x-auto scrollbar-none flex-wrap sm:flex-nowrap shrink-0">
                 {[
                   { id: 'all', label: 'All Events' },
                   { id: 'payment_recorded', label: 'Recorded' },
@@ -1395,7 +1663,7 @@ export const FeePlansView = () => {
                     key={tab.id}
                     type="button"
                     onClick={() => setAuditActionFilter(tab.id)}
-                    className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                    className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer whitespace-nowrap ${
                       auditActionFilter === tab.id
                         ? 'bg-zinc-700 text-white shadow'
                         : 'text-zinc-400 hover:text-white'
@@ -1436,39 +1704,39 @@ export const FeePlansView = () => {
                 return (
                   <div
                     key={log.id || idx}
-                    className="p-4 bg-dojo-card border border-dojo-border rounded-2xl space-y-2 hover:border-zinc-700 transition-colors"
+                    className="p-4 bg-dojo-card border border-dojo-border rounded-2xl space-y-2 hover:border-zinc-700 transition-colors min-w-0"
                   >
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${badgeMeta.cls}`}>
+                    <div className="flex flex-wrap items-center justify-between gap-2 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap min-w-0">
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${badgeMeta.cls}`}>
                           {badgeMeta.label}
                         </span>
                         {log.billNumber && (
-                          <span className="font-mono font-bold text-xs px-2 py-0.5 rounded-lg bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                          <span className="font-mono font-bold text-xs px-2 py-0.5 rounded-lg bg-amber-500/15 text-amber-300 border border-amber-500/30 shrink-0">
                             {log.billNumber}
                           </span>
                         )}
                         {log.studentName && (
-                          <span className="text-xs font-bold text-white">{log.studentName}</span>
+                          <span className="text-xs font-bold text-white break-words">{log.studentName}</span>
                         )}
                         {log.amount !== undefined && (
-                          <span className="text-xs font-bold text-emerald-400">
+                          <span className="text-xs font-bold text-emerald-400 shrink-0">
                             AED {formatCurrencyAmount(log.amount)}
                           </span>
                         )}
                       </div>
 
-                      <span className="text-[11px] text-zinc-400">{timeDisplay}</span>
+                      <span className="text-[11px] text-zinc-400 shrink-0">{timeDisplay}</span>
                     </div>
 
-                    <p className="text-xs text-zinc-200 leading-relaxed">{log.text}</p>
+                    <p className="text-xs text-zinc-200 leading-relaxed break-words">{log.text}</p>
 
                     {Array.isArray(log.changesSummary) && log.changesSummary.length > 0 && (
                       <div className="p-2.5 bg-zinc-950/80 rounded-xl border border-zinc-800 space-y-1 text-[11px]">
                         <span className="text-[10px] font-bold text-amber-400 uppercase block">
                           Changes Applied:
                         </span>
-                        <ul className="list-disc list-inside text-zinc-300 space-y-0.5">
+                        <ul className="list-disc list-inside text-zinc-300 space-y-0.5 break-words">
                           {log.changesSummary.map((ch, i) => (
                             <li key={i}>{ch}</li>
                           ))}
@@ -1481,7 +1749,7 @@ export const FeePlansView = () => {
                         Authorized Staff: <strong className="text-zinc-200">{log.performedBy || 'Admin'}</strong>
                       </span>
                       {log.reason && (
-                        <span>
+                        <span className="break-words">
                           Reason: <strong className="text-zinc-200">{log.reason}</strong>
                         </span>
                       )}

@@ -28,6 +28,7 @@ export const WhatsAppBroadcastModal = ({ isOpen, onClose }) => {
   const { students, dojos, feePlans, showToast } = useDojo();
   const [sentStudentIds, setSentStudentIds] = useState(new Set());
   const [previewNoticeStudent, setPreviewNoticeStudent] = useState(null);
+  const [failedAvatarIds, setFailedAvatarIds] = useState(() => new Set());
 
   if (!isOpen) return null;
 
@@ -110,18 +111,18 @@ export const WhatsAppBroadcastModal = ({ isOpen, onClose }) => {
       }}
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-sm animate-fade-in"
     >
-      <div className="w-full sm:max-w-2xl bg-dojo-card border-t sm:border border-dojo-border rounded-t-3xl sm:rounded-2xl shadow-2xl max-h-[92vh] flex flex-col overflow-hidden">
+      <div className="w-full sm:max-w-2xl bg-dojo-card border-t sm:border border-dojo-border rounded-t-3xl sm:rounded-2xl shadow-2xl max-h-dvh-92 flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="sticky top-0 bg-[#16161a] px-5 py-4 border-b border-zinc-800 flex items-center justify-between z-10 shrink-0">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center justify-center">
+        <div className="shrink-0 bg-[#16161a] px-4 sm:px-5 py-3.5 sm:py-4 border-b border-zinc-800 flex items-center justify-between gap-2 z-10">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center justify-center shrink-0">
               <MessageSquare className="w-5 h-5" />
             </div>
-            <div>
-              <h2 className="text-base font-bold text-white tracking-tight">
+            <div className="min-w-0">
+              <h2 className="text-base font-bold text-white tracking-tight truncate">
                 Official Fee Due Notices — WhatsApp
               </h2>
-              <p className="text-[11px] text-zinc-400">
+              <p className="text-[11px] text-zinc-400 truncate">
                 Send printable Official Fee Due Notice images directly to parents on WhatsApp
               </p>
             </div>
@@ -129,17 +130,17 @@ export const WhatsAppBroadcastModal = ({ isOpen, onClose }) => {
 
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer"
+            className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer shrink-0"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Overview Banner & Quick Actions */}
-        <div className="px-5 py-3.5 bg-gradient-to-r from-red-950/40 via-zinc-900 to-zinc-900 border-b border-zinc-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
-          <div>
+        <div className="px-4 sm:px-5 py-3.5 bg-gradient-to-r from-red-950/40 via-zinc-900 to-zinc-900 border-b border-zinc-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
+          <div className="min-w-0">
             <span className="text-xs text-zinc-400 font-medium">Pending Unpaid Fees:</span>
-            <div className="flex items-baseline gap-2 mt-0.5">
+            <div className="flex items-baseline gap-2 mt-0.5 flex-wrap">
               <span className="text-lg font-black text-red-400">
                 {dueStudents.length} Student{dueStudents.length === 1 ? '' : 's'}
               </span>
@@ -149,7 +150,7 @@ export const WhatsAppBroadcastModal = ({ isOpen, onClose }) => {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 w-full sm:w-auto">
             <div className="text-right hidden sm:block">
               <span className="text-[11px] font-semibold text-emerald-400 block">
                 {sentStudentIds.size} of {dueStudents.length} Dispatched
@@ -168,7 +169,7 @@ export const WhatsAppBroadcastModal = ({ isOpen, onClose }) => {
               <button
                 type="button"
                 onClick={handleSendNextImage}
-                className="inline-flex items-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-xs font-bold text-white rounded-xl shadow-lg shadow-emerald-700/30 transition-all cursor-pointer"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-xs font-bold text-white rounded-xl shadow-lg shadow-emerald-700/30 transition-all cursor-pointer"
               >
                 <Send className="w-3.5 h-3.5" />
                 <span>Send Next Notice Image</span>
@@ -178,7 +179,7 @@ export const WhatsAppBroadcastModal = ({ isOpen, onClose }) => {
         </div>
 
         {/* Scrollable Student Cards */}
-        <div className="p-4 sm:p-5 overflow-y-auto space-y-3">
+        <div className="flex-1 p-3.5 sm:p-5 overflow-y-auto space-y-3">
           {dueStudents.length === 0 ? (
             <div className="p-10 text-center text-zinc-500">
               <CheckCircle2 className="w-10 h-10 mx-auto text-emerald-500 mb-2 stroke-[1.5]" />
@@ -206,11 +207,18 @@ export const WhatsAppBroadcastModal = ({ isOpen, onClose }) => {
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3">
                     {/* Student Info */}
                     <div className="flex items-start gap-3 min-w-0 flex-1">
-                      <img
-                        src={student.photoUrl}
-                        alt={student.fullName}
-                        className="w-11 h-11 rounded-xl object-cover border border-zinc-700 shrink-0"
-                      />
+                      {student.photoUrl && !failedAvatarIds.has(student.id) ? (
+                        <img
+                          src={student.photoUrl}
+                          alt={student.fullName}
+                          onError={() => setFailedAvatarIds(prev => new Set(prev).add(student.id))}
+                          className="w-11 h-11 rounded-xl object-cover border border-zinc-700 shrink-0"
+                        />
+                      ) : (
+                        <div className="w-11 h-11 rounded-xl bg-zinc-800 border border-zinc-700 shrink-0 flex items-center justify-center text-sm font-black text-zinc-200 select-none">
+                          {(student.fullName || 'S').trim().charAt(0).toUpperCase()}
+                        </div>
+                      )}
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <h4 className="text-sm font-bold text-white break-words">

@@ -71,7 +71,7 @@ export const DojoBranchDropdown = () => {
         <span className="text-xs sm:text-sm select-none shrink-0">
           {activeDojo ? (activeDojo.logo || '🥋') : '🏢'}
         </span>
-        <span className="truncate max-w-[70px] xs:max-w-[110px] sm:max-w-[180px] md:max-w-[220px] text-left">
+        <span className="truncate max-w-[100px] sm:max-w-[130px] md:max-w-[150px] lg:max-w-[200px] text-left">
           {activeDojo ? activeDojo.name : 'All Branches'}
         </span>
         <ChevronDown
@@ -84,8 +84,7 @@ export const DojoBranchDropdown = () => {
       {/* Custom Styled Popover Menu */}
       {isOpen && (
         <div
-          style={{ backgroundColor: '#18181c' }}
-          className="absolute right-0 top-full mt-2 w-72 sm:w-80 border border-zinc-700 rounded-2xl shadow-2xl shadow-black z-50 overflow-hidden divide-y divide-zinc-800"
+          className="absolute right-0 top-full mt-2 w-72 sm:w-80 max-w-[calc(100vw-1.5rem)] bg-dojo-card border border-zinc-700 rounded-2xl shadow-2xl dark:shadow-black z-50 overflow-hidden divide-y divide-zinc-800"
         >
           {/* Header */}
           <div className="px-4 py-3 bg-[#131316]">

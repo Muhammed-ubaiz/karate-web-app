@@ -112,7 +112,7 @@ export const BatchListView = () => {
 
         <button
           onClick={() => setIsAddModalOpen(true)}
-          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold shadow-lg transition-all cursor-pointer bg-dojo-red hover:bg-dojo-redHover active:scale-95 text-white shadow-red-600/30"
+          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold shadow-lg transition-all cursor-pointer bg-dojo-red hover:bg-dojo-redHover active:scale-95 text-white shadow-red-600/30"
         >
           <Plus className="w-4 h-4" />
           <span>+ Create New Batch</span>
@@ -142,7 +142,7 @@ export const BatchListView = () => {
         </div>
 
         {/* Day Pills Bar */}
-        <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-1 scrollbar-thin">
+        <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-1 scrollbar-none">
           {/* Today Button */}
           <button
             type="button"
@@ -150,7 +150,7 @@ export const BatchListView = () => {
             className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer ${
               selectedDay === todayAbbr
                 ? 'bg-dojo-red text-white shadow-md shadow-red-900/40 ring-1 ring-red-400/50'
-                : 'bg-zinc-850 hover:bg-zinc-800 text-zinc-300 border border-zinc-700/80 hover:text-white'
+                : 'bg-zinc-800/70 hover:bg-zinc-800 text-zinc-300 border border-zinc-700/80 hover:text-white'
             }`}
           >
             <span>⚡ Today ({todayAbbr})</span>
@@ -168,7 +168,7 @@ export const BatchListView = () => {
             className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer ${
               selectedDay === 'all'
                 ? 'bg-zinc-800 text-white border border-zinc-600 shadow-md ring-1 ring-zinc-500/50'
-                : 'bg-zinc-900 hover:bg-zinc-850 text-zinc-400 border border-zinc-800 hover:text-zinc-200'
+                : 'bg-zinc-900 hover:bg-zinc-800/70 text-zinc-400 border border-zinc-800 hover:text-zinc-200'
             }`}
           >
             <span>🌐 All Days</span>
@@ -193,7 +193,7 @@ export const BatchListView = () => {
                 className={`inline-flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-semibold transition-all shrink-0 cursor-pointer ${
                   isSelected
                     ? 'bg-zinc-800 text-white border border-red-500/60 shadow-md font-bold'
-                    : 'bg-zinc-900 hover:bg-zinc-850 text-zinc-400 border border-zinc-800 hover:text-zinc-200'
+                    : 'bg-zinc-900 hover:bg-zinc-800/70 text-zinc-400 border border-zinc-800 hover:text-zinc-200'
                 }`}
               >
                 <span>{day.abbr}</span>
@@ -272,7 +272,7 @@ export const BatchListView = () => {
             )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
             {displayedBatches.map((batch) => {
               const dojo = dojos.find(d => d.id === batch.dojoId);
               // Real-time calculation of active enrolled students (Excluding inactive/stopped)
@@ -285,14 +285,14 @@ export const BatchListView = () => {
               return (
                 <div
                   key={batch.id}
-                  className={`bg-dojo-card border rounded-2xl p-5 transition-all flex flex-col justify-between group shadow-lg ${
-                    runsToday ? 'border-zinc-700/80 hover:border-red-500/50' : 'border-dojo-border hover:border-zinc-750'
+                  className={`bg-dojo-card border rounded-2xl p-4 sm:p-5 transition-all flex flex-col justify-between group shadow-lg min-w-0 ${
+                    runsToday ? 'border-zinc-700/80 hover:border-red-500/50' : 'border-dojo-border hover:border-zinc-700'
                   }`}
                 >
-                  <div>
+                  <div className="min-w-0">
                     {/* Dojo Badge & Level + Quick Actions */}
-                    <div className="flex items-center justify-between gap-2 mb-3">
-                      <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
+                    <div className="flex items-start justify-between gap-2 mb-3">
+                      <div className="flex items-center gap-1.5 min-w-0 flex-wrap flex-1">
                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-300 border border-zinc-700/80 shrink-0">
                           {batch.level || 'All Levels'}
                         </span>
@@ -304,7 +304,7 @@ export const BatchListView = () => {
                           </span>
                         )}
 
-                        <span className="text-[11px] font-medium text-zinc-400 flex items-center gap-1 truncate">
+                        <span className="text-[11px] font-medium text-zinc-400 flex items-center gap-1 min-w-0 max-w-full">
                           <Building className="w-3 h-3 text-red-500 shrink-0" />
                           <span className="truncate">{dojo?.name || 'Main Dojo'}</span>
                         </span>
@@ -315,7 +315,7 @@ export const BatchListView = () => {
                         <button
                           type="button"
                           onClick={() => setEditingBatch(batch)}
-                          className="p-1.5 rounded-lg bg-zinc-800/80 hover:bg-zinc-750 text-zinc-400 hover:text-amber-400 border border-zinc-700/60 transition-all cursor-pointer"
+                          className="p-1.5 rounded-lg bg-zinc-800/80 hover:bg-zinc-700 text-zinc-400 hover:text-amber-400 border border-zinc-700/60 transition-all cursor-pointer"
                           title="Edit Batch"
                         >
                           <Pencil className="w-3.5 h-3.5" />
@@ -383,7 +383,7 @@ export const BatchListView = () => {
                         </span>
                       </div>
 
-                      <div className="w-full bg-zinc-800 h-2.5 rounded-full overflow-hidden p-0.5 border border-zinc-750">
+                      <div className="w-full bg-zinc-800 h-2.5 rounded-full overflow-hidden p-0.5 border border-zinc-700">
                         <div
                           className={`h-full rounded-full transition-all duration-500 ${
                             capacityPercent >= 100
@@ -405,7 +405,7 @@ export const BatchListView = () => {
                     </div>
 
                     {/* Bottom Action Buttons Bar */}
-                    <div className="pt-2 border-t border-zinc-850 flex items-center justify-between gap-2">
+                    <div className="pt-2 border-t border-zinc-800 flex items-center justify-between gap-2">
                       <span className="text-[11px] text-zinc-500 truncate">
                         Sensei: <strong className="text-zinc-300 font-medium">{batch.instructor || 'Chief Sensei'}</strong>
                       </span>

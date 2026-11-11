@@ -22,13 +22,29 @@
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='48' fill='%23121214' stroke='%23E50914' stroke-width='4'/><path d='M30 65 L50 25 L70 65 L50 52 Z' fill='%23E50914'/><circle cx='50' cy='48' r='7' fill='%23f59e0b'/><path d='M22 68 C35 78, 65 78, 78 68' stroke='%23ffffff' stroke-width='4' stroke-linecap='round' fill='none'/></svg>" />
 
     <title>Al Muharib Karate Center 🥋 | Dojo Management</title>
+
+    <!-- Prevent theme flash before React mounts -->
+    <script>
+      (function () {
+        try {
+          var saved = localStorage.getItem('sensei_theme');
+          var theme = saved === 'light' ? 'light' : 'dark';
+          var root = document.documentElement;
+          root.classList.remove('dark', 'light');
+          root.classList.add(theme);
+          root.style.colorScheme = theme;
+          var meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) meta.setAttribute('content', theme === 'light' ? '#ffffff' : '#121214');
+        } catch (e) {}
+      })();
+    </script>
     
     <!-- Google Fonts: Plus Jakarta Sans & Inter with display=swap -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   </head>
-  <body class="bg-dojo-bg text-white antialiased min-h-screen selection:bg-red-600 selection:text-white">
+  <body class="bg-dojo-bg text-slate-900 dark:text-white antialiased min-h-screen selection:bg-red-600 selection:text-white transition-colors duration-200">
     <noscript>
       <div style="padding: 2rem; text-align: center; background: #121214; color: #fff; font-family: sans-serif;">
         <h2>🥋 Al Muharib Karate Center</h2>

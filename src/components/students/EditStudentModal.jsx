@@ -201,22 +201,22 @@ export const EditStudentModal = ({ isOpen, onClose, student }) => {
       }}
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-sm animate-fade-in"
     >
-      <div className="w-full sm:max-w-2xl bg-dojo-card border-t sm:border border-dojo-border rounded-t-3xl sm:rounded-2xl shadow-2xl max-h-[92vh] flex flex-col overflow-hidden">
+      <div className="w-full sm:max-w-2xl bg-dojo-card border-t sm:border border-dojo-border rounded-t-3xl sm:rounded-2xl shadow-2xl max-h-dvh-92 flex flex-col overflow-hidden">
         {/* Modal Header */}
-        <div className="sticky top-0 bg-dojo-card/95 backdrop-blur-md px-5 py-4 border-b border-dojo-border flex items-center justify-between z-10 shrink-0">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-red-600/20 text-red-500 border border-red-500/30 flex items-center justify-center">
+        <div className="shrink-0 bg-dojo-card/95 backdrop-blur-md px-4 sm:px-5 py-3.5 sm:py-4 border-b border-dojo-border flex items-center justify-between gap-2 z-10">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-lg bg-red-600/20 text-red-500 border border-red-500/30 flex items-center justify-center shrink-0">
               <UserCheck className="w-4 h-4" />
             </div>
-            <div>
-              <h2 className="text-base font-bold text-white tracking-tight">Edit Student Details</h2>
-              <p className="text-[11px] text-zinc-400">Update belt rank, contact, fees & branch assignment</p>
+            <div className="min-w-0">
+              <h2 className="text-base font-bold text-white tracking-tight truncate">Edit Student Details</h2>
+              <p className="text-[11px] text-zinc-400 truncate">Update belt rank, contact, fees & branch assignment</p>
             </div>
           </div>
           <button
             type="button"
             onClick={handleClose}
-            className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer"
+            className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer shrink-0"
             title="Close editor"
           >
             <X className="w-5 h-5" />
@@ -224,7 +224,7 @@ export const EditStudentModal = ({ isOpen, onClose, student }) => {
         </div>
 
         {/* Modal Body / Scrollable Form */}
-        <form onSubmit={handleSubmit} className="p-5 sm:p-6 space-y-5 overflow-y-auto">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5">
           {/* Section 1: Basic Personal Info */}
           <div className="space-y-3">
             <h3 className="text-xs font-bold text-red-400 uppercase tracking-wider flex items-center gap-1.5">
@@ -258,7 +258,7 @@ export const EditStudentModal = ({ isOpen, onClose, student }) => {
                   </div>
                 </div>
 
-                <div className="flex-1 space-y-1.5">
+                <div className="flex-1 min-w-0 space-y-1.5">
                   <span className="block text-xs font-bold text-zinc-200">
                     Student Profile Photo
                   </span>
@@ -357,7 +357,7 @@ export const EditStudentModal = ({ isOpen, onClose, student }) => {
 
             {/* DOB & Join Date */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
+              <div className="min-w-0">
                 <label className="block text-xs font-semibold text-zinc-300 mb-1">
                   Date of Birth
                 </label>
@@ -365,11 +365,11 @@ export const EditStudentModal = ({ isOpen, onClose, student }) => {
                   type="date"
                   value={formData.dob}
                   onChange={(e) => setFormData({ ...formData, dob: e.target.value })}
-                  className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-red-500"
+                  className="w-full min-w-0 bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-red-500"
                 />
               </div>
 
-              <div>
+              <div className="min-w-0">
                 <label className="block text-xs font-semibold text-zinc-300 mb-1">
                   Join Date
                 </label>
@@ -377,7 +377,7 @@ export const EditStudentModal = ({ isOpen, onClose, student }) => {
                   type="date"
                   value={formData.joinDate}
                   onChange={(e) => setFormData({ ...formData, joinDate: e.target.value })}
-                  className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-red-500"
+                  className="w-full min-w-0 bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-red-500"
                 />
               </div>
             </div>
@@ -453,17 +453,17 @@ export const EditStudentModal = ({ isOpen, onClose, student }) => {
               <span>3. Belt Rank, Dojo & Tuition Status</span>
             </h3>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {/* Dynamic Belt Ranks */}
-              <div>
-                <div className="flex items-center justify-between mb-1">
+              <div className="min-w-0">
+                <div className="flex items-center justify-between gap-1 flex-wrap mb-1">
                   <label className="block text-xs font-semibold text-zinc-300">
                     Belt Rank *
                   </label>
                   <button
                     type="button"
                     onClick={() => setIsManageBeltsOpen(true)}
-                    className="text-[10px] font-bold text-red-400 hover:text-red-300 underline cursor-pointer"
+                    className="text-[10px] font-bold text-red-400 hover:text-red-300 underline cursor-pointer shrink-0"
                   >
                     ⚙️ Manage Belts
                   </button>
@@ -472,7 +472,7 @@ export const EditStudentModal = ({ isOpen, onClose, student }) => {
                   <select
                     value={formData.beltRank}
                     onChange={(e) => setFormData({ ...formData, beltRank: e.target.value })}
-                    className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-red-500 cursor-pointer"
+                    className="w-full min-w-0 bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-red-500 cursor-pointer truncate"
                   >
                     {beltRanks.map((b) => (
                       <option key={b.id || b.name} value={b.name}>
@@ -486,13 +486,13 @@ export const EditStudentModal = ({ isOpen, onClose, student }) => {
                     placeholder="e.g. White Belt"
                     value={formData.beltRank}
                     onChange={(e) => setFormData({ ...formData, beltRank: e.target.value })}
-                    className="w-full bg-zinc-900 border border-amber-500/50 rounded-xl px-3 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-red-500"
+                    className="w-full min-w-0 bg-zinc-900 border border-amber-500/50 rounded-xl px-3 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-red-500"
                   />
                 )}
               </div>
 
               {/* Dojo Branch */}
-              <div>
+              <div className="min-w-0">
                 <label className="block text-xs font-semibold text-zinc-300 mb-1">
                   Dojo Branch *
                 </label>
@@ -507,7 +507,7 @@ export const EditStudentModal = ({ isOpen, onClose, student }) => {
                       batchId: matchingBatches[0]?.id || ''
                     });
                   }}
-                  className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-red-500"
+                  className="w-full min-w-0 bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-red-500 truncate"
                 >
                   {dojos.map((d) => (
                     <option key={d.id} value={d.id}>
@@ -518,14 +518,14 @@ export const EditStudentModal = ({ isOpen, onClose, student }) => {
               </div>
 
               {/* Batch */}
-              <div>
+              <div className="min-w-0 sm:col-span-2 lg:col-span-1">
                 <label className="block text-xs font-semibold text-zinc-300 mb-1">
                   Class Batch *
                 </label>
                 <select
                   value={formData.batchId}
                   onChange={(e) => setFormData({ ...formData, batchId: e.target.value })}
-                  className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-red-500"
+                  className="w-full min-w-0 bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-red-500 truncate"
                 >
                   {dojoBatches.length > 0 ? (
                     dojoBatches.map((b) => (
@@ -545,8 +545,8 @@ export const EditStudentModal = ({ isOpen, onClose, student }) => {
             </div>
 
             {/* Tuition Plan, Due Amount, Fee Status & Membership Status */}
-            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-              <div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <div className="min-w-0">
                 <label className="block text-xs font-semibold text-zinc-300 mb-1">
                   Tuition Plan
                 </label>
@@ -561,7 +561,7 @@ export const EditStudentModal = ({ isOpen, onClose, student }) => {
                       nextDueDate: calculateNextDueDate(prev.lastPaidDate || prev.joinDate, selectedPlan) || prev.nextDueDate
                     }));
                   }}
-                  className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-red-500 font-bold"
+                  className="w-full min-w-0 bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-red-500 font-bold truncate"
                 >
                   {feePlans.map((p) => {
                     const b = calculatePlanRenewalBreakdown(p);
@@ -574,7 +574,7 @@ export const EditStudentModal = ({ isOpen, onClose, student }) => {
                 </select>
               </div>
 
-              <div>
+              <div className="min-w-0">
                 <label className="block text-xs font-semibold text-zinc-300 mb-1">
                   Due Balance (Dhs)
                 </label>
@@ -591,18 +591,18 @@ export const EditStudentModal = ({ isOpen, onClose, student }) => {
                       feeStatus: due === 0 ? 'Paid' : 'Pending'
                     });
                   }}
-                  className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-red-500 font-bold"
+                  className="w-full min-w-0 bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-red-500 font-bold"
                 />
               </div>
 
-              <div>
+              <div className="min-w-0">
                 <label className="block text-xs font-semibold text-zinc-300 mb-1">
                   Fee Status
                 </label>
                 <select
                   value={formData.feeStatus}
                   onChange={(e) => setFormData({ ...formData, feeStatus: e.target.value })}
-                  className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-red-500 font-semibold"
+                  className="w-full min-w-0 bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-red-500 font-semibold"
                 >
                   <option value="Paid">Paid</option>
                   <option value="Pending">Pending</option>
@@ -610,14 +610,14 @@ export const EditStudentModal = ({ isOpen, onClose, student }) => {
                 </select>
               </div>
 
-              <div>
+              <div className="min-w-0">
                 <label className="block text-xs font-semibold text-zinc-300 mb-1">
                   Enrollment Status
                 </label>
                 <select
                   value={formData.status}
                   onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                  className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-red-500 font-semibold"
+                  className="w-full min-w-0 bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-red-500 font-semibold"
                 >
                   <option value="Active">Active</option>
                   <option value="Inactive">Inactive</option>
@@ -628,8 +628,8 @@ export const EditStudentModal = ({ isOpen, onClose, student }) => {
             </div>
 
             {/* Subscription Start Date, Next Due Date, Last Paid Date & Payment Method */}
-            <div className="pt-2.5 border-t border-zinc-800/80 grid grid-cols-1 sm:grid-cols-4 gap-3">
-              <div>
+            <div className="pt-2.5 border-t border-zinc-800/80 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <div className="min-w-0">
                 <label className="block text-[11px] font-bold text-blue-400 mb-1">
                   📅 Subscription Starts
                 </label>
@@ -645,13 +645,13 @@ export const EditStudentModal = ({ isOpen, onClose, student }) => {
                       nextDueDate: calculateNextDueDate(newDate, plan) || prev.nextDueDate
                     }));
                   }}
-                  className="w-full bg-zinc-900 border border-blue-500/40 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:border-blue-400 cursor-pointer font-semibold"
+                  className="w-full min-w-0 bg-zinc-900 border border-blue-500/40 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:border-blue-400 cursor-pointer font-semibold"
                 />
               </div>
 
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="text-[11px] font-bold text-amber-400 flex items-center gap-1">
+              <div className="min-w-0">
+                <div className="flex items-center justify-between gap-1 mb-1">
+                  <label className="text-[11px] font-bold text-amber-400 flex items-center gap-1 truncate">
                     ⏰ Next Due Date
                   </label>
                   <button
@@ -662,7 +662,7 @@ export const EditStudentModal = ({ isOpen, onClose, student }) => {
                       const autoDue = calculateNextDueDate(baseDate, plan);
                       if (autoDue) setFormData(prev => ({ ...prev, nextDueDate: autoDue }));
                     }}
-                    className="text-[10px] font-bold text-red-400 hover:text-red-300 underline cursor-pointer"
+                    className="text-[10px] font-bold text-red-400 hover:text-red-300 underline cursor-pointer shrink-0"
                   >
                     ⚡ Auto Due
                   </button>
@@ -671,11 +671,11 @@ export const EditStudentModal = ({ isOpen, onClose, student }) => {
                   type="date"
                   value={formData.nextDueDate}
                   onChange={(e) => setFormData({ ...formData, nextDueDate: e.target.value })}
-                  className="w-full bg-zinc-900 border border-amber-500/40 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:border-amber-400 cursor-pointer font-bold"
+                  className="w-full min-w-0 bg-zinc-900 border border-amber-500/40 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:border-amber-400 cursor-pointer font-bold"
                 />
               </div>
 
-              <div>
+              <div className="min-w-0">
                 <label className="block text-[11px] font-bold text-zinc-300 mb-1">
                   📅 Payment Date
                 </label>
@@ -689,18 +689,18 @@ export const EditStudentModal = ({ isOpen, onClose, student }) => {
                       lastPaidDate: newDate
                     }));
                   }}
-                  className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:border-red-500 cursor-pointer"
+                  className="w-full min-w-0 bg-zinc-900 border border-zinc-700 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:border-red-500 cursor-pointer"
                 />
               </div>
 
-              <div>
+              <div className="min-w-0">
                 <label className="block text-[11px] font-bold text-zinc-300 mb-1">
                   💳 Payment Mode
                 </label>
                 <select
                   value={formData.lastPaymentMethod}
                   onChange={(e) => setFormData({ ...formData, lastPaymentMethod: e.target.value })}
-                  className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:border-red-500 cursor-pointer font-medium"
+                  className="w-full min-w-0 bg-zinc-900 border border-zinc-700 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:border-red-500 cursor-pointer font-medium truncate"
                 >
                   <option value="Cash">💵 Cash</option>
                   <option value="Card / POS">💳 Card / POS</option>
@@ -747,17 +747,17 @@ export const EditStudentModal = ({ isOpen, onClose, student }) => {
           </div>
 
           {/* Footer Submit */}
-          <div className="pt-3 border-t border-zinc-800 flex items-center justify-end gap-3 sticky bottom-0 bg-dojo-card py-2">
+          <div className="pt-3 border-t border-zinc-800 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2 sm:gap-3">
             <button
               type="button"
               onClick={handleClose}
-              className="px-4 py-2.5 text-xs font-semibold text-zinc-400 hover:text-white transition-colors cursor-pointer"
+              className="w-full sm:w-auto px-4 py-2.5 text-xs font-semibold text-zinc-400 hover:text-white transition-colors cursor-pointer text-center"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-6 py-2.5 bg-dojo-red hover:bg-dojo-redHover active:scale-95 text-xs font-bold text-white rounded-xl shadow-lg shadow-red-600/30 transition-all flex items-center gap-1.5 cursor-pointer"
+              className="w-full sm:w-auto px-6 py-2.5 bg-dojo-red hover:bg-dojo-redHover active:scale-95 text-xs font-bold text-white rounded-xl shadow-lg shadow-red-600/30 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
             >
               <Check className="w-4 h-4" />
               <span>Save Changes</span>

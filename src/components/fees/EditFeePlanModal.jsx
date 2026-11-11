@@ -97,29 +97,35 @@ export const EditFeePlanModal = ({ isOpen, onClose, plan }) => {
   const grandTotal = roundCurrency(subtotal + vatAmount);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-      <div className="w-full sm:max-w-lg bg-dojo-card border-t sm:border border-dojo-border rounded-t-3xl sm:rounded-2xl shadow-2xl max-h-[92vh] overflow-y-auto">
+    <div
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-sm animate-fade-in"
+    >
+      <div className="w-full sm:max-w-lg bg-dojo-card border-t sm:border border-dojo-border rounded-t-3xl sm:rounded-2xl shadow-2xl max-h-dvh-92 flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="sticky top-0 bg-dojo-card/95 backdrop-blur-md px-5 py-4 border-b border-dojo-border flex items-center justify-between z-10">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center">
+        <div className="shrink-0 bg-dojo-card/95 backdrop-blur-md px-5 py-4 border-b border-dojo-border flex items-center justify-between gap-2 z-10">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center shrink-0">
               <CreditCard className="w-4 h-4" />
             </div>
-            <div>
-              <h2 className="text-base font-bold text-white tracking-tight">Edit Fee Structure</h2>
-              <p className="text-[11px] text-zinc-400">Modify package pricing, admission, uniform & 5% VAT</p>
+            <div className="min-w-0">
+              <h2 className="text-base font-bold text-white tracking-tight truncate">Edit Fee Structure</h2>
+              <p className="text-[11px] text-zinc-400 truncate">Modify package pricing, admission, uniform &amp; 5% VAT</p>
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
+            className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer shrink-0"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-5 space-y-4">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
           {/* Plan Name */}
           <div>
             <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
@@ -139,7 +145,7 @@ export const EditFeePlanModal = ({ isOpen, onClose, plan }) => {
 
           {/* Duration & Billing Cycle */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
+            <div className="min-w-0">
               <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
                 Duration (Months)
               </label>
@@ -160,7 +166,7 @@ export const EditFeePlanModal = ({ isOpen, onClose, plan }) => {
                     specialOffer: m >= 3 && !formData.specialOffer ? 'Special Offer: Free Uniform (worth 125 Dhs)' : formData.specialOffer
                   });
                 }}
-                className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-red-500"
+                className="w-full min-w-0 bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-red-500 truncate"
               >
                 <option value={1}>1 Month (Monthly)</option>
                 <option value={3}>3 Months (Special Offer)</option>
@@ -169,7 +175,7 @@ export const EditFeePlanModal = ({ isOpen, onClose, plan }) => {
               </select>
             </div>
 
-            <div>
+            <div className="min-w-0">
               <label className="block text-xs font-semibold text-zinc-300 mb-1.5">
                 Class Schedule Note
               </label>
@@ -180,7 +186,7 @@ export const EditFeePlanModal = ({ isOpen, onClose, plan }) => {
                   placeholder="Weekly 3 days with 1 hr"
                   value={formData.scheduleNote}
                   onChange={(e) => setFormData({ ...formData, scheduleNote: e.target.value })}
-                  className="w-full bg-zinc-900 border border-zinc-700 rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-red-500"
+                  className="w-full min-w-0 bg-zinc-900 border border-zinc-700 rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-red-500"
                 />
               </div>
             </div>
@@ -193,7 +199,7 @@ export const EditFeePlanModal = ({ isOpen, onClose, plan }) => {
             </span>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-              <div>
+              <div className="min-w-0">
                 <label className="block text-[11px] font-medium text-zinc-300 mb-1">
                   Tuition Fee (Dhs) *
                 </label>
@@ -204,12 +210,12 @@ export const EditFeePlanModal = ({ isOpen, onClose, plan }) => {
                   placeholder="250"
                   value={formData.tuitionFee}
                   onChange={(e) => setFormData({ ...formData, tuitionFee: e.target.value })}
-                  className="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-emerald-400 font-bold focus:outline-none focus:border-red-500"
+                  className="w-full min-w-0 bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-emerald-400 font-bold focus:outline-none focus:border-red-500"
                 />
                 {errors.tuitionFee && <p className="text-[10px] text-red-400 mt-0.5">{errors.tuitionFee}</p>}
               </div>
 
-              <div>
+              <div className="min-w-0">
                 <label className="block text-[11px] font-medium text-zinc-300 mb-1">
                   Admission Fee (Dhs)
                 </label>
@@ -220,17 +226,17 @@ export const EditFeePlanModal = ({ isOpen, onClose, plan }) => {
                   placeholder="100"
                   value={formData.registrationFee}
                   onChange={(e) => setFormData({ ...formData, registrationFee: e.target.value })}
-                  className="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white font-semibold focus:outline-none focus:border-red-500"
+                  className="w-full min-w-0 bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white font-semibold focus:outline-none focus:border-red-500"
                 />
               </div>
 
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="text-[11px] font-medium text-zinc-300">
+              <div className="min-w-0">
+                <div className="flex items-center justify-between gap-1 mb-1">
+                  <label className="text-[11px] font-medium text-zinc-300 truncate">
                     Uniform (Dhs)
                   </label>
                   {Number(formData.uniformFee) === 0 && (
-                    <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-emerald-950 text-emerald-400 border border-emerald-500/30">
+                    <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-emerald-950 text-emerald-400 border border-emerald-500/30 shrink-0">
                       FREE
                     </span>
                   )}
@@ -242,7 +248,7 @@ export const EditFeePlanModal = ({ isOpen, onClose, plan }) => {
                   placeholder="125"
                   value={formData.uniformFee}
                   onChange={(e) => setFormData({ ...formData, uniformFee: e.target.value })}
-                  className="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white font-semibold focus:outline-none focus:border-red-500"
+                  className="w-full min-w-0 bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white font-semibold focus:outline-none focus:border-red-500"
                 />
               </div>
             </div>
@@ -285,21 +291,21 @@ export const EditFeePlanModal = ({ isOpen, onClose, plan }) => {
 
             {/* VAT Rate & Calculation Breakdown */}
             <div className="pt-2 border-t border-zinc-800 space-y-1.5 text-xs">
-              <div className="flex items-center justify-between text-zinc-400">
-                <span>Subtotal (Tuition + Admission + Uniform):</span>
-                <span className="font-semibold text-zinc-200">{formatCurrencyAmount(subtotal)} Dhs</span>
+              <div className="flex items-center justify-between gap-2 text-zinc-400">
+                <span className="min-w-0">Subtotal (Tuition + Admission + Uniform):</span>
+                <span className="font-semibold text-zinc-200 shrink-0">{formatCurrencyAmount(subtotal)} Dhs</span>
               </div>
 
-              <div className="flex items-center justify-between text-zinc-400">
-                <span className="flex items-center gap-1">
+              <div className="flex items-center justify-between gap-2 text-zinc-400">
+                <span className="flex items-center gap-1 min-w-0">
                   <span>UAE VAT ({formData.vatRate}%):</span>
                 </span>
-                <span className="font-semibold text-amber-400">+{vatAmount.toFixed(2)} Dhs</span>
+                <span className="font-semibold text-amber-400 shrink-0">+{vatAmount.toFixed(2)} Dhs</span>
               </div>
 
-              <div className="flex items-center justify-between pt-1 border-t border-zinc-800/80">
-                <span className="font-bold text-white">Total Bill Amount (Incl. {vatRate}% VAT):</span>
-                <span className="text-base font-black text-emerald-400">
+              <div className="flex items-center justify-between gap-2 pt-1 border-t border-zinc-800/80">
+                <span className="font-bold text-white min-w-0">Total Bill Amount (Incl. {vatRate}% VAT):</span>
+                <span className="text-base font-black text-emerald-400 shrink-0">
                   {grandTotal.toFixed(2)} Dhs
                 </span>
               </div>
@@ -390,17 +396,17 @@ export const EditFeePlanModal = ({ isOpen, onClose, plan }) => {
           </div>
 
           {/* Actions */}
-          <div className="pt-3 border-t border-zinc-800 flex items-center justify-end gap-3">
+          <div className="pt-3 border-t border-zinc-800 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2 sm:gap-3">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2.5 text-xs font-semibold text-zinc-400 hover:text-white transition-colors cursor-pointer"
+              className="w-full sm:w-auto px-4 py-2.5 text-xs font-semibold text-zinc-400 hover:text-white transition-colors cursor-pointer text-center"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-xs font-bold text-white rounded-xl shadow-lg shadow-emerald-700/30 transition-all cursor-pointer"
+              className="w-full sm:w-auto px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-xs font-bold text-white rounded-xl shadow-lg shadow-emerald-700/30 transition-all cursor-pointer text-center"
             >
               Save Fee Plan Changes
             </button>

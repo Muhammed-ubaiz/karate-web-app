@@ -260,7 +260,7 @@ export const CollectionProgress = ({ initialMonth = null }) => {
     });
   };
 
-  const renderTransactionRow = (payment) => {
+  const renderMobileTransactionCard = (payment) => {
     const studentObj = studentLookup.get(payment.studentId);
     const studentName = payment.studentName || studentObj?.fullName || 'Unknown Student';
     const billNo = payment.billNumber || payment.receiptNumber || `BILL-${payment.id?.slice(-4) || '0000'}`;
@@ -271,82 +271,69 @@ export const CollectionProgress = ({ initialMonth = null }) => {
     return (
       <div
         key={payment.id}
-        className={`px-3.5 py-2.5 sm:px-4 grid grid-cols-1 md:grid-cols-12 gap-2 md:gap-3 md:items-center transition-colors ${
+        className={`p-3.5 space-y-2 transition-colors ${
           isReset ? 'bg-orange-950/15 opacity-80' : 'hover:bg-zinc-900/70'
         }`}
       >
-        {/* 1. Bill / Receipt Number */}
-        <div className="md:col-span-2 flex items-center justify-between md:justify-start gap-2">
-          <span className="inline-flex items-center gap-1 font-mono font-bold text-[11px] px-2 py-0.5 rounded-lg bg-amber-500/15 text-amber-300 border border-amber-500/30">
-            <Hash className="w-3 h-3 text-amber-400 shrink-0" />
-            <span>{billNo}</span>
-          </span>
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+            <span className="inline-flex items-center gap-1 font-mono font-bold text-[11px] px-2 py-0.5 rounded-lg bg-amber-500/15 text-amber-300 border border-amber-500/30">
+              <Hash className="w-3 h-3 text-amber-400 shrink-0" />
+              <span>{billNo}</span>
+            </span>
+            {payment.isEdited && (
+              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 shrink-0">
+                Corrected
+              </span>
+            )}
+            {isReset && (
+              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-orange-600/25 text-orange-300 border border-orange-500/50 shrink-0">
+                Reset
+              </span>
+            )}
+          </div>
 
-          {/* Mobile amount badge on right of first line */}
-          <span className={`md:hidden text-sm font-black ${isReset ? 'text-zinc-500 line-through' : 'text-emerald-400'}`}>
+          <span className={`text-sm font-black shrink-0 ${isReset ? 'text-zinc-500 line-through' : 'text-emerald-400'}`}>
             AED {formatCurrencyAmount(payment.amount)}
           </span>
         </div>
 
-        {/* 2. Student Name + status badges */}
-        <div className="md:col-span-3 min-w-0 flex items-center gap-1.5 flex-wrap">
+        <div className="min-w-0">
           {studentObj ? (
             <button
               type="button"
               onClick={() => setProfileStudent(studentObj)}
-              className="text-xs sm:text-sm font-bold text-white hover:text-amber-300 transition-colors flex items-center gap-1.5 truncate cursor-pointer text-left"
+              className="text-xs font-bold text-white hover:text-amber-300 transition-colors inline-flex items-center gap-1.5 max-w-full cursor-pointer text-left"
               title={`View ${studentName}'s full payment history`}
             >
               <User className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
               <span className="truncate">{studentName}</span>
             </button>
           ) : (
-            <span className="text-xs sm:text-sm font-bold text-white flex items-center gap-1.5 truncate">
+            <span className="text-xs font-bold text-white inline-flex items-center gap-1.5 max-w-full">
               <User className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
               <span className="truncate">{studentName}</span>
             </span>
           )}
+        </div>
 
-          {payment.isEdited && (
-            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 shrink-0">
-              Corrected
+        <div className="flex items-center justify-between gap-2 pt-1 text-[11px] text-zinc-400">
+          <div className="flex items-center gap-2 min-w-0 flex-wrap">
+            <span className="inline-flex items-center gap-1 shrink-0">
+              <Calendar className="w-3 h-3 text-zinc-500 shrink-0" />
+              <span>{displayDate}</span>
             </span>
-          )}
-          {isReset && (
-            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-orange-600/25 text-orange-300 border border-orange-500/50 shrink-0">
-              Reset / Voided
+            <span className="text-zinc-600">•</span>
+            <span className="inline-flex items-center gap-1 truncate">
+              <CreditCard className="w-3 h-3 text-zinc-500 shrink-0" />
+              <span className="truncate">{methodText}</span>
             </span>
-          )}
-        </div>
+          </div>
 
-        {/* 3. Payment Date */}
-        <div className="md:col-span-2 flex items-center gap-1.5 text-xs text-zinc-300">
-          <Calendar className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
-          <span className="font-medium">{displayDate}</span>
-        </div>
-
-        {/* 4. Payment Method */}
-        <div className="md:col-span-2 flex items-center gap-1.5 text-xs text-zinc-300">
-          <CreditCard className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
-          <span className="truncate font-medium">{methodText}</span>
-        </div>
-
-        {/* 5. Amount (Desktop Column) */}
-        <div className="hidden md:block md:col-span-2 text-right">
-          <span className={`text-sm font-black ${isReset ? 'text-zinc-500 line-through' : 'text-emerald-400'}`}>
-            AED {formatCurrencyAmount(payment.amount)}
-          </span>
-          {isReset && (
-            <span className="block text-[9px] text-orange-400 font-semibold">Excluded (Reset)</span>
-          )}
-        </div>
-
-        {/* 6. Quick Receipt Action */}
-        <div className="md:col-span-1 flex items-center justify-end">
           <button
             type="button"
             onClick={() => handleOpenReceipt(payment)}
-            className="inline-flex items-center gap-1 px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-100 rounded-lg text-[11px] font-bold border border-zinc-700 transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1 px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-100 rounded-lg text-[11px] font-bold border border-zinc-700 transition-colors cursor-pointer shrink-0"
             title={`Open receipt for ${billNo}`}
           >
             <Printer className="w-3 h-3 text-amber-400" />
@@ -357,6 +344,125 @@ export const CollectionProgress = ({ initialMonth = null }) => {
     );
   };
 
+  const renderDesktopTableRow = (payment) => {
+    const studentObj = studentLookup.get(payment.studentId);
+    const studentName = payment.studentName || studentObj?.fullName || 'Unknown Student';
+    const billNo = payment.billNumber || payment.receiptNumber || `BILL-${payment.id?.slice(-4) || '0000'}`;
+    const displayDate = formatDisplayDate(payment.paymentDate || payment.createdAt) || '—';
+    const methodText = payment.paymentMethod || 'Cash';
+    const isReset = payment.status === 'Reset';
+
+    return (
+      <tr
+        key={payment.id}
+        className={`transition-colors ${
+          isReset ? 'bg-orange-950/15 opacity-80' : 'hover:bg-zinc-900/70'
+        }`}
+      >
+        <td className="px-4 py-2.5 whitespace-nowrap">
+          <span className="inline-flex items-center gap-1 font-mono font-bold text-[11px] px-2 py-0.5 rounded-lg bg-amber-500/15 text-amber-300 border border-amber-500/30">
+            <Hash className="w-3 h-3 text-amber-400 shrink-0" />
+            <span>{billNo}</span>
+          </span>
+        </td>
+
+        <td className="px-4 py-2.5 min-w-[160px]">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {studentObj ? (
+              <button
+                type="button"
+                onClick={() => setProfileStudent(studentObj)}
+                className="text-xs lg:text-sm font-bold text-white hover:text-amber-300 transition-colors inline-flex items-center gap-1.5 cursor-pointer text-left"
+                title={`View ${studentName}'s full payment history`}
+              >
+                <User className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
+                <span className="break-words">{studentName}</span>
+              </button>
+            ) : (
+              <span className="text-xs lg:text-sm font-bold text-white inline-flex items-center gap-1.5">
+                <User className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
+                <span className="break-words">{studentName}</span>
+              </span>
+            )}
+            {payment.isEdited && (
+              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 shrink-0">
+                Corrected
+              </span>
+            )}
+            {isReset && (
+              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-orange-600/25 text-orange-300 border border-orange-500/50 shrink-0">
+                Reset / Voided
+              </span>
+            )}
+          </div>
+        </td>
+
+        <td className="px-4 py-2.5 whitespace-nowrap text-xs text-zinc-300">
+          <span className="inline-flex items-center gap-1.5">
+            <Calendar className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
+            <span className="font-medium">{displayDate}</span>
+          </span>
+        </td>
+
+        <td className="px-4 py-2.5 whitespace-nowrap text-xs text-zinc-300">
+          <span className="inline-flex items-center gap-1.5">
+            <CreditCard className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
+            <span className="font-medium">{methodText}</span>
+          </span>
+        </td>
+
+        <td className="px-4 py-2.5 whitespace-nowrap text-right">
+          <span className={`text-sm font-black ${isReset ? 'text-zinc-500 line-through' : 'text-emerald-400'}`}>
+            AED {formatCurrencyAmount(payment.amount)}
+          </span>
+          {isReset && (
+            <span className="block text-[9px] text-orange-400 font-semibold">Excluded (Reset)</span>
+          )}
+        </td>
+
+        <td className="px-4 py-2.5 whitespace-nowrap text-right">
+          <button
+            type="button"
+            onClick={() => handleOpenReceipt(payment)}
+            className="inline-flex items-center gap-1 px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-100 rounded-lg text-[11px] font-bold border border-zinc-700 transition-colors cursor-pointer"
+            title={`Open receipt for ${billNo}`}
+          >
+            <Printer className="w-3 h-3 text-amber-400" />
+            <span>Receipt</span>
+          </button>
+        </td>
+      </tr>
+    );
+  };
+
+  const renderTransactionsTableOrCards = (transactions) => (
+    <>
+      {/* Mobile Cards (<768px) */}
+      <div className="md:hidden divide-y divide-zinc-800/70">
+        {transactions.map(renderMobileTransactionCard)}
+      </div>
+
+      {/* Tablet & Desktop Table (md+) */}
+      <div className="hidden md:block overflow-x-auto">
+        <table className="w-full text-left border-collapse min-w-[680px]">
+          <thead>
+            <tr className="bg-zinc-950/80 border-b border-zinc-800/80 text-[10px] font-bold uppercase tracking-wider text-zinc-500">
+              <th className="px-4 py-2">Bill / Receipt No.</th>
+              <th className="px-4 py-2">Student Name</th>
+              <th className="px-4 py-2">Payment Date</th>
+              <th className="px-4 py-2">Payment Method</th>
+              <th className="px-4 py-2 text-right">Amount</th>
+              <th className="px-4 py-2 text-right">Receipt</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-zinc-800/70">
+            {transactions.map(renderDesktopTableRow)}
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
+
   return (
     <div className="bg-dojo-card border border-dojo-border rounded-2xl p-4 sm:p-5 shadow-lg relative overflow-hidden space-y-4">
       {/* Decorative gradient glow */}
@@ -364,7 +470,7 @@ export const CollectionProgress = ({ initialMonth = null }) => {
 
       {/* Top Header Row + Month Selector Controls */}
       <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 relative z-10">
-        <div>
+        <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="w-2 h-2 rounded-full bg-red-500 animate-ping shrink-0" />
             <h3 className="text-base font-bold text-white tracking-tight">{displayTitle}</h3>
@@ -372,7 +478,7 @@ export const CollectionProgress = ({ initialMonth = null }) => {
               {selectedMonthSummary.validCount} Bill{selectedMonthSummary.validCount === 1 ? '' : 's'}
             </span>
           </div>
-          <p className="text-xs text-zinc-400 mt-0.5">
+          <p className="text-xs text-zinc-400 mt-0.5 break-words">
             {isAllMonthsMode
               ? `Showing all recorded monthly transactions across ${allMonthGroups.length} month(s) • ${activeStudents.length} active students`
               : `Target: ${formatCurrencyAmount(estimatedTarget)} Dhs across ${activeStudents.length} active students • ${selectedMonthSummary.validCount} transaction(s) in ${selectedMonthSummary.monthLabel}`}
@@ -380,8 +486,8 @@ export const CollectionProgress = ({ initialMonth = null }) => {
         </div>
 
         {/* Controls: Month Picker + Prev/Next + All Months + Overdue Alert */}
-        <div className="flex items-center gap-2 flex-wrap w-full xl:w-auto">
-          <div className="flex items-center bg-zinc-900 border border-zinc-700/80 rounded-xl p-1 gap-1 w-full sm:w-auto max-w-full min-w-0">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap lg:items-center gap-2 w-full xl:w-auto">
+          <div className="flex items-center bg-zinc-900 border border-zinc-700/80 rounded-xl p-1 gap-1 w-full lg:w-auto min-w-0">
             <button
               type="button"
               onClick={() => handleStepMonth(-1)}
@@ -396,7 +502,7 @@ export const CollectionProgress = ({ initialMonth = null }) => {
               aria-label="Select billing month"
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(e.target.value)}
-              className="bg-transparent text-xs font-bold text-white px-1.5 py-1 focus:outline-none cursor-pointer flex-1 sm:flex-initial min-w-0 max-w-full truncate"
+              className="bg-transparent text-xs font-bold text-white px-1.5 py-1 focus:outline-none cursor-pointer flex-1 lg:flex-initial min-w-0 max-w-full truncate"
             >
               <option value="all" className="bg-zinc-900 text-amber-300">
                 All Months (Month-by-Month • {allMonthGroups.length})
@@ -431,14 +537,14 @@ export const CollectionProgress = ({ initialMonth = null }) => {
             onChange={(e) => {
               if (e.target.value) setSelectedMonth(e.target.value);
             }}
-            className="bg-zinc-900 border border-zinc-700/80 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-zinc-200 focus:outline-none focus:border-amber-400 cursor-pointer w-full sm:w-auto max-w-full"
+            className="bg-zinc-900 border border-zinc-700/80 rounded-xl px-2.5 py-2 text-xs font-semibold text-zinc-200 focus:outline-none focus:border-amber-400 cursor-pointer w-full lg:w-auto min-w-0"
             title="Pick any month & year"
           />
 
           <button
             type="button"
             onClick={() => setSelectedMonth(isAllMonthsMode ? currentMonthKey : 'all')}
-            className={`px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+            className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer text-center whitespace-nowrap ${
               isAllMonthsMode
                 ? 'bg-amber-600 text-white border-amber-500 shadow'
                 : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border-zinc-700'
@@ -450,9 +556,9 @@ export const CollectionProgress = ({ initialMonth = null }) => {
           <button
             type="button"
             onClick={handleSendReminders}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all border bg-zinc-800 hover:bg-zinc-700 border-zinc-700 text-zinc-200 active:scale-95 cursor-pointer"
+            className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all border bg-zinc-800 hover:bg-zinc-700 border-zinc-700 text-zinc-200 active:scale-95 cursor-pointer whitespace-nowrap"
           >
-            <MessageSquare className="w-3.5 h-3.5 text-emerald-400" />
+            <MessageSquare className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
             <span>WhatsApp Overdue Alert</span>
           </button>
         </div>
@@ -539,15 +645,15 @@ export const CollectionProgress = ({ initialMonth = null }) => {
           {/* Search & Monthly Total Summary Bar */}
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5 bg-zinc-950/70 border border-zinc-800 rounded-xl p-3">
             {/* Search by Student Name or Bill Number */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 flex-1">
-              <div className="relative flex-1 min-w-[200px]">
+            <div className="grid grid-cols-2 sm:flex sm:flex-row items-stretch sm:items-center gap-2 flex-1 min-w-0">
+              <div className="relative col-span-2 sm:flex-1 min-w-0">
                 <Search className="w-3.5 h-3.5 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search by student name or bill / receipt no. (e.g. BILL-0001)..."
-                  className="w-full bg-zinc-900 border border-zinc-700/80 rounded-xl pl-8 pr-8 py-1.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-amber-400"
+                  placeholder="Search student or Bill No. (BILL-0001)..."
+                  className="w-full bg-zinc-900 border border-zinc-700/80 rounded-xl pl-8 pr-8 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-amber-400"
                 />
                 {searchQuery && (
                   <button
@@ -565,7 +671,7 @@ export const CollectionProgress = ({ initialMonth = null }) => {
                 aria-label="Filter by payment method"
                 value={methodFilter}
                 onChange={(e) => setMethodFilter(e.target.value)}
-                className="bg-zinc-900 border border-zinc-700/80 rounded-xl px-2.5 py-1.5 text-xs text-zinc-200 font-semibold focus:outline-none focus:border-amber-400 cursor-pointer"
+                className="w-full sm:w-auto min-w-0 bg-zinc-900 border border-zinc-700/80 rounded-xl px-2.5 py-2 text-xs text-zinc-200 font-semibold focus:outline-none focus:border-amber-400 cursor-pointer"
               >
                 <option value="all">All Methods</option>
                 {uniqueMethods.map(m => (
@@ -577,7 +683,7 @@ export const CollectionProgress = ({ initialMonth = null }) => {
                 aria-label="Filter by transaction status"
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="bg-zinc-900 border border-zinc-700/80 rounded-xl px-2.5 py-1.5 text-xs text-zinc-200 font-semibold focus:outline-none focus:border-amber-400 cursor-pointer"
+                className="w-full sm:w-auto min-w-0 bg-zinc-900 border border-zinc-700/80 rounded-xl px-2.5 py-2 text-xs text-zinc-200 font-semibold focus:outline-none focus:border-amber-400 cursor-pointer"
               >
                 <option value="all">All Status</option>
                 <option value="Active">Valid Paid</option>
@@ -586,7 +692,7 @@ export const CollectionProgress = ({ initialMonth = null }) => {
             </div>
 
             {/* Summary Total Badge */}
-            <div className="flex items-center justify-between sm:justify-end gap-3 text-xs shrink-0 pt-1 lg:pt-0 border-t lg:border-t-0 border-zinc-800/70">
+            <div className="flex items-center justify-between sm:justify-end gap-3 text-xs shrink-0 pt-2 lg:pt-0 border-t lg:border-t-0 border-zinc-800/70">
               {hasActiveFilter ? (
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-zinc-400">
@@ -681,7 +787,7 @@ export const CollectionProgress = ({ initialMonth = null }) => {
             </div>
           ) : isAllMonthsMode ? (
             /* Month-by-Month Grouped Display */
-            <div className="space-y-3 max-h-[500px] overflow-y-auto pr-0.5">
+            <div className="space-y-3 max-h-[520px] overflow-y-auto pr-0.5">
               {filteredMonthGroups.map((group) => (
                 <div
                   key={group.monthKey}
@@ -719,19 +825,7 @@ export const CollectionProgress = ({ initialMonth = null }) => {
                     </div>
                   </div>
 
-                  {/* Desktop Column Sub-header */}
-                  <div className="hidden md:grid md:grid-cols-12 gap-3 px-4 py-1.5 bg-zinc-950/80 border-b border-zinc-800/70 text-[10px] font-bold uppercase tracking-wider text-zinc-500">
-                    <div className="md:col-span-2">Bill / Receipt No.</div>
-                    <div className="md:col-span-3">Student Name</div>
-                    <div className="md:col-span-2">Payment Date</div>
-                    <div className="md:col-span-2">Payment Method</div>
-                    <div className="md:col-span-2 text-right">Amount</div>
-                    <div className="md:col-span-1 text-right">Receipt</div>
-                  </div>
-
-                  <div className="divide-y divide-zinc-800/70">
-                    {group.transactions.map(renderTransactionRow)}
-                  </div>
+                  {renderTransactionsTableOrCards(group.transactions)}
                 </div>
               ))}
             </div>
@@ -752,18 +846,8 @@ export const CollectionProgress = ({ initialMonth = null }) => {
                 </span>
               </div>
 
-              {/* Desktop Column Header */}
-              <div className="hidden md:grid md:grid-cols-12 gap-3 px-4 py-2 bg-zinc-950/80 border-b border-zinc-800/80 text-[10px] font-bold uppercase tracking-wider text-zinc-500">
-                <div className="md:col-span-2">Bill / Receipt No.</div>
-                <div className="md:col-span-3">Student Name</div>
-                <div className="md:col-span-2">Payment Date</div>
-                <div className="md:col-span-2">Payment Method</div>
-                <div className="md:col-span-2 text-right">Amount</div>
-                <div className="md:col-span-1 text-right">Receipt</div>
-              </div>
-
-              <div className="divide-y divide-zinc-800/70 max-h-[420px] overflow-y-auto">
-                {filteredTransactions.map(renderTransactionRow)}
+              <div className="max-h-[420px] overflow-y-auto">
+                {renderTransactionsTableOrCards(filteredTransactions)}
               </div>
             </div>
           )}

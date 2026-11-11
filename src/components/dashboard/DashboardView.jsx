@@ -70,13 +70,13 @@ export const DashboardView = () => {
   return (
     <div className="space-y-6">
       {/* Welcome Banner & Quick Action Buttons */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-zinc-900 via-dojo-card to-zinc-900 border border-dojo-border rounded-2xl p-4 sm:p-5 shadow-lg">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-gradient-to-r from-zinc-900 via-dojo-card to-zinc-900 border border-dojo-border rounded-2xl p-4 sm:p-5 shadow-lg">
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="text-lg sm:text-2xl font-black text-white tracking-tight">
+            <h1 className="text-lg sm:text-xl lg:text-2xl font-black text-white tracking-tight break-words">
               Osu, Al Muharib Karate Center! 🥋
             </h1>
-            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border whitespace-nowrap ${
+            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border whitespace-nowrap shrink-0 ${
               isAdmin
                 ? 'bg-red-600/20 text-red-400 border-red-500/30'
                 : 'bg-zinc-800 text-zinc-400 border-zinc-700'
@@ -90,10 +90,10 @@ export const DashboardView = () => {
         </div>
 
         {/* Quick Action Buttons */}
-        <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 sm:gap-2.5">
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 sm:gap-2.5 shrink-0">
           <button
             onClick={() => setActiveTab('attendance')}
-            className="inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-2.5 bg-zinc-800 hover:bg-zinc-700 active:scale-95 text-xs font-semibold text-white rounded-xl border border-zinc-700 transition-all shadow truncate cursor-pointer"
+            className="inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-2.5 bg-zinc-800 hover:bg-zinc-700 active:scale-95 text-xs font-semibold text-white rounded-xl border border-zinc-700 transition-all shadow cursor-pointer min-w-0"
           >
             <ClipboardCheck className="w-4 h-4 text-emerald-400 shrink-0" />
             <span className="truncate">Attendance</span>
@@ -101,7 +101,7 @@ export const DashboardView = () => {
 
           <button
             onClick={() => requireAdmin(() => setModalState(prev => ({ ...prev, recordPayment: true })))}
-            className="inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-2.5 bg-zinc-800 hover:bg-zinc-700 active:scale-95 text-xs font-semibold text-white rounded-xl border border-zinc-700 transition-all shadow truncate cursor-pointer"
+            className="inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-2.5 bg-zinc-800 hover:bg-zinc-700 active:scale-95 text-xs font-semibold text-white rounded-xl border border-zinc-700 transition-all shadow cursor-pointer min-w-0"
           >
             <CreditCard className="w-4 h-4 text-amber-400 shrink-0" />
             <span className="truncate">{isAdmin ? 'Record Fee' : 'Record Fee 🔒'}</span>
@@ -109,7 +109,7 @@ export const DashboardView = () => {
 
           <button
             onClick={() => requireAdmin(() => setModalState(prev => ({ ...prev, addStudent: true })))}
-            className={`col-span-2 sm:col-span-1 sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            className={`col-span-2 sm:col-span-1 sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
               isAdmin
                 ? 'bg-dojo-red hover:bg-dojo-redHover active:scale-95 text-white shadow-lg shadow-red-600/30'
                 : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700'

@@ -111,9 +111,9 @@ export const DueNoticeModal = ({ isOpen, onClose, student, dojo = null, onSent =
       }}
       className="printable-portal-root fixed inset-0 z-[70] flex items-center justify-center p-2.5 sm:p-4 bg-black/85 backdrop-blur-sm animate-fade-in"
     >
-      <div className="printable-portal-card w-full max-w-xl bg-[#18181c] border border-zinc-700/90 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[95vh]">
+      <div className="printable-portal-card w-full max-w-xl bg-[#18181c] border border-zinc-700/90 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-dvh-95">
         {/* Modal Action Bar (Hidden in Print) */}
-        <div className="px-4 sm:px-5 py-3 bg-zinc-900 border-b border-zinc-800 flex flex-wrap items-center justify-between gap-2 shrink-0 print:hidden">
+        <div className="px-3.5 sm:px-5 py-2.5 sm:py-3 bg-zinc-900 border-b border-zinc-800 flex flex-wrap items-center justify-between gap-2 shrink-0 print:hidden">
           <div className="flex items-center gap-2 min-w-0">
             <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse shrink-0" />
             <span className="text-xs font-bold text-white uppercase tracking-wider truncate">
@@ -203,11 +203,11 @@ export const DueNoticeModal = ({ isOpen, onClose, student, dojo = null, onSent =
         )}
 
         {/* White-Paper Printable Official Fee Due Notice */}
-        <div className="p-3.5 sm:p-5 overflow-y-auto bg-zinc-950/60 print:p-0 print:bg-white">
+        <div className="p-2.5 sm:p-5 overflow-y-auto bg-zinc-950/60 print:p-0 print:bg-white">
           <div className="printable-paper bg-white text-slate-900 rounded-2xl border border-slate-200 shadow-xl overflow-hidden">
             <div className="h-2.5 w-full bg-red-600" />
 
-            <div className="p-5 sm:p-7 space-y-5">
+            <div className="p-4 sm:p-7 space-y-4 sm:space-y-5">
               {/* Academy Brand Header */}
               <div className="text-center pb-4 border-b border-slate-200">
                 <div className="w-12 h-12 mx-auto rounded-2xl bg-red-50 text-red-600 border border-red-200 flex items-center justify-center font-black text-2xl mb-2.5">
@@ -283,17 +283,17 @@ export const DueNoticeModal = ({ isOpen, onClose, student, dojo = null, onSent =
                   Fee Renewal Breakdown
                 </span>
                 <div className="rounded-xl border border-slate-300 overflow-hidden divide-y divide-slate-200 text-xs">
-                  <div className="flex items-center justify-between px-3.5 py-2.5 bg-slate-100 font-bold text-slate-600 text-[11px] uppercase tracking-wider">
-                    <span>Fee Description</span>
-                    <span>Amount (Dhs)</span>
+                  <div className="flex items-center justify-between gap-2 px-3 sm:px-3.5 py-2.5 bg-slate-100 font-bold text-slate-600 text-[11px] uppercase tracking-wider">
+                    <span className="min-w-0">Fee Description</span>
+                    <span className="shrink-0">Amount (Dhs)</span>
                   </div>
 
-                  <div className="flex items-start justify-between gap-3 px-3.5 py-3 text-slate-900">
+                  <div className="flex items-start justify-between gap-3 px-3 sm:px-3.5 py-3 text-slate-900">
                     <div className="min-w-0">
-                      <span className="font-extrabold block text-sm">
+                      <span className="font-extrabold block text-sm break-words">
                         {planName} ({billingCycle})
                       </span>
-                      <span className="text-[11px] text-slate-600 font-medium block mt-0.5">
+                      <span className="text-[11px] text-slate-600 font-medium block mt-0.5 break-words">
                         Branch: {dojoName}
                       </span>
                       {lastPaidDisplay && (
@@ -307,16 +307,16 @@ export const DueNoticeModal = ({ isOpen, onClose, student, dojo = null, onSent =
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-between px-3.5 py-2.5 text-slate-600 text-xs">
-                    <span className="font-semibold">UAE VAT ({breakdown.vatRate}%)</span>
-                    <span className="font-bold text-amber-700">+{breakdown.vatAmount.toFixed(2)}</span>
+                  <div className="flex items-center justify-between gap-2 px-3 sm:px-3.5 py-2.5 text-slate-600 text-xs">
+                    <span className="font-semibold min-w-0">UAE VAT ({breakdown.vatRate}%)</span>
+                    <span className="font-bold text-amber-700 shrink-0">+{breakdown.vatAmount.toFixed(2)}</span>
                   </div>
 
-                  <div className="flex items-center justify-between px-3.5 py-3.5 bg-red-50 text-slate-900 font-bold text-sm">
-                    <span className="font-extrabold">
+                  <div className="flex items-center justify-between gap-2 px-3 sm:px-3.5 py-3.5 bg-red-50 text-slate-900 font-bold text-sm">
+                    <span className="font-extrabold min-w-0">
                       Total Outstanding Due (Incl. {breakdown.vatRate}% VAT)
                     </span>
-                    <span className="text-lg font-black text-red-600">
+                    <span className="text-base sm:text-lg font-black text-red-600 shrink-0">
                       {formatCurrencyAmount(breakdown.totalDue)} Dhs
                     </span>
                   </div>
@@ -338,7 +338,7 @@ export const DueNoticeModal = ({ isOpen, onClose, student, dojo = null, onSent =
 
               {/* Footer */}
               <div className="pt-4 border-t border-slate-200 flex flex-wrap items-center justify-between gap-3 text-xs">
-                <div>
+                <div className="min-w-0">
                   <span className="font-extrabold text-slate-900 flex items-center gap-1.5">
                     <Phone className="w-3.5 h-3.5 text-red-600 shrink-0" />
                     <span>Inquiry Desk: {dojoPhone}</span>
@@ -348,7 +348,7 @@ export const DueNoticeModal = ({ isOpen, onClose, student, dojo = null, onSent =
                   </span>
                 </div>
 
-                <div className="text-right">
+                <div className="w-full sm:w-auto flex sm:block justify-center sm:text-right">
                   <div className="inline-block px-3 py-1.5 border border-dashed border-slate-400 rounded-lg text-[10px] text-slate-700 font-mono text-center">
                     <span className="font-bold block">AL MUHARIB KARATE CENTER</span>
                     <span className="text-[9px] text-slate-500">Administration Desk</span>

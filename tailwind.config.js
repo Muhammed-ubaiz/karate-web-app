@@ -9,13 +9,13 @@ export default {
     extend: {
       colors: {
         dojo: {
-          darkest: '#0d0d0e',
-          bg: '#121214',
-          card: '#1a1a1e',
-          cardHover: '#222228',
-          surface: '#26262e',
-          border: '#2e2e38',
-          muted: '#8e8ea0',
+          darkest: 'rgb(var(--dojo-darkest) / <alpha-value>)',
+          bg: 'rgb(var(--dojo-bg) / <alpha-value>)',
+          card: 'rgb(var(--dojo-card) / <alpha-value>)',
+          cardHover: 'rgb(var(--dojo-card-hover) / <alpha-value>)',
+          surface: 'rgb(var(--dojo-surface) / <alpha-value>)',
+          border: 'rgb(var(--dojo-border) / <alpha-value>)',
+          muted: 'rgb(var(--dojo-muted) / <alpha-value>)',
           red: '#E50914',
           redHover: '#f4121d',
           redLight: 'rgba(229, 9, 20, 0.15)',
