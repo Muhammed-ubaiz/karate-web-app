@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useDojo } from '../../context/DojoContext';
 import { DojoBranchDropdown } from './DojoBranchDropdown';
+import { BrandLogo, DojoEmblem } from './BrandLogo';
 import {
   Building2,
   ChevronDown,
@@ -50,17 +51,22 @@ export const Navbar = () => {
         <div className="flex items-center justify-between h-14 sm:h-16 gap-2">
           {/* Brand Logo & Name */}
           <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1 md:flex-initial md:mr-2">
-            <div className="w-8 h-8 sm:w-9 sm:h-9 lg:w-10 lg:h-10 rounded-xl bg-gradient-to-br from-red-600 to-red-800 flex items-center justify-center shadow-lg shadow-red-900/30 ring-1 ring-red-500/40 shrink-0">
-              <span className="text-base sm:text-lg lg:text-xl font-bold select-none">🥋</span>
-            </div>
+            <BrandLogo className="w-9 h-9 sm:w-10 sm:h-10 lg:w-11 lg:h-11 shrink-0 drop-shadow-[0_2px_8px_rgba(220,38,38,0.28)]" />
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1 sm:gap-1.5 min-w-0">
                 <span className="text-xs sm:text-sm lg:text-base font-black tracking-tight text-white truncate">
                   Al Muharib <span className="text-dojo-red">Karate Center</span>
                 </span>
               </div>
-              <p className="text-[10px] text-zinc-400 md:hidden font-medium truncate">
-                {activeDojo ? `${activeDojo.logo || '🥋'} ${activeDojo.name}` : '🏢 All Dojo Branches'}
+              <p className="text-[10px] text-zinc-400 md:hidden font-medium truncate flex items-center gap-1">
+                {activeDojo ? (
+                  <>
+                    <DojoEmblem logo={activeDojo.logo} sizeClass="w-3.5 h-3.5 shrink-0" textClass="text-[10px]" />
+                    <span className="truncate">{activeDojo.name}</span>
+                  </>
+                ) : (
+                  '🏢 All Dojo Branches'
+                )}
               </p>
               <p className="text-[10px] text-zinc-400 hidden md:block font-medium truncate">
                 Dojo &amp; Fee Management System
@@ -248,7 +254,10 @@ export const Navbar = () => {
                       : 'bg-zinc-900 text-zinc-300 border border-zinc-800'
                   }`}
                 >
-                  <span className="truncate">{d.logo || '🥋'} {d.name}</span>
+                  <span className="flex items-center gap-2 min-w-0 truncate">
+                    <DojoEmblem logo={d.logo} sizeClass="w-4 h-4 shrink-0" textClass="text-xs" />
+                    <span className="truncate">{d.name}</span>
+                  </span>
                   {selectedDojoId === d.id && <Check className="w-3.5 h-3.5 text-red-400" />}
                 </button>
               ))}

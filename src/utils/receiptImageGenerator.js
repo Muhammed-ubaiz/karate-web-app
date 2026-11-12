@@ -12,11 +12,42 @@ import {
   calculateVatBreakdownFromTotal,
   formatCurrencyAmount
 } from './billingHelper.js';
+import logoReceiptUrl from '../assets/logo-receipt.png?inline';
 
 const ACADEMY_NAME = 'AL MUHARIB KARATE CENTER';
 const ACADEMY_TRN = '100293847500003';
 const SANS_FONT = '"Plus Jakarta Sans", "Inter", system-ui, -apple-system, "Segoe UI", Arial, sans-serif';
 const MONO_FONT = '"Consolas", "Courier New", monospace';
+
+let cachedLogoImg = null;
+let logoLoadPromise = null;
+
+if (typeof Image !== 'undefined') {
+  cachedLogoImg = new Image();
+  cachedLogoImg.src = logoReceiptUrl;
+}
+
+const ensureReceiptLogoLoaded = () => {
+  if (typeof Image === 'undefined') return Promise.resolve(null);
+  if (cachedLogoImg && cachedLogoImg.complete && cachedLogoImg.naturalWidth > 0) {
+    return Promise.resolve(cachedLogoImg);
+  }
+  if (!logoLoadPromise) {
+    logoLoadPromise = new Promise((resolve) => {
+      const img = cachedLogoImg || new Image();
+      const finish = (result) => resolve(result);
+      img.onload = () => finish(img);
+      img.onerror = () => finish(null);
+      if (!img.src) img.src = logoReceiptUrl;
+      if (img.complete) {
+        finish(img.naturalWidth > 0 ? img : null);
+      } else {
+        setTimeout(() => finish(img.naturalWidth > 0 ? img : null), 1500);
+      }
+    });
+  }
+  return logoLoadPromise;
+};
 
 const drawRoundedRectPath = (ctx, x, y, width, height, radius = 8) => {
   const r = Math.min(radius, width / 2, height / 2);
@@ -63,8 +94,19 @@ const wrapTextLines = (ctx, text, maxWidth) => {
   return lines;
 };
 
-const drawKarateCrest = (ctx, cx, cy, radius) => {
-  // Subtle crimson circle background
+const drawKarateCrest = (ctx, cx, cy, radius, logoImg = null) => {
+  if (logoImg && logoImg.naturalWidth > 0) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+    ctx.closePath();
+    ctx.clip();
+    ctx.drawImage(logoImg, cx - radius, cy - radius, radius * 2, radius * 2);
+    ctx.restore();
+    return;
+  }
+
+  // Fallback vector crest if image decoding fails
   ctx.save();
   ctx.beginPath();
   ctx.arc(cx, cy, radius, 0, Math.PI * 2);
@@ -191,8 +233,10 @@ export const resolveReceiptBreakdown = (receiptData = {}) => {
 /**
  * Generates a crisp high-DPI white-paper PNG Blob of an Official Receipt.
  */
-export const generateReceiptPngBlob = (receiptData) => {
+export const generateReceiptPngBlob = async (receiptData) => {
   if (!receiptData || typeof document === 'undefined') return null;
+
+  const logoImg = await ensureReceiptLogoLoaded();
 
   const {
     billNumber,
@@ -263,8 +307,9 @@ export const generateReceiptPngBlob = (receiptData) => {
   }
 
   // Compute exact dynamic height
-  const headerTop = 34;
-  const crestBlockH = 56;
+  const headerTop = 30;
+  const crestRadius = 38;
+  const crestBlockH = crestRadius * 2 + 8;
   const titleBlockH = 30 + branchLines.length * 18 + 20;
   const statusPillH = 34;
   const resetBannerH = isReset ? (resetLines.length * 18 + 22) : 0;
@@ -328,7 +373,7 @@ export const generateReceiptPngBlob = (receiptData) => {
   let y = headerTop;
 
   // Center emblem crest
-  drawKarateCrest(ctx, width / 2, y + 26, 26);
+  drawKarateCrest(ctx, width / 2, y + crestRadius, crestRadius, logoImg);
   y += crestBlockH + 6;
 
   // Academy Title
@@ -687,8 +732,10 @@ export const generateReceiptPngBlob = (receiptData) => {
 /**
  * Generates a crisp high-DPI white-paper PNG Blob of an Official Fee Due Notice.
  */
-export const generateDueNoticePngBlob = ({ student, dojo, feePlans = [] }) => {
+export const generateDueNoticePngBlob = async ({ student, dojo, feePlans = [] }) => {
   if (!student || typeof document === 'undefined') return null;
+
+  const logoImg = await ensureReceiptLogoLoaded();
 
   const breakdown = getStudentDueBreakdown(student, feePlans);
   const dojoName = dojo?.name || 'Al Muharib Karate Center';
@@ -728,8 +775,9 @@ export const generateDueNoticePngBlob = ({ student, dojo, feePlans = [] }) => {
   mCtx.font = `700 14px ${SANS_FONT}`;
   const parentLines = wrapTextLines(mCtx, parentDisplay, halfColWidth);
 
-  const headerTop = 34;
-  const crestBlockH = 56;
+  const headerTop = 30;
+  const crestRadius = 38;
+  const crestBlockH = crestRadius * 2 + 8;
   const titleBlockH = 30 + branchLines.length * 18 + 20;
   const statusPillH = 34;
   const metaTopRowH = 44;
@@ -784,7 +832,7 @@ export const generateDueNoticePngBlob = ({ student, dojo, feePlans = [] }) => {
   ctx.fillRect(0, 0, width, 10);
 
   let y = headerTop;
-  drawKarateCrest(ctx, width / 2, y + 26, 26);
+  drawKarateCrest(ctx, width / 2, y + crestRadius, crestRadius, logoImg);
   y += crestBlockH + 6;
 
   ctx.fillStyle = '#0f172a';

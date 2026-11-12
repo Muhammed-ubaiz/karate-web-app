@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useDojo } from '../../context/DojoContext';
+import { DojoEmblem } from './BrandLogo';
 import {
   ChevronDown,
   Check,
@@ -68,8 +69,12 @@ export const DojoBranchDropdown = () => {
             : 'border-zinc-700/80 hover:border-zinc-600'
         }`}
       >
-        <span className="text-xs sm:text-sm select-none shrink-0">
-          {activeDojo ? (activeDojo.logo || '🥋') : '🏢'}
+        <span className="flex items-center justify-center select-none shrink-0">
+          {activeDojo ? (
+            <DojoEmblem logo={activeDojo.logo} sizeClass="w-4 h-4 sm:w-5 sm:h-5" textClass="text-xs sm:text-sm" />
+          ) : (
+            <span className="text-xs sm:text-sm">🏢</span>
+          )}
         </span>
         <span className="truncate max-w-[100px] sm:max-w-[130px] md:max-w-[150px] lg:max-w-[200px] text-left">
           {activeDojo ? activeDojo.name : 'All Branches'}
@@ -145,8 +150,8 @@ export const DojoBranchDropdown = () => {
                   }`}
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="w-8 h-8 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center text-sm shrink-0">
-                      {dojo.logo || '🥋'}
+                    <div className="w-8 h-8 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center text-sm shrink-0 overflow-hidden">
+                      <DojoEmblem logo={dojo.logo} sizeClass="w-6 h-6" textClass="text-sm" />
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5 flex-wrap">

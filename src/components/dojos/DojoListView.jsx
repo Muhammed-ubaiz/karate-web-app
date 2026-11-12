@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useDojo } from '../../context/DojoContext';
 import { showConfirmDialog, showSuccessAlert } from '../../utils/sweetAlert';
 import { AddDojoModal } from './AddDojoModal';
+import { DojoEmblem } from '../layout/BrandLogo';
 import {
   Building2,
   MapPin,
@@ -66,8 +67,8 @@ export const DojoListView = () => {
               <div className="min-w-0">
                 {/* Branch Header & Status Badge */}
                 <div className="flex items-start justify-between gap-3 mb-3">
-                  <div className="w-12 h-12 rounded-xl bg-zinc-800 border border-zinc-700/80 flex items-center justify-center text-2xl shadow shrink-0">
-                    {dojo.logo || '🥋'}
+                  <div className="w-12 h-12 rounded-xl bg-zinc-800 border border-zinc-700/80 flex items-center justify-center text-2xl shadow shrink-0 p-1">
+                    <DojoEmblem logo={dojo.logo} sizeClass="w-full h-full" textClass="text-2xl" />
                   </div>
                   <button
                     onClick={() => toggleStatus(dojo)}

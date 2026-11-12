@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useDojo } from '../../context/DojoContext';
 import { showSuccessAlert, showErrorAlert } from '../../utils/sweetAlert';
+import { BrandLogo } from '../layout/BrandLogo';
 import {
   X,
-  Lock,
   Mail,
   KeyRound,
   Eye,
@@ -130,9 +130,7 @@ export const AdminLoginModal = ({ isOpen, onClose, pendingAction }) => {
         {/* Modal Header */}
         <div className="p-4 sm:p-5 pb-3.5 sm:pb-4 border-b border-zinc-800 bg-[#121215] flex items-center justify-between gap-2">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-2xl bg-red-600/20 text-red-500 border border-red-500/30 flex items-center justify-center shadow-inner shrink-0">
-              <Lock className="w-5 h-5" />
-            </div>
+            <BrandLogo className="w-10 h-10 shrink-0 drop-shadow-sm" />
             <div className="min-w-0">
               <h3 className="text-base font-bold text-white tracking-tight truncate">Authorized Staff Login</h3>
               <p className="text-[11px] text-zinc-400 truncate">Sign in to manage academy, fees &amp; bills</p>

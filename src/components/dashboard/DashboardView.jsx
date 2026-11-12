@@ -3,6 +3,7 @@ import { useDojo } from '../../context/DojoContext';
 import { MetricCard } from './MetricCard';
 import { CollectionProgress } from './CollectionProgress';
 import { ActivityFeed } from './ActivityFeed';
+import { BrandLogo } from '../layout/BrandLogo';
 import { isStudentFeeDue, getStudentDueAmount } from '../../utils/whatsappHelper';
 import { formatCurrencyAmount, roundCurrency } from '../../utils/billingHelper';
 import {
@@ -71,22 +72,25 @@ export const DashboardView = () => {
     <div className="space-y-6">
       {/* Welcome Banner & Quick Action Buttons */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-gradient-to-r from-zinc-900 via-dojo-card to-zinc-900 border border-dojo-border rounded-2xl p-4 sm:p-5 shadow-lg">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="text-lg sm:text-xl lg:text-2xl font-black text-white tracking-tight break-words">
-              Osu, Al Muharib Karate Center! 🥋
-            </h1>
-            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border whitespace-nowrap shrink-0 ${
-              isAdmin
-                ? 'bg-red-600/20 text-red-400 border-red-500/30'
-                : 'bg-zinc-800 text-zinc-400 border-zinc-700'
-            }`}>
-              {isAdmin ? 'Admin Mode 👑' : 'View-Only Guest 🔒'}
-            </span>
+        <div className="flex items-center gap-3.5 min-w-0">
+          <BrandLogo className="w-12 h-12 sm:w-14 sm:h-14 shrink-0 drop-shadow-[0_2px_10px_rgba(220,38,38,0.25)]" />
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-lg sm:text-xl lg:text-2xl font-black text-white tracking-tight break-words">
+                Osu, Al Muharib Karate Center!
+              </h1>
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border whitespace-nowrap shrink-0 ${
+                isAdmin
+                  ? 'bg-red-600/20 text-red-400 border-red-500/30'
+                  : 'bg-zinc-800 text-zinc-400 border-zinc-700'
+              }`}>
+                {isAdmin ? 'Admin Mode 👑' : 'View-Only Guest 🔒'}
+              </span>
+            </div>
+            <p className="text-xs sm:text-sm text-zinc-400 mt-1">
+              Al Muharib Karate Center Operations Snapshot &amp; Daily Session Manager
+            </p>
           </div>
-          <p className="text-xs sm:text-sm text-zinc-400 mt-1">
-            Al Muharib Karate Center Operations Snapshot &amp; Daily Session Manager
-          </p>
         </div>
 
         {/* Quick Action Buttons */}

@@ -102,8 +102,8 @@ export const PaymentReceiptModal = ({ isOpen, onClose, receiptData }) => {
     window.print();
   };
 
-  const handleDownloadPng = () => {
-    const blob = generateReceiptPngBlob(receiptData);
+  const handleDownloadPng = async () => {
+    const blob = await generateReceiptPngBlob(receiptData);
     if (!blob) return;
     triggerBlobDownload(blob, pngFilename);
     if (showToast) showToast(`Saved receipt image: ${pngFilename}`, 'success');
@@ -113,7 +113,7 @@ export const PaymentReceiptModal = ({ isOpen, onClose, receiptData }) => {
     if (isSendingImage) return;
     setIsSendingImage(true);
     try {
-      const blob = generateReceiptPngBlob(receiptData);
+      const blob = await generateReceiptPngBlob(receiptData);
       const res = await dispatchDocumentImageToWhatsApp({
         blob,
         filename: pngFilename,
@@ -246,9 +246,11 @@ export const PaymentReceiptModal = ({ isOpen, onClose, receiptData }) => {
             <div className="p-4 sm:p-7 space-y-4 sm:space-y-5">
               {/* Academy Brand Header */}
               <div className="text-center pb-4 border-b border-slate-200">
-                <div className="w-12 h-12 mx-auto rounded-2xl bg-red-50 text-red-600 border border-red-200 flex items-center justify-center font-black text-2xl mb-2.5">
-                  🥋
-                </div>
+                <img
+                  src="/logo.png"
+                  alt="Al Muharib Karate Center Logo"
+                  className="w-16 h-16 sm:w-20 sm:h-20 mx-auto object-contain mb-2.5 select-none"
+                />
                 <h2 className="text-lg sm:text-xl font-black text-slate-900 uppercase tracking-tight">
                   Al Muharib Karate Center
                 </h2>

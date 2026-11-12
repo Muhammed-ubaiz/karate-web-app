@@ -52,7 +52,7 @@ export const WhatsAppBroadcastModal = ({ isOpen, onClose }) => {
     }
 
     const dojo = dojos.find(d => d.id === student.dojoId);
-    const blob = generateDueNoticePngBlob({ student, dojo, feePlans });
+    const blob = await generateDueNoticePngBlob({ student, dojo, feePlans });
     const safeSlug = String(student.fullName || 'student').replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '');
 
     const res = await dispatchDocumentImageToWhatsApp({
