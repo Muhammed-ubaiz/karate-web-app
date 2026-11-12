@@ -46,6 +46,7 @@ export const ActivityFeed = () => {
   const {
     activities,
     clearActivities,
+    isAdmin,
     requireAdmin,
     setActiveTab,
     setActiveFeesSubTab,
@@ -95,10 +96,10 @@ export const ActivityFeed = () => {
               type="button"
               onClick={handleClearFeed}
               className="text-[11px] font-semibold text-zinc-400 hover:text-red-400 transition-colors flex items-center gap-1 cursor-pointer"
-              title="Clear dashboard activity feed (Staff Only)"
+              title={isAdmin ? 'Clear dashboard activity feed' : 'Admin Login Required — Clear activity feed'}
             >
               <Trash2 className="w-3 h-3" />
-              <span>Clear</span>
+              <span>{isAdmin ? 'Clear' : 'Clear 🔒'}</span>
             </button>
           )}
           <span className="text-[11px] font-semibold text-zinc-400 bg-zinc-800/80 px-2 py-0.5 rounded-full border border-zinc-700/60">

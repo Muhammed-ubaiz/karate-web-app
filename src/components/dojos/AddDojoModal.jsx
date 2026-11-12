@@ -3,7 +3,7 @@ import { useDojo } from '../../context/DojoContext';
 import { X, Building2, MapPin, Phone, User, Mail, ShieldCheck } from 'lucide-react';
 
 export const AddDojoModal = ({ isOpen, onClose }) => {
-  const { addDojo } = useDojo();
+  const { addDojo, isAdmin, requireAdmin } = useDojo();
 
   const getInitialFormData = () => ({
     name: '',
@@ -31,7 +31,7 @@ export const AddDojoModal = ({ isOpen, onClose }) => {
     onClose();
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || !isAdmin) return null;
 
   const validate = () => {
     const errs = {};
@@ -46,8 +46,10 @@ export const AddDojoModal = ({ isOpen, onClose }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!validate()) return;
-    addDojo(formData);
-    handleClose();
+    requireAdmin(() => {
+      addDojo(formData);
+      handleClose();
+    }, 'Authorized Admin login required to create a dojo branch.');
   };
 
   return (

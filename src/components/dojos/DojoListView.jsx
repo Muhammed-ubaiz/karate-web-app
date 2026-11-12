@@ -21,6 +21,10 @@ export const DojoListView = () => {
   const { dojos, students, batches, deleteDojo, updateDojo, isAdmin, requireAdmin } = useDojo();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
+  React.useEffect(() => {
+    if (!isAdmin) setIsAddModalOpen(false);
+  }, [isAdmin]);
+
   const toggleStatus = (dojo) => {
     requireAdmin(() => {
       const nextStatus = dojo.status === 'Active' ? 'Inactive' : 'Active';
@@ -30,6 +34,28 @@ export const DojoListView = () => {
 
   return (
     <div className="space-y-6">
+      {/* View-Only Guest Mode Banner */}
+      {!isAdmin && (
+        <div className="p-3.5 bg-gradient-to-r from-amber-950/40 via-zinc-900 to-zinc-900 border border-amber-500/30 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <span className="text-base select-none">👁️</span>
+            <div>
+              <p className="text-xs font-bold text-zinc-200">View-Only Guest Mode</p>
+              <p className="text-[11px] text-zinc-400">
+                You can browse dojo branches added by Admin. Sign in as Admin to add, change status, or delete branches.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => requireAdmin()}
+            className="px-3.5 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 rounded-xl text-xs font-bold transition-all self-start sm:self-auto cursor-pointer"
+          >
+            Admin Login 🔑
+          </button>
+        </div>
+      )}
+
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -136,25 +162,27 @@ export const DojoListView = () => {
                 <div className="flex items-center justify-between text-xs">
                   <button
                     onClick={() => toggleStatus(dojo)}
-                    className="text-zinc-400 hover:text-white transition-colors text-[11px] font-medium"
+                    className="text-zinc-400 hover:text-white transition-colors text-[11px] font-medium cursor-pointer"
                   >
-                    Set as {isActive ? 'Inactive' : 'Active'}
+                    Set as {isActive ? 'Inactive' : 'Active'} {!isAdmin && '🔒'}
                   </button>
                   <button
-                    onClick={async () => {
-                      const confirmed = await showConfirmDialog({
-                        title: 'Delete Dojo Branch? 🗑️',
-                        text: `Are you sure you want to permanently delete "${dojo.name}"? This will detach assigned batches.`,
-                        confirmText: 'Yes, Delete Branch',
-                        icon: 'warning'
-                      });
-                      if (confirmed) {
-                        deleteDojo(dojo.id);
-                        await showSuccessAlert('Branch Deleted! 🏢', `"${dojo.name}" has been removed.`);
-                      }
+                    onClick={() => {
+                      requireAdmin(async () => {
+                        const confirmed = await showConfirmDialog({
+                          title: 'Delete Dojo Branch? 🗑️',
+                          text: `Are you sure you want to permanently delete "${dojo.name}"? This will detach assigned batches.`,
+                          confirmText: 'Yes, Delete Branch',
+                          icon: 'warning'
+                        });
+                        if (confirmed) {
+                          deleteDojo(dojo.id);
+                          await showSuccessAlert('Branch Deleted! 🏢', `"${dojo.name}" has been removed.`);
+                        }
+                      }, 'Authorized Admin login required to delete dojo branches.');
                     }}
-                    className="text-zinc-500 hover:text-red-400 transition-colors p-1"
-                    title="Delete Dojo"
+                    className="text-zinc-500 hover:text-red-400 transition-colors p-1 cursor-pointer"
+                    title={isAdmin ? 'Delete Dojo' : 'Admin Login Required — Delete Dojo'}
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -166,7 +194,7 @@ export const DojoListView = () => {
       </div>
 
       <AddDojoModal
-        isOpen={isAddModalOpen}
+        isOpen={isAdmin && isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
       />
     </div>

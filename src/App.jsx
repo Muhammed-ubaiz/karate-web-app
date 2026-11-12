@@ -26,6 +26,7 @@ const MainContent = () => {
     setActiveTab,
     modalState,
     setModalState,
+    isAdmin,
     isAdminLoginOpen,
     closeAdminLoginModal,
     pendingAdminAction,
@@ -140,23 +141,23 @@ const MainContent = () => {
 
       {/* Global Modals triggered from quick action buttons */}
       <AddDojoModal
-        isOpen={modalState.addDojo}
+        isOpen={isAdmin && modalState.addDojo}
         onClose={() => setModalState(prev => ({ ...prev, addDojo: false }))}
       />
       <AddBatchModal
-        isOpen={modalState.addBatch}
+        isOpen={isAdmin && modalState.addBatch}
         onClose={() => setModalState(prev => ({ ...prev, addBatch: false }))}
       />
       <AddFeePlanModal
-        isOpen={modalState.addFeePlan}
+        isOpen={isAdmin && modalState.addFeePlan}
         onClose={() => setModalState(prev => ({ ...prev, addFeePlan: false }))}
       />
       <StudentRegistrationModal
-        isOpen={modalState.addStudent}
+        isOpen={isAdmin && modalState.addStudent}
         onClose={() => setModalState(prev => ({ ...prev, addStudent: false }))}
       />
       <RecordPaymentModal
-        isOpen={modalState.recordPayment}
+        isOpen={isAdmin && modalState.recordPayment}
         onClose={() => setModalState(prev => ({
           ...prev,
           recordPayment: false,

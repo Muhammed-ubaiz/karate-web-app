@@ -27,7 +27,8 @@ export const FreezeSubscriptionModal = ({ isOpen, onClose, student }) => {
     feePlans,
     freezeStudentSubscription,
     unfreezeStudentSubscription,
-    isAdmin
+    isAdmin,
+    requireAdmin
   } = useDojo();
 
   const currentStudent = students.find(s => s.id === student?.id) || student;
@@ -68,7 +69,7 @@ export const FreezeSubscriptionModal = ({ isOpen, onClose, student }) => {
     }
   }, [isOpen, startDate, durationMonths, currentStudent]);
 
-  if (!isOpen || !currentStudent) return null;
+  if (!isOpen || !currentStudent || !isAdmin) return null;
 
   const handleDurationChange = (months) => {
     const val = Math.max(1, Number(months) || 1);
@@ -91,7 +92,7 @@ export const FreezeSubscriptionModal = ({ isOpen, onClose, student }) => {
     setNewDueDate(calculatedDue);
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
 
     // 1. Minimum 1 full month validation
@@ -112,22 +113,26 @@ export const FreezeSubscriptionModal = ({ isOpen, onClose, student }) => {
       return;
     }
 
-    const success = await freezeStudentSubscription({
-      studentId: currentStudent.id,
-      startDate,
-      endDate,
-      durationMonths,
-      reason
-    });
+    requireAdmin(async () => {
+      const success = await freezeStudentSubscription({
+        studentId: currentStudent.id,
+        startDate,
+        endDate,
+        durationMonths,
+        reason
+      });
 
-    if (success) {
-      onClose();
-    }
+      if (success) {
+        onClose();
+      }
+    }, 'Authorized Admin login required to freeze student subscriptions.');
   };
 
-  const handleUnfreezeNow = async () => {
-    await unfreezeStudentSubscription(currentStudent.id);
-    onClose();
+  const handleUnfreezeNow = () => {
+    requireAdmin(async () => {
+      await unfreezeStudentSubscription(currentStudent.id);
+      onClose();
+    }, 'Authorized Admin login required to resume a frozen subscription.');
   };
 
   const plan = feePlans.find(p => p.id === currentStudent.tuitionPlanId);

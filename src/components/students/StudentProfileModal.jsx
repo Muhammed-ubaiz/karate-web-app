@@ -125,6 +125,15 @@ export const StudentProfileModal = ({ student, onClose, initialTab = 'overview' 
     setAvatarError(false);
   }, [student?.photoUrl]);
 
+  useEffect(() => {
+    if (!isAdmin) {
+      setIsEditModalOpen(false);
+      setIsFreezeModalOpen(false);
+      setEditingPayment(null);
+      setIsLoggingAttendance(false);
+    }
+  }, [isAdmin]);
+
   // Real-time student reference computed before conditional return so all hooks always execute in consistent order
   const currentStudent = useMemo(() => {
     if (!student) return null;
@@ -269,20 +278,22 @@ export const StudentProfileModal = ({ student, onClose, initialTab = 'overview' 
     return item.status === attendanceFilter;
   });
 
-  const handleSaveIndividualAttendance = async (e) => {
+  const handleSaveIndividualAttendance = (e) => {
     e.preventDefault();
     if (!logDate || !recordStudentAttendanceIndividual) return;
 
-    await recordStudentAttendanceIndividual({
-      studentId: currentStudent.id,
-      date: logDate,
-      status: logStatus,
-      batchId: currentStudent.batchId,
-      notes: logNote
-    });
+    requireAdmin(async () => {
+      await recordStudentAttendanceIndividual({
+        studentId: currentStudent.id,
+        date: logDate,
+        status: logStatus,
+        batchId: currentStudent.batchId,
+        notes: logNote
+      });
 
-    setIsLoggingAttendance(false);
-    setLogNote('');
+      setIsLoggingAttendance(false);
+      setLogNote('');
+    }, 'Authorized Admin login required to log or modify student attendance.');
   };
 
   const handleOpenRecordPayment = (renewalMode = 'normal') => {
@@ -397,9 +408,12 @@ export const StudentProfileModal = ({ student, onClose, initialTab = 'overview' 
             />
 
             <div
-              onClick={() => fileInputRef.current?.click()}
+              onClick={() => requireAdmin(
+                () => fileInputRef.current?.click(),
+                'Authorized Admin login required to change student photo.'
+              )}
               className="w-14 h-14 sm:w-20 sm:h-20 rounded-2xl bg-zinc-800 border-2 border-red-500/40 hover:border-red-400 overflow-hidden shrink-0 shadow-lg relative group cursor-pointer transition-colors"
-              title="Click to change student photo from gallery"
+              title={isAdmin ? 'Click to change student photo from gallery' : 'Admin Login Required — Change Photo'}
             >
               {currentStudent.photoUrl && !avatarError ? (
                 <img
@@ -414,8 +428,17 @@ export const StudentProfileModal = ({ student, onClose, initialTab = 'overview' 
                 </div>
               )}
               <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center transition-opacity text-white text-[9px] font-bold">
-                <Camera className="w-5 h-5 mb-0.5" />
-                <span>Change</span>
+                {isAdmin ? (
+                  <>
+                    <Camera className="w-5 h-5 mb-0.5" />
+                    <span>Change</span>
+                  </>
+                ) : (
+                  <>
+                    <Lock className="w-4 h-4 mb-0.5 text-amber-400" />
+                    <span>Admin</span>
+                  </>
+                )}
               </div>
             </div>
 
@@ -457,11 +480,16 @@ export const StudentProfileModal = ({ student, onClose, initialTab = 'overview' 
               <div className="mt-2.5 flex flex-wrap items-center gap-1.5 sm:gap-2">
                 <button
                   type="button"
-                  onClick={() => setIsEditModalOpen(true)}
+                  onClick={() => requireAdmin(
+                    () => setIsEditModalOpen(true),
+                    'Authorized Admin login required to edit student details or rename student.'
+                  )}
                   className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-semibold border border-zinc-700 transition-all cursor-pointer"
+                  title={isAdmin ? 'Edit student details' : 'Admin Login Required — Edit Profile'}
                 >
                   <Edit3 className="w-3.5 h-3.5 text-amber-400" />
                   <span>Edit Profile</span>
+                  {!isAdmin && <Lock className="w-3 h-3 text-amber-400" />}
                 </button>
 
                 {isDue ? (
@@ -609,11 +637,16 @@ export const StudentProfileModal = ({ student, onClose, initialTab = 'overview' 
 
                   <button
                     type="button"
-                    onClick={() => unfreezeStudentSubscription(currentStudent.id)}
+                    onClick={() => requireAdmin(
+                      () => unfreezeStudentSubscription(currentStudent.id),
+                      'Authorized Admin login required to resume a frozen subscription.'
+                    )}
                     className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-xs font-bold rounded-xl transition-all shadow shrink-0 cursor-pointer"
+                    title={isAdmin ? 'Resume Training Now' : 'Admin Login Required — Resume Training'}
                   >
                     <PlayCircle className="w-3.5 h-3.5" />
                     <span>Resume Training Now</span>
+                    {!isAdmin && <Lock className="w-3 h-3" />}
                   </button>
                 </div>
               )}
@@ -719,27 +752,33 @@ export const StudentProfileModal = ({ student, onClose, initialTab = 'overview' 
                     type="button"
                     onClick={() => handleOpenRecordPayment('normal')}
                     className="flex items-center justify-center gap-1.5 py-2 px-2.5 bg-blue-950/60 hover:bg-blue-900/80 border border-blue-500/40 text-blue-300 text-xs font-bold rounded-xl transition-all cursor-pointer"
+                    title={isAdmin ? 'Record normal renewal' : 'Admin Login Required'}
                   >
                     <RefreshCw className="w-3.5 h-3.5" />
                     <span>Normal Renewal</span>
+                    {!isAdmin && <Lock className="w-3 h-3 text-amber-400 shrink-0" />}
                   </button>
 
                   <button
                     type="button"
                     onClick={() => handleOpenRecordPayment('restart')}
                     className="flex items-center justify-center gap-1.5 py-2 px-2.5 bg-amber-950/60 hover:bg-amber-900/80 border border-amber-500/40 text-amber-300 text-xs font-bold rounded-xl transition-all cursor-pointer"
+                    title={isAdmin ? 'Record restart payment after break' : 'Admin Login Required'}
                   >
                     <PlayCircle className="w-3.5 h-3.5" />
                     <span>Restart Resumed</span>
+                    {!isAdmin && <Lock className="w-3 h-3 text-amber-400 shrink-0" />}
                   </button>
 
                   <button
                     type="button"
-                    onClick={() => setIsFreezeModalOpen(true)}
+                    onClick={() => requireAdmin(() => setIsFreezeModalOpen(true), 'Authorized Admin login required to freeze or extend student subscriptions.')}
                     className="flex items-center justify-center gap-1.5 py-2 px-2.5 bg-cyan-950/60 hover:bg-cyan-900/80 border border-cyan-500/40 text-cyan-300 text-xs font-bold rounded-xl transition-all cursor-pointer"
+                    title={isAdmin ? 'Manage subscription freeze or extension' : 'Admin Login Required'}
                   >
                     <Snowflake className="w-3.5 h-3.5 text-cyan-400" />
                     <span>{currentStudent.status === 'Frozen' ? 'Manage Freeze' : 'Freeze / Extend'}</span>
+                    {!isAdmin && <Lock className="w-3 h-3 text-amber-400 shrink-0" />}
                   </button>
                 </div>
               </div>
@@ -796,17 +835,20 @@ export const StudentProfileModal = ({ student, onClose, initialTab = 'overview' 
               {/* Status Controls & Delete Action */}
               <div className="pt-3 border-t border-zinc-800 space-y-3">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-                  <span className="text-xs font-medium text-zinc-400">Quick Status Override:</span>
+                  <span className="text-xs font-medium text-zinc-400">
+                    Quick Status Override {!isAdmin && '🔒'}:
+                  </span>
                   <div className="flex gap-1.5 flex-wrap">
                     {['Active', 'Inactive', 'Stopped', 'Blocked'].map((status) => (
                       <button
                         key={status}
-                        onClick={() => requireAdmin(() => updateStudentStatus(currentStudent.id, status))}
+                        onClick={() => requireAdmin(() => updateStudentStatus(currentStudent.id, status), 'Authorized Admin login required to change student status.')}
                         className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-colors border cursor-pointer ${
                           currentStudent.status === status
                             ? 'bg-red-600 text-white border-red-500'
                             : 'bg-zinc-800 text-zinc-400 border-zinc-700 hover:text-white'
                         }`}
+                        title={isAdmin ? `Set status to ${status}` : 'Admin Login Required'}
                       >
                         {status}
                       </button>
@@ -821,9 +863,11 @@ export const StudentProfileModal = ({ student, onClose, initialTab = 'overview' 
                     type="button"
                     onClick={handleDelete}
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-950/40 hover:bg-red-600 text-red-400 hover:text-white border border-red-500/40 rounded-xl text-xs font-bold transition-all active:scale-95 cursor-pointer shadow-sm"
+                    title={isAdmin ? 'Delete student profile permanently' : 'Admin Login Required'}
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                     <span>Delete Student Profile</span>
+                    {!isAdmin && <Lock className="w-3 h-3 text-amber-400 shrink-0" />}
                   </button>
                 </div>
               </div>
@@ -905,16 +949,18 @@ export const StudentProfileModal = ({ student, onClose, initialTab = 'overview' 
 
                 <button
                   type="button"
-                  onClick={() => setIsLoggingAttendance(!isLoggingAttendance)}
+                  onClick={() => requireAdmin(() => setIsLoggingAttendance(prev => !prev), 'Authorized Admin login required to log student attendance.')}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl transition-all shadow cursor-pointer"
+                  title={isAdmin ? 'Log individual attendance record' : 'Admin Login Required'}
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  <span>{isLoggingAttendance ? 'Cancel' : 'Log Attendance'}</span>
+                  <span>{isAdmin && isLoggingAttendance ? 'Cancel' : 'Log Attendance'}</span>
+                  {!isAdmin && <Lock className="w-3 h-3 text-amber-200 shrink-0" />}
                 </button>
               </div>
 
               {/* Individual Attendance Logging Inline Form */}
-              {isLoggingAttendance && (
+              {isAdmin && isLoggingAttendance && (
                 <form
                   onSubmit={handleSaveIndividualAttendance}
                   className="p-3.5 bg-zinc-900 border border-emerald-500/40 rounded-2xl space-y-3 animate-fade-in"
@@ -1049,33 +1095,39 @@ export const StudentProfileModal = ({ student, onClose, initialTab = 'overview' 
                             </span>
 
                             <div className="flex items-center gap-0.5 bg-zinc-950 p-0.5 rounded-lg border border-zinc-800">
+                              {!isAdmin && (
+                                <Lock
+                                  className="w-2.5 h-2.5 text-amber-400/80 mx-1 shrink-0"
+                                  title="Admin Login Required — Correct Attendance"
+                                />
+                              )}
                               <button
                                 type="button"
-                                onClick={() => requireAdmin(() => updateSingleAttendanceRecord({ studentId: currentStudent.id, date: record.date, batchId: record.batchId, status: 'Present' }))}
+                                onClick={() => requireAdmin(() => updateSingleAttendanceRecord({ studentId: currentStudent.id, date: record.date, batchId: record.batchId, status: 'Present' }), 'Authorized Admin login required to correct attendance.')}
                                 className={`px-2 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-all ${
                                   record.status === 'Present' ? 'bg-emerald-600 text-white shadow' : 'text-zinc-500 hover:text-white'
                                 }`}
-                                title="Correct to Present"
+                                title={isAdmin ? 'Correct to Present' : 'Admin Login Required — Correct Attendance'}
                               >
                                 P
                               </button>
                               <button
                                 type="button"
-                                onClick={() => requireAdmin(() => updateSingleAttendanceRecord({ studentId: currentStudent.id, date: record.date, batchId: record.batchId, status: 'Absent' }))}
+                                onClick={() => requireAdmin(() => updateSingleAttendanceRecord({ studentId: currentStudent.id, date: record.date, batchId: record.batchId, status: 'Absent' }), 'Authorized Admin login required to correct attendance.')}
                                 className={`px-2 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-all ${
                                   record.status === 'Absent' ? 'bg-red-600 text-white shadow' : 'text-zinc-500 hover:text-white'
                                 }`}
-                                title="Correct to Absent"
+                                title={isAdmin ? 'Correct to Absent' : 'Admin Login Required — Correct Attendance'}
                               >
                                 A
                               </button>
                               <button
                                 type="button"
-                                onClick={() => requireAdmin(() => updateSingleAttendanceRecord({ studentId: currentStudent.id, date: record.date, batchId: record.batchId, status: 'Late' }))}
+                                onClick={() => requireAdmin(() => updateSingleAttendanceRecord({ studentId: currentStudent.id, date: record.date, batchId: record.batchId, status: 'Late' }), 'Authorized Admin login required to correct attendance.')}
                                 className={`px-2 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-all ${
                                   record.status === 'Late' ? 'bg-amber-600 text-white shadow' : 'text-zinc-500 hover:text-white'
                                 }`}
-                                title="Correct to Late"
+                                title={isAdmin ? 'Correct to Late' : 'Admin Login Required — Correct Attendance'}
                               >
                                 L
                               </button>
@@ -1094,7 +1146,9 @@ export const StudentProfileModal = ({ student, onClose, initialTab = 'overview' 
                               <th className="py-2.5 px-3">Date</th>
                               <th className="py-2.5 px-3">Batch &amp; Notes</th>
                               <th className="py-2.5 px-3">Status</th>
-                              <th className="py-2.5 px-3 text-right">Quick Override</th>
+                              <th className="py-2.5 px-3 text-right">
+                                Quick Override {!isAdmin && <span className="text-amber-400 ml-1">🔒</span>}
+                              </th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-zinc-800/70">
@@ -1131,31 +1185,31 @@ export const StudentProfileModal = ({ student, onClose, initialTab = 'overview' 
                                   <div className="inline-flex items-center gap-0.5 bg-zinc-950 p-0.5 rounded-lg border border-zinc-800">
                                     <button
                                       type="button"
-                                      onClick={() => requireAdmin(() => updateSingleAttendanceRecord({ studentId: currentStudent.id, date: record.date, batchId: record.batchId, status: 'Present' }))}
+                                      onClick={() => requireAdmin(() => updateSingleAttendanceRecord({ studentId: currentStudent.id, date: record.date, batchId: record.batchId, status: 'Present' }), 'Authorized Admin login required to correct attendance.')}
                                       className={`px-1.5 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-all ${
                                         record.status === 'Present' ? 'bg-emerald-600 text-white shadow' : 'text-zinc-500 hover:text-white'
                                       }`}
-                                      title="Correct to Present"
+                                      title={isAdmin ? 'Correct to Present' : 'Admin Login Required — Correct Attendance'}
                                     >
                                       P
                                     </button>
                                     <button
                                       type="button"
-                                      onClick={() => requireAdmin(() => updateSingleAttendanceRecord({ studentId: currentStudent.id, date: record.date, batchId: record.batchId, status: 'Absent' }))}
+                                      onClick={() => requireAdmin(() => updateSingleAttendanceRecord({ studentId: currentStudent.id, date: record.date, batchId: record.batchId, status: 'Absent' }), 'Authorized Admin login required to correct attendance.')}
                                       className={`px-1.5 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-all ${
                                         record.status === 'Absent' ? 'bg-red-600 text-white shadow' : 'text-zinc-500 hover:text-white'
                                       }`}
-                                      title="Correct to Absent"
+                                      title={isAdmin ? 'Correct to Absent' : 'Admin Login Required — Correct Attendance'}
                                     >
                                       A
                                     </button>
                                     <button
                                       type="button"
-                                      onClick={() => requireAdmin(() => updateSingleAttendanceRecord({ studentId: currentStudent.id, date: record.date, batchId: record.batchId, status: 'Late' }))}
+                                      onClick={() => requireAdmin(() => updateSingleAttendanceRecord({ studentId: currentStudent.id, date: record.date, batchId: record.batchId, status: 'Late' }), 'Authorized Admin login required to correct attendance.')}
                                       className={`px-1.5 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-all ${
                                         record.status === 'Late' ? 'bg-amber-600 text-white shadow' : 'text-zinc-500 hover:text-white'
                                       }`}
-                                      title="Correct to Late"
+                                      title={isAdmin ? 'Correct to Late' : 'Admin Login Required — Correct Attendance'}
                                     >
                                       L
                                     </button>
@@ -1218,27 +1272,33 @@ export const StudentProfileModal = ({ student, onClose, initialTab = 'overview' 
                     type="button"
                     onClick={() => handleOpenRecordPayment('normal')}
                     className="flex items-center justify-center gap-1.5 py-2 px-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow-md shadow-blue-600/30 transition-all cursor-pointer"
+                    title={isAdmin ? 'Record normal renewal' : 'Admin Login Required'}
                   >
                     <RefreshCw className="w-3.5 h-3.5" />
                     <span>Normal Renewal</span>
+                    {!isAdmin && <Lock className="w-3 h-3 text-amber-200 shrink-0" />}
                   </button>
 
                   <button
                     type="button"
                     onClick={() => handleOpenRecordPayment('restart')}
                     className="flex items-center justify-center gap-1.5 py-2 px-2.5 bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold rounded-xl shadow-md shadow-amber-600/30 transition-all cursor-pointer"
+                    title={isAdmin ? 'Record restart payment after break' : 'Admin Login Required'}
                   >
                     <PlayCircle className="w-3.5 h-3.5" />
                     <span>Restart Resumed</span>
+                    {!isAdmin && <Lock className="w-3 h-3 text-amber-200 shrink-0" />}
                   </button>
 
                   <button
                     type="button"
-                    onClick={() => setIsFreezeModalOpen(true)}
+                    onClick={() => requireAdmin(() => setIsFreezeModalOpen(true), 'Authorized Admin login required to freeze or extend student subscriptions.')}
                     className="flex items-center justify-center gap-1.5 py-2 px-2.5 bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold rounded-xl shadow-md shadow-cyan-600/30 transition-all cursor-pointer"
+                    title={isAdmin ? 'Manage subscription freeze or extension' : 'Admin Login Required'}
                   >
                     <Snowflake className="w-3.5 h-3.5" />
                     <span>{currentStudent.status === 'Frozen' ? 'Manage Freeze' : 'Freeze / Extend'}</span>
+                    {!isAdmin && <Lock className="w-3 h-3 text-amber-200 shrink-0" />}
                   </button>
                 </div>
               </div>
@@ -1344,9 +1404,11 @@ export const StudentProfileModal = ({ student, onClose, initialTab = 'overview' 
                       type="button"
                       onClick={() => handleOpenRecordPayment('normal')}
                       className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow-lg cursor-pointer"
+                      title={isAdmin ? 'Record first payment' : 'Admin Login Required'}
                     >
                       <Plus className="w-3.5 h-3.5" />
                       <span>Record First Payment</span>
+                      {!isAdmin && <Lock className="w-3 h-3 text-amber-200 shrink-0" />}
                     </button>
                   </div>
                 ) : filteredStudentPayments.length === 0 ? (
@@ -1753,21 +1815,21 @@ export const StudentProfileModal = ({ student, onClose, initialTab = 'overview' 
 
       {/* Freeze / Subscription Extension Modal */}
       <FreezeSubscriptionModal
-        isOpen={isFreezeModalOpen}
+        isOpen={isAdmin && isFreezeModalOpen}
         onClose={() => setIsFreezeModalOpen(false)}
         student={currentStudent}
       />
 
       {/* Edit Student Modal */}
       <EditStudentModal
-        isOpen={isEditModalOpen}
+        isOpen={isAdmin && isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
         student={currentStudent}
       />
 
       {/* Edit Payment Transaction Modal (Authorized Staff Only) */}
       <EditPaymentModal
-        isOpen={Boolean(editingPayment)}
+        isOpen={isAdmin && Boolean(editingPayment)}
         onClose={() => setEditingPayment(null)}
         payment={editingPayment}
       />

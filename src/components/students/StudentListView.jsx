@@ -87,6 +87,12 @@ export const StudentListView = () => {
     setSelectedBatch('all');
   }, [selectedDojoId]);
 
+  React.useEffect(() => {
+    if (!isAdmin) {
+      setEditingStudent(null);
+    }
+  }, [isAdmin]);
+
   // Available batches for selected branch
   const availableBatches = selectedBranch === 'all'
     ? batches
@@ -193,10 +199,15 @@ export const StudentListView = () => {
               () => setModalState(prev => ({ ...prev, addStudent: true })),
               'Authorized staff verification required to enroll students and record registration fees.'
             )}
-            className="col-span-2 sm:col-span-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold shadow-lg transition-all cursor-pointer bg-dojo-red hover:bg-dojo-redHover active:scale-95 text-white shadow-red-600/30"
+            className={`col-span-2 sm:col-span-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold shadow-lg transition-all cursor-pointer ${
+              isAdmin
+                ? 'bg-dojo-red hover:bg-dojo-redHover active:scale-95 text-white shadow-red-600/30'
+                : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700'
+            }`}
+            title={isAdmin ? 'Enroll a new student' : 'Admin Login Required'}
           >
             <Plus className="w-4 h-4 shrink-0" />
-            <span>Enroll Student</span>
+            <span>{isAdmin ? 'Enroll Student' : 'Enroll Student 🔒'}</span>
           </button>
         </div>
       </div>
@@ -436,9 +447,10 @@ export const StudentListView = () => {
                   'Authorized staff verification required to enroll students and record registration fees.'
                 )}
                 className="mt-3 inline-flex items-center gap-1.5 px-4 py-2 bg-dojo-red hover:bg-dojo-redHover text-white text-xs font-bold rounded-xl shadow cursor-pointer active:scale-95"
+                title={isAdmin ? 'Register a new student' : 'Admin Login Required'}
               >
                 <Plus className="w-4 h-4" />
-                <span>Register New Student</span>
+                <span>{isAdmin ? 'Register New Student' : 'Register New Student 🔒'}</span>
               </button>
             )}
           </div>
@@ -698,10 +710,13 @@ export const StudentListView = () => {
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
-                            setEditingStudent(student);
+                            requireAdmin(
+                              () => setEditingStudent(student),
+                              'Authorized Admin login required to edit student details or rename students.'
+                            );
                           }}
                           className="p-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 hover:text-white text-zinc-400 border border-zinc-700/80 transition-all cursor-pointer"
-                          title="Edit Student Profile & Belt Rank"
+                          title={isAdmin ? 'Edit Student Profile & Belt Rank' : 'Admin Login Required — Edit Student'}
                         >
                           <Pencil className="w-4 h-4 text-zinc-300" />
                         </button>
@@ -1006,10 +1021,13 @@ export const StudentListView = () => {
                               type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                setEditingStudent(student);
+                                requireAdmin(
+                                  () => setEditingStudent(student),
+                                  'Authorized Admin login required to edit student details or rename students.'
+                                );
                               }}
                               className="p-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 hover:text-white text-zinc-300 border border-zinc-700/80 transition-all cursor-pointer"
-                              title="Edit Student"
+                              title={isAdmin ? 'Edit Student' : 'Admin Login Required — Edit Student'}
                             >
                               <Pencil className="w-3.5 h-3.5" />
                             </button>
@@ -1088,7 +1106,7 @@ export const StudentListView = () => {
 
       {/* Add Student Modal */}
       <StudentRegistrationModal
-        isOpen={modalState.addStudent}
+        isOpen={isAdmin && modalState.addStudent}
         onClose={() => setModalState(prev => ({ ...prev, addStudent: false }))}
       />
 
@@ -1106,7 +1124,7 @@ export const StudentListView = () => {
 
       {/* Edit Student Details Modal */}
       <EditStudentModal
-        isOpen={Boolean(editingStudent)}
+        isOpen={isAdmin && Boolean(editingStudent)}
         onClose={() => setEditingStudent(null)}
         student={editingStudent}
       />

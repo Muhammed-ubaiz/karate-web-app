@@ -43,6 +43,7 @@ export const EditStudentModal = ({ isOpen, onClose, student }) => {
     beltRanks,
     updateStudent,
     showToast,
+    isAdmin,
     requireAdmin
   } = useDojo();
 
@@ -107,7 +108,7 @@ export const EditStudentModal = ({ isOpen, onClose, student }) => {
     }
   }, [isOpen, student, dojos, batches, feePlans, beltRanks]);
 
-  if (!isOpen || !student) return null;
+  if (!isOpen || !student || !isAdmin) return null;
 
   const handleClose = () => {
     setErrors({});
@@ -462,7 +463,10 @@ export const EditStudentModal = ({ isOpen, onClose, student }) => {
                   </label>
                   <button
                     type="button"
-                    onClick={() => setIsManageBeltsOpen(true)}
+                    onClick={() => requireAdmin(
+                      () => setIsManageBeltsOpen(true),
+                      'Authorized Admin login required to manage belt ranks.'
+                    )}
                     className="text-[10px] font-bold text-red-400 hover:text-red-300 underline cursor-pointer shrink-0"
                   >
                     ⚙️ Manage Belts

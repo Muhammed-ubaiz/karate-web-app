@@ -44,7 +44,9 @@ export const EditPaymentModal = ({ isOpen, onClose, payment, onSaved }) => {
     feePlans,
     updatePayment,
     isBillNumberUnique,
-    getNextBillNumber
+    getNextBillNumber,
+    isAdmin,
+    requireAdmin
   } = useDojo();
 
   const [billNumber, setBillNumber] = useState(() => payment?.billNumber || payment?.receiptNumber || '');
@@ -85,7 +87,7 @@ export const EditPaymentModal = ({ isOpen, onClose, payment, onSaved }) => {
     }
   }, [isOpen, payment?.id]);
 
-  if (!isOpen || !payment) return null;
+  if (!isOpen || !payment || !isAdmin) return null;
 
   const student = students.find(s => s.id === payment.studentId);
   const selectedPlan = feePlans.find(p => p.id === planId) || feePlans[0];
@@ -120,7 +122,7 @@ export const EditPaymentModal = ({ isOpen, onClose, payment, onSaved }) => {
     if (due) setNextDueDate(due);
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
 
     const cleanBill = String(billNumber || '').trim();
@@ -144,34 +146,36 @@ export const EditPaymentModal = ({ isOpen, onClose, payment, onSaved }) => {
       return;
     }
 
-    const updated = await updatePayment(
-      payment.id,
-      {
-        billNumber: cleanBill,
-        receiptNumber: cleanBill,
-        amount: numericAmount,
-        baseAmount: amountVatBreakdown.baseAmount,
-        vatAmount: amountVatBreakdown.vatAmount,
-        vatRate: amountVatBreakdown.vatRate,
-        paymentDate,
-        paymentMethod,
-        planId,
-        renewalType,
-        subscriptionStartDate,
-        nextDueDate,
-        notes
-      },
-      cleanReason
-    );
-
-    if (updated) {
-      if (typeof onSaved === 'function') onSaved(updated);
-      onClose();
-      await showSuccessAlert(
-        'Payment Corrected! ✏️',
-        `Bill ${cleanBill} has been updated (${numericAmount.toLocaleString()} Dhs) and logged in the Activity & Audit Log.`
+    requireAdmin(async () => {
+      const updated = await updatePayment(
+        payment.id,
+        {
+          billNumber: cleanBill,
+          receiptNumber: cleanBill,
+          amount: numericAmount,
+          baseAmount: amountVatBreakdown.baseAmount,
+          vatAmount: amountVatBreakdown.vatAmount,
+          vatRate: amountVatBreakdown.vatRate,
+          paymentDate,
+          paymentMethod,
+          planId,
+          renewalType,
+          subscriptionStartDate,
+          nextDueDate,
+          notes
+        },
+        cleanReason
       );
-    }
+
+      if (updated) {
+        if (typeof onSaved === 'function') onSaved(updated);
+        onClose();
+        await showSuccessAlert(
+          'Payment Corrected! ✏️',
+          `Bill ${cleanBill} has been updated (${numericAmount.toLocaleString()} Dhs) and logged in the Activity & Audit Log.`
+        );
+      }
+    }, 'Authorized Admin login required to edit payment transactions.');
   };
 
   return (

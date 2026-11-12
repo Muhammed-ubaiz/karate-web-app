@@ -15,7 +15,8 @@ import {
   Pencil,
   Trash2,
   Sparkles,
-  Filter
+  Filter,
+  Lock
 } from 'lucide-react';
 
 const DAYS_OF_WEEK = [
@@ -99,6 +100,30 @@ export const BatchListView = () => {
 
   return (
     <div className="space-y-6">
+      {/* View-Only Guest Mode Banner */}
+      {!isAdmin && (
+        <div className="p-3.5 bg-gradient-to-r from-amber-950/40 via-zinc-900 to-zinc-900 border border-amber-500/30 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <span className="text-base select-none">👁️</span>
+            <div>
+              <p className="text-xs font-bold text-zinc-200">
+                View-Only Guest Mode
+              </p>
+              <p className="text-[11px] text-zinc-400">
+                You can browse class batches and weekly training schedules. Login as Admin to create, edit, or delete batches.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => requireAdmin()}
+            className="px-3.5 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 rounded-xl text-xs font-bold transition-all self-start sm:self-auto cursor-pointer shrink-0"
+          >
+            Admin Login 🔑
+          </button>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -111,11 +136,18 @@ export const BatchListView = () => {
         </div>
 
         <button
-          onClick={() => setIsAddModalOpen(true)}
-          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold shadow-lg transition-all cursor-pointer bg-dojo-red hover:bg-dojo-redHover active:scale-95 text-white shadow-red-600/30"
+          onClick={() => requireAdmin(
+            () => setIsAddModalOpen(true),
+            'Authorized Admin login required to create a new class batch.'
+          )}
+          className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold shadow-lg transition-all cursor-pointer ${
+            isAdmin
+              ? 'bg-dojo-red hover:bg-dojo-redHover active:scale-95 text-white shadow-red-600/30'
+              : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700'
+          }`}
         >
           <Plus className="w-4 h-4" />
-          <span>+ Create New Batch</span>
+          <span>{isAdmin ? '+ Create New Batch' : '+ Create New Batch 🔒'}</span>
         </button>
       </div>
 
@@ -237,11 +269,22 @@ export const BatchListView = () => {
 
             <button
               type="button"
-              onClick={() => setIsAddModalOpen(true)}
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-dojo-red hover:bg-dojo-redHover text-white text-xs font-bold rounded-xl shadow cursor-pointer active:scale-95 transition-all"
+              onClick={() => requireAdmin(
+                () => setIsAddModalOpen(true),
+                'Authorized Admin login required to create a new class batch.'
+              )}
+              className={`inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-xl shadow cursor-pointer active:scale-95 transition-all ${
+                isAdmin
+                  ? 'bg-dojo-red hover:bg-dojo-redHover text-white'
+                  : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700'
+              }`}
             >
               <Plus className="w-4 h-4" />
-              <span>+ Create {selectedDay === todayAbbr ? todayFullName : selectedDay} Batch</span>
+              <span>
+                {isAdmin
+                  ? `+ Create ${selectedDay === todayAbbr ? todayFullName : selectedDay} Batch`
+                  : `+ Create ${selectedDay === todayAbbr ? todayFullName : selectedDay} Batch 🔒`}
+              </span>
             </button>
           </div>
         </div>
@@ -314,17 +357,23 @@ export const BatchListView = () => {
                       <div className="flex items-center gap-1 shrink-0">
                         <button
                           type="button"
-                          onClick={() => setEditingBatch(batch)}
+                          onClick={() => requireAdmin(
+                            () => setEditingBatch(batch),
+                            'Authorized Admin login required to edit class batches.'
+                          )}
                           className="p-1.5 rounded-lg bg-zinc-800/80 hover:bg-zinc-700 text-zinc-400 hover:text-amber-400 border border-zinc-700/60 transition-all cursor-pointer"
-                          title="Edit Batch"
+                          title={isAdmin ? 'Edit Batch' : 'Admin Login Required — Edit Batch'}
                         >
                           <Pencil className="w-3.5 h-3.5" />
                         </button>
                         <button
                           type="button"
-                          onClick={() => handleDeleteBatch(batch)}
+                          onClick={() => requireAdmin(
+                            () => handleDeleteBatch(batch),
+                            'Authorized Admin login required to delete class batches.'
+                          )}
                           className="p-1.5 rounded-lg bg-zinc-800/80 hover:bg-red-950/60 text-zinc-400 hover:text-red-400 hover:border-red-500/40 border border-zinc-700/60 transition-all cursor-pointer"
-                          title="Delete Batch"
+                          title={isAdmin ? 'Delete Batch' : 'Admin Login Required — Delete Batch'}
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -413,20 +462,30 @@ export const BatchListView = () => {
                       <div className="flex items-center gap-1.5 shrink-0">
                         <button
                           type="button"
-                          onClick={() => setEditingBatch(batch)}
+                          onClick={() => requireAdmin(
+                            () => setEditingBatch(batch),
+                            'Authorized Admin login required to edit class batches.'
+                          )}
                           className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-zinc-800 hover:bg-zinc-700 hover:text-white text-zinc-300 text-xs font-semibold rounded-lg border border-zinc-700 transition-all cursor-pointer active:scale-95"
+                          title={isAdmin ? 'Edit Batch' : 'Admin Login Required — Edit Batch'}
                         >
                           <Pencil className="w-3.5 h-3.5 text-amber-400" />
                           <span>Edit</span>
+                          {!isAdmin && <Lock className="w-3 h-3 text-amber-400" />}
                         </button>
 
                         <button
                           type="button"
-                          onClick={() => handleDeleteBatch(batch)}
+                          onClick={() => requireAdmin(
+                            () => handleDeleteBatch(batch),
+                            'Authorized Admin login required to delete class batches.'
+                          )}
                           className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-zinc-800 hover:bg-red-950/60 hover:text-red-400 text-zinc-400 text-xs font-semibold rounded-lg border border-zinc-700 hover:border-red-500/30 transition-all cursor-pointer active:scale-95"
+                          title={isAdmin ? 'Delete Batch' : 'Admin Login Required — Delete Batch'}
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                           <span>Delete</span>
+                          {!isAdmin && <Lock className="w-3 h-3 text-red-400" />}
                         </button>
                       </div>
                     </div>
@@ -440,14 +499,14 @@ export const BatchListView = () => {
 
       {/* Add Batch Modal */}
       <AddBatchModal
-        isOpen={isAddModalOpen}
+        isOpen={isAdmin && isAddModalOpen}
         initialDay={selectedDay !== 'all' ? selectedDay : todayAbbr}
         onClose={() => setIsAddModalOpen(false)}
       />
 
       {/* Edit Batch Modal */}
       <EditBatchModal
-        isOpen={Boolean(editingBatch)}
+        isOpen={isAdmin && Boolean(editingBatch)}
         batch={editingBatch}
         onClose={() => setEditingBatch(null)}
       />

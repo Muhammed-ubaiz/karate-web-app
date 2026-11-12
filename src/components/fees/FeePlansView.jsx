@@ -655,6 +655,30 @@ export const FeePlansView = () => {
 
   return (
     <div className="space-y-6">
+      {/* View-Only Guest Mode Banner */}
+      {!isAdmin && (
+        <div className="p-3.5 bg-gradient-to-r from-amber-950/40 via-zinc-900 to-zinc-900 border border-amber-500/30 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <span className="text-base select-none">👁️</span>
+            <div>
+              <p className="text-xs font-bold text-zinc-200">
+                View-Only Guest Mode
+              </p>
+              <p className="text-[11px] text-zinc-400">
+                You can browse fee structures, bill receipts, and payment history. Login as Admin to record payments or edit fee plans.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => requireAdmin()}
+            className="px-3.5 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 rounded-xl text-xs font-bold transition-all self-start sm:self-auto cursor-pointer shrink-0"
+          >
+            Admin Login 🔑
+          </button>
+        </div>
+      )}
+
       {/* Top Banner & Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="min-w-0">
@@ -1764,20 +1788,20 @@ export const FeePlansView = () => {
 
       {/* Add Fee Plan Modal */}
       <AddFeePlanModal
-        isOpen={isAddPlanModalOpen}
+        isOpen={isAdmin && isAddPlanModalOpen}
         onClose={() => setIsAddPlanModalOpen(false)}
       />
 
       {/* Edit Fee Plan Modal */}
       <EditFeePlanModal
-        isOpen={Boolean(editingPlan)}
+        isOpen={isAdmin && Boolean(editingPlan)}
         onClose={() => setEditingPlan(null)}
         plan={editingPlan}
       />
 
       {/* Record Payment Modal */}
       <RecordPaymentModal
-        isOpen={isRecordModalOpen}
+        isOpen={isAdmin && isRecordModalOpen}
         onClose={() => {
           setIsRecordModalOpen(false);
           setRecordPlanId(null);
@@ -1788,7 +1812,7 @@ export const FeePlansView = () => {
 
       {/* Edit Payment Modal (Authorized Staff Only) */}
       <EditPaymentModal
-        isOpen={Boolean(editingPayment)}
+        isOpen={isAdmin && Boolean(editingPayment)}
         onClose={() => setEditingPayment(null)}
         payment={editingPayment}
       />

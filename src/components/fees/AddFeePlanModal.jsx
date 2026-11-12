@@ -9,7 +9,7 @@ const MONTHS = [
 ];
 
 export const AddFeePlanModal = ({ isOpen, onClose }) => {
-  const { addFeePlan } = useDojo();
+  const { addFeePlan, isAdmin, requireAdmin } = useDojo();
 
   const getInitialFormData = () => ({
     name: '',
@@ -44,7 +44,7 @@ export const AddFeePlanModal = ({ isOpen, onClose }) => {
     onClose();
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || !isAdmin) return null;
 
   const toggleMonth = (monthIndex) => {
     setFormData(prev => ({
@@ -67,16 +67,18 @@ export const AddFeePlanModal = ({ isOpen, onClose }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!validate()) return;
-    addFeePlan({
-      ...formData,
-      tuitionFee: Number(formData.tuitionFee),
-      registrationFee: Number(formData.registrationFee || 0),
-      uniformFee: Number(formData.uniformFee || 0),
-      vatRate: Number(formData.vatRate || 0),
-      durationMonths: Number(formData.durationMonths),
-      dueDayOfMonth: Number(formData.dueDayOfMonth)
-    });
-    handleClose();
+    requireAdmin(() => {
+      addFeePlan({
+        ...formData,
+        tuitionFee: Number(formData.tuitionFee),
+        registrationFee: Number(formData.registrationFee || 0),
+        uniformFee: Number(formData.uniformFee || 0),
+        vatRate: Number(formData.vatRate || 0),
+        durationMonths: Number(formData.durationMonths),
+        dueDayOfMonth: Number(formData.dueDayOfMonth)
+      });
+      handleClose();
+    }, 'Authorized Admin login required to create a fee plan.');
   };
 
   const tuition = roundCurrency(formData.tuitionFee || 0);

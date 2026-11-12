@@ -9,7 +9,7 @@ const MONTHS = [
 ];
 
 export const EditFeePlanModal = ({ isOpen, onClose, plan }) => {
-  const { updateFeePlan } = useDojo();
+  const { updateFeePlan, isAdmin, requireAdmin } = useDojo();
   const [formData, setFormData] = useState({
     name: '',
     durationMonths: 1,
@@ -51,7 +51,7 @@ export const EditFeePlanModal = ({ isOpen, onClose, plan }) => {
     }
   }, [plan, isOpen]);
 
-  if (!isOpen || !plan) return null;
+  if (!isOpen || !plan || !isAdmin) return null;
 
   const toggleMonth = (monthIndex) => {
     setFormData(prev => ({
@@ -75,16 +75,18 @@ export const EditFeePlanModal = ({ isOpen, onClose, plan }) => {
     e.preventDefault();
     if (!validate()) return;
 
-    updateFeePlan(plan.id, {
-      ...formData,
-      tuitionFee: Number(formData.tuitionFee),
-      registrationFee: Number(formData.registrationFee || 0),
-      uniformFee: Number(formData.uniformFee || 0),
-      vatRate: Number(formData.vatRate || 0),
-      durationMonths: Number(formData.durationMonths),
-      dueDayOfMonth: Number(formData.dueDayOfMonth)
-    });
-    onClose();
+    requireAdmin(() => {
+      updateFeePlan(plan.id, {
+        ...formData,
+        tuitionFee: Number(formData.tuitionFee),
+        registrationFee: Number(formData.registrationFee || 0),
+        uniformFee: Number(formData.uniformFee || 0),
+        vatRate: Number(formData.vatRate || 0),
+        durationMonths: Number(formData.durationMonths),
+        dueDayOfMonth: Number(formData.dueDayOfMonth)
+      });
+      onClose();
+    }, 'Authorized Admin login required to update a fee plan.');
   };
 
   // Calculations for live preview

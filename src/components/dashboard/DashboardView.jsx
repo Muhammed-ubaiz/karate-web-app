@@ -305,7 +305,7 @@ export const DashboardView = () => {
                         className="w-full mt-2 inline-flex items-center justify-center gap-1.5 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-semibold rounded-lg transition-colors border border-zinc-700 cursor-pointer"
                       >
                         <ClipboardCheck className="w-3.5 h-3.5 text-emerald-400" />
-                        <span>Take Batch Attendance</span>
+                        <span>{isAdmin ? 'Take Batch Attendance' : 'View Batch Attendance'}</span>
                       </button>
                     </div>
                   </div>

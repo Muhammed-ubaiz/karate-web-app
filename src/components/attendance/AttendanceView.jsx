@@ -28,7 +28,8 @@ import {
   AlertCircle,
   BarChart2,
   FileCheck2,
-  Filter
+  Filter,
+  Lock
 } from 'lucide-react';
 
 const MONTH_NAMES = [
@@ -177,12 +178,16 @@ export const AttendanceView = () => {
         }
         setIsExistingSession(true);
       } else if (isMounted) {
-        // Brand new session: default all active batch students to 'Present'
-        const initial = {};
-        assignedBatchStudents.forEach(s => {
-          initial[s.id] = 'Present';
-        });
-        setAttendanceRecords(initial);
+        // Brand new session: pre-fill 'Present' for Admin fast entry; leave unmarked for View-Only Guests
+        if (isAdmin) {
+          const initial = {};
+          assignedBatchStudents.forEach(s => {
+            initial[s.id] = 'Present';
+          });
+          setAttendanceRecords(initial);
+        } else {
+          setAttendanceRecords({});
+        }
         setGuestStudentIds([]);
         setIsExistingSession(false);
       }
@@ -190,52 +195,71 @@ export const AttendanceView = () => {
 
     loadFromFirestore();
     return () => { isMounted = false; };
-  }, [currentBatch?.id, selectedDate, attendanceHistory, assignedBatchStudents]);
+  }, [currentBatch?.id, selectedDate, attendanceHistory, assignedBatchStudents, isAdmin]);
+
+  // Collapse inline Admin forms when not logged in as Admin
+  useEffect(() => {
+    if (!isAdmin) {
+      setIsAddGuestOpen(false);
+      setIsAddingMissedRecord(false);
+    }
+  }, [isAdmin]);
 
   const setStatus = (studentId, status) => {
-    setAttendanceRecords(prev => ({
-      ...prev,
-      [studentId]: status
-    }));
+    requireAdmin(() => {
+      setAttendanceRecords(prev => ({
+        ...prev,
+        [studentId]: status
+      }));
+    }, 'Authorized Admin login required to mark Present, Absent, or Late.');
   };
 
   const handleMarkAll = (status) => {
-    const updated = { ...attendanceRecords };
-    allSessionStudents.forEach(s => {
-      updated[s.id] = status;
-    });
-    setAttendanceRecords(updated);
-    showToast(`Marked all ${allSessionStudents.length} session students as ${status}!`);
+    requireAdmin(() => {
+      const updated = { ...attendanceRecords };
+      allSessionStudents.forEach(s => {
+        updated[s.id] = status;
+      });
+      setAttendanceRecords(updated);
+      showToast(`Marked all ${allSessionStudents.length} session students as ${status}!`);
+    }, `Authorized Admin login required to mark all students ${status}.`);
   };
 
   const handleAddGuestStudent = (studentId) => {
-    setGuestStudentIds(prev => Array.from(new Set([...prev, studentId])));
-    setAttendanceRecords(prev => ({
-      ...prev,
-      [studentId]: 'Present'
-    }));
-    const target = students.find(s => s.id === studentId);
-    showToast(`${target?.fullName || 'Student'} checked into this batch session! 🥋`, 'success');
-    setSearchQuery('');
-    setIsAddGuestOpen(false);
+    requireAdmin(() => {
+      setGuestStudentIds(prev => Array.from(new Set([...prev, studentId])));
+      setAttendanceRecords(prev => ({
+        ...prev,
+        [studentId]: 'Present'
+      }));
+      const target = students.find(s => s.id === studentId);
+      showToast(`${target?.fullName || 'Student'} checked into this batch session! 🥋`, 'success');
+      setSearchQuery('');
+      setIsAddGuestOpen(false);
+    }, 'Authorized Admin login required to check in make-up students.');
   };
 
   const handleRemoveGuestStudent = (studentId) => {
-    setGuestStudentIds(prev => prev.filter(id => id !== studentId));
-    setAttendanceRecords(prev => {
-      const copy = { ...prev };
-      delete copy[studentId];
-      return copy;
-    });
-    showToast('Student removed from this session.', 'info');
+    requireAdmin(() => {
+      setGuestStudentIds(prev => prev.filter(id => id !== studentId));
+      setAttendanceRecords(prev => {
+        const copy = { ...prev };
+        delete copy[studentId];
+        return copy;
+      });
+      showToast('Student removed from this session.', 'info');
+    }, 'Authorized Admin login required to modify session attendees.');
   };
 
-  const handleSaveAttendance = async () => {
-    await markAttendanceBatch(currentBatch?.id, selectedDate, attendanceRecords, guestStudentIds);
-    await showSuccessAlert(
-      isExistingSession ? 'Attendance Updated! 🥋' : 'Attendance Saved! 🥋',
-      `Session for ${currentBatch?.name || 'Batch'} on ${formatDisplayDate(selectedDate)} recorded with ${presentCount} present, ${absentCount} absent${guestStudents.length > 0 ? `, and ${guestStudents.length} make-up attendee(s)` : ''}.`
-    );
+  const handleSaveAttendance = () => {
+    requireAdmin(async () => {
+      const saved = await markAttendanceBatch(currentBatch?.id, selectedDate, attendanceRecords, guestStudentIds);
+      if (!saved) return;
+      await showSuccessAlert(
+        isExistingSession ? 'Attendance Updated! 🥋' : 'Attendance Saved! 🥋',
+        `Session for ${currentBatch?.name || 'Batch'} on ${formatDisplayDate(selectedDate)} recorded with ${presentCount} present, ${absentCount} absent${guestStudents.length > 0 ? `, and ${guestStudents.length} make-up attendee(s)` : ''}.`
+      );
+    }, 'Authorized Admin login required to save or update attendance.');
   };
 
   // Filter session roster by live search query
@@ -267,30 +291,39 @@ export const AttendanceView = () => {
     s.status !== 'Blocked'
   );
 
-  const presentCount = allSessionStudents.filter(s => (attendanceRecords[s.id] || 'Present') === 'Present').length;
-  const absentCount = allSessionStudents.filter(s => attendanceRecords[s.id] === 'Absent').length;
-  const lateCount = allSessionStudents.filter(s => attendanceRecords[s.id] === 'Late').length;
-  const sessionTurnoutRate = allSessionStudents.length > 0
+  const getDisplayAttendanceStatus = (studentId) => {
+    if (attendanceRecords[studentId]) return attendanceRecords[studentId];
+    return isAdmin && !isExistingSession ? 'Present' : null;
+  };
+
+  const presentCount = allSessionStudents.filter(s => getDisplayAttendanceStatus(s.id) === 'Present').length;
+  const absentCount = allSessionStudents.filter(s => getDisplayAttendanceStatus(s.id) === 'Absent').length;
+  const lateCount = allSessionStudents.filter(s => getDisplayAttendanceStatus(s.id) === 'Late').length;
+  const sessionTurnoutRate = !isAdmin && !isExistingSession
+    ? 0
+    : allSessionStudents.length > 0
     ? Math.round(((presentCount + lateCount) / allSessionStudents.length) * 100)
     : 100;
 
-  const handleWhatsAppAbsentAlert = async () => {
-    const absentees = allSessionStudents.filter(s => attendanceRecords[s.id] === 'Absent');
-    if (absentees.length === 0) {
-      showToast('No absent students in this batch session!', 'info');
-      return;
-    }
+  const handleWhatsAppAbsentAlert = () => {
+    requireAdmin(async () => {
+      const absentees = allSessionStudents.filter(s => attendanceRecords[s.id] === 'Absent');
+      if (absentees.length === 0) {
+        showToast('No absent students in this batch session!', 'info');
+        return;
+      }
 
-    const confirmed = await showConfirmDialog({
-      title: 'Send Absentee Alerts? 📢',
-      text: `Dispatch instant WhatsApp alerts to parents of ${absentees.length} absent students?`,
-      confirmText: 'Yes, Send Broadcast',
-      icon: 'warning'
-    });
+      const confirmed = await showConfirmDialog({
+        title: 'Send Absentee Alerts? 📢',
+        text: `Dispatch instant WhatsApp alerts to parents of ${absentees.length} absent students?`,
+        confirmText: 'Yes, Send Broadcast',
+        icon: 'warning'
+      });
 
-    if (confirmed) {
-      showToast(`WhatsApp absence notifications dispatched to ${absentees.length} parents!`, 'success');
-    }
+      if (confirmed) {
+        showToast(`WhatsApp absence notifications dispatched to ${absentees.length} parents!`, 'success');
+      }
+    }, 'Authorized Admin login required to send absentee notifications.');
   };
 
   // Fast date setter helpers
@@ -397,34 +430,41 @@ export const AttendanceView = () => {
   }, [selectedMonth, selectedYear]);
 
   // Handle saving an individual missed attendance record
-  const handleSaveMissedRecord = async (e) => {
+  const handleSaveMissedRecord = (e) => {
     e.preventDefault();
     if (!selectedStudent || !missedRecordDate) return;
 
-    await updateSingleAttendanceRecord({
-      studentId: selectedStudent.id,
-      date: missedRecordDate,
-      batchId: missedRecordBatchId || selectedStudent.batchId,
-      status: missedRecordStatus,
-      notes: missedRecordNotes
-    });
+    requireAdmin(async () => {
+      const saved = await updateSingleAttendanceRecord({
+        studentId: selectedStudent.id,
+        date: missedRecordDate,
+        batchId: missedRecordBatchId || selectedStudent.batchId,
+        status: missedRecordStatus,
+        notes: missedRecordNotes
+      });
 
-    setIsAddingMissedRecord(false);
-    setMissedRecordNotes('');
-    showToast(`Added attendance record for ${selectedStudent.fullName} on ${formatDisplayDate(missedRecordDate)}!`, 'success');
+      if (!saved) return;
+      setIsAddingMissedRecord(false);
+      setMissedRecordNotes('');
+      showToast(`Added attendance record for ${selectedStudent.fullName} on ${formatDisplayDate(missedRecordDate)}!`, 'success');
+    }, 'Authorized Admin login required to add or edit attendance records.');
   };
 
   // Quick 1-tap correction of attendance mistake for staff
-  const handleQuickStatusCorrection = async (record, newStatus) => {
+  const handleQuickStatusCorrection = (record, newStatus) => {
     if (!selectedStudent) return;
-    await updateSingleAttendanceRecord({
-      studentId: selectedStudent.id,
-      date: record.date,
-      batchId: record.batchId,
-      status: newStatus,
-      notes: record.notes
-    });
-    showToast(`Corrected status to ${newStatus} on ${formatDisplayDate(record.date)}!`, 'success');
+    requireAdmin(async () => {
+      const saved = await updateSingleAttendanceRecord({
+        studentId: selectedStudent.id,
+        date: record.date,
+        batchId: record.batchId,
+        status: newStatus,
+        notes: record.notes
+      });
+      if (saved) {
+        showToast(`Corrected status to ${newStatus} on ${formatDisplayDate(record.date)}!`, 'success');
+      }
+    }, 'Authorized Admin login required to mark or correct attendance.');
   };
 
   // --- TAB 3: PAST SESSIONS LOG STATE (Requirement 1) ---
@@ -444,11 +484,13 @@ export const AttendanceView = () => {
 
   // 1-Click load past session into register for editing
   const handleEditPastSession = (session) => {
-    setAttendanceBranchId(session.dojoId || 'all');
-    setSelectedBatchId(session.batchId);
-    setSelectedDate(session.date);
-    setActiveAttendanceTab('register');
-    showToast(`Loaded ${session.batchName || 'Batch'} on ${formatDisplayDate(session.date)} for editing.`, 'info');
+    requireAdmin(() => {
+      setAttendanceBranchId(session.dojoId || 'all');
+      setSelectedBatchId(session.batchId);
+      setSelectedDate(session.date);
+      setActiveAttendanceTab('register');
+      showToast(`Loaded ${session.batchName || 'Batch'} on ${formatDisplayDate(session.date)} for editing.`, 'info');
+    }, 'Authorized Admin login required to edit past attendance sessions.');
   };
 
   const handleDeletePastSession = async (session) => {
@@ -546,6 +588,18 @@ export const AttendanceView = () => {
         </div>
       </div>
 
+      {/* View-Only Guest Banner */}
+      {!isAdmin && (
+        <div className="bg-amber-950/30 border border-amber-500/30 rounded-2xl px-4 py-3 flex flex-wrap items-center justify-between gap-2 text-xs text-amber-200">
+          <div className="flex items-center gap-2 min-w-0">
+            <Lock className="w-4 h-4 text-amber-400 shrink-0" />
+            <span>
+              <strong className="text-amber-300">View-Only Guest Mode:</strong> Attendance records are read-only. Admin username &amp; password are required to mark Present, Absent, or Late, check in make-up attendees, edit, or save attendance.
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* ========================================================================= */}
       {/* TAB 1: DAILY ROLL CALL REGISTER (PAST DATE & EDIT RECORD SUPPORT)          */}
       {/* ========================================================================= */}
@@ -565,9 +619,11 @@ export const AttendanceView = () => {
                 type="button"
                 onClick={handleWhatsAppAbsentAlert}
                 className="inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-zinc-800 hover:bg-zinc-700 text-xs font-semibold text-zinc-200 border border-zinc-700 rounded-xl transition-all shadow truncate cursor-pointer"
+                title={isAdmin ? 'Notify parents of absent students' : 'Admin Login Required'}
               >
                 <MessageSquare className="w-4 h-4 text-emerald-400 shrink-0" />
                 <span className="truncate">Notify Absentees</span>
+                {!isAdmin && <Lock className="w-3 h-3 text-amber-400 shrink-0" />}
               </button>
 
               <button
@@ -578,6 +634,7 @@ export const AttendanceView = () => {
                     ? 'bg-amber-600 hover:bg-amber-500 shadow-amber-600/30'
                     : 'bg-dojo-red hover:bg-dojo-redHover shadow-red-600/30'
                 }`}
+                title={isAdmin ? 'Save session attendance' : 'Admin Login Required — Save Attendance'}
               >
                 {isExistingSession ? (
                   <>
@@ -590,6 +647,7 @@ export const AttendanceView = () => {
                     <span>{selectedDate < todayStr ? 'Save Missed Attendance' : 'Save Attendance'}</span>
                   </>
                 )}
+                {!isAdmin && <Lock className="w-3 h-3 text-amber-200 shrink-0" />}
               </button>
             </div>
           </div>
@@ -673,22 +731,26 @@ export const AttendanceView = () => {
             {/* 4. Quick Bulk Roll Call */}
             <div className="min-w-0">
               <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-1">
-                ⚡ Rapid Bulk Action
+                ⚡ Rapid Bulk Action {!isAdmin && '🔒'}
               </label>
               <div className="flex gap-1.5">
                 <button
                   type="button"
                   onClick={() => handleMarkAll('Present')}
-                  className="flex-1 py-2 text-[11px] font-bold rounded-xl bg-emerald-950/60 text-emerald-400 border border-emerald-500/40 hover:bg-emerald-900/60 transition-colors cursor-pointer"
+                  className="flex-1 inline-flex items-center justify-center gap-1 py-2 text-[11px] font-bold rounded-xl bg-emerald-950/60 text-emerald-400 border border-emerald-500/40 hover:bg-emerald-900/60 transition-colors cursor-pointer"
+                  title={isAdmin ? 'Mark all students present' : 'Admin Login Required'}
                 >
-                  All Present
+                  <span>All Present</span>
+                  {!isAdmin && <Lock className="w-3 h-3 text-amber-400 shrink-0" />}
                 </button>
                 <button
                   type="button"
                   onClick={() => handleMarkAll('Absent')}
-                  className="flex-1 py-2 text-[11px] font-bold rounded-xl bg-zinc-900 text-zinc-400 border border-zinc-700 hover:text-white transition-colors cursor-pointer"
+                  className="flex-1 inline-flex items-center justify-center gap-1 py-2 text-[11px] font-bold rounded-xl bg-zinc-900 text-zinc-400 border border-zinc-700 hover:text-white transition-colors cursor-pointer"
+                  title={isAdmin ? 'Mark all students absent' : 'Admin Login Required'}
                 >
-                  All Absent
+                  <span>All Absent</span>
+                  {!isAdmin && <Lock className="w-3 h-3 text-amber-400 shrink-0" />}
                 </button>
               </div>
             </div>
@@ -703,13 +765,16 @@ export const AttendanceView = () => {
                 </div>
                 <div>
                   <h4 className="text-xs sm:text-sm font-bold text-white flex items-center gap-2">
-                    <span>Editing Previously Recorded Attendance</span>
+                    <span>{isAdmin ? 'Editing Previously Recorded Attendance' : 'Viewing Recorded Attendance Session'}</span>
                     <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40">
                       Saved Session
                     </span>
                   </h4>
                   <p className="text-[11px] text-zinc-400 mt-0.5">
-                    Attendance for <strong>{currentBatch?.name || 'Batch'}</strong> on <strong>{formatDisplayDate(selectedDate)}</strong> is currently loaded ({presentCount} present, {absentCount} absent). You can modify any student's status below and tap "Update Attendance".
+                    Attendance for <strong>{currentBatch?.name || 'Batch'}</strong> on <strong>{formatDisplayDate(selectedDate)}</strong> is currently loaded ({presentCount} present, {absentCount} absent).{' '}
+                    {isAdmin
+                      ? 'You can modify any student\'s status below and tap "Update Attendance".'
+                      : 'Admin login is required to modify saved statuses.'}
                   </p>
                 </div>
               </div>
@@ -717,9 +782,11 @@ export const AttendanceView = () => {
                 type="button"
                 onClick={handleSaveAttendance}
                 className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold rounded-xl shadow cursor-pointer shrink-0"
+                title={isAdmin ? 'Save updates' : 'Admin Login Required'}
               >
                 <RefreshCw className="w-3.5 h-3.5" />
                 <span>Save Edits</span>
+                {!isAdmin && <Lock className="w-3 h-3 text-amber-200" />}
               </button>
             </div>
           ) : selectedDate < todayStr ? (
@@ -730,13 +797,13 @@ export const AttendanceView = () => {
                 </div>
                 <div>
                   <h4 className="text-xs sm:text-sm font-bold text-white flex items-center gap-2 flex-wrap">
-                    <span>Recording Attendance for Previous Date ({formatDisplayDate(selectedDate)})</span>
+                    <span>{isAdmin ? `Recording Attendance for Previous Date (${formatDisplayDate(selectedDate)})` : `Previous Date Roll Call (${formatDisplayDate(selectedDate)})`}</span>
                     <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/40 shrink-0">
-                      Missed Date Entry
+                      {isAdmin ? 'Missed Date Entry' : 'Not Recorded'}
                     </span>
                   </h4>
                   <p className="text-[11px] text-zinc-400 mt-0.5">
-                    No session was recorded on this past date. You can mark attendance now to complete missed records and update student percentages.
+                    No session was recorded on this past date. {isAdmin ? 'You can mark attendance now to complete missed records and update student percentages.' : 'Admin login is required to mark missed attendance.'}
                   </p>
                 </div>
               </div>
@@ -744,9 +811,11 @@ export const AttendanceView = () => {
                 type="button"
                 onClick={handleSaveAttendance}
                 className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow cursor-pointer shrink-0"
+                title={isAdmin ? 'Save missed attendance' : 'Admin Login Required'}
               >
                 <Check className="w-3.5 h-3.5" />
                 <span>Save Missed Attendance</span>
+                {!isAdmin && <Lock className="w-3 h-3 text-amber-200" />}
               </button>
             </div>
           ) : null}
@@ -774,16 +843,18 @@ export const AttendanceView = () => {
 
             <button
               type="button"
-              onClick={() => setIsAddGuestOpen(!isAddGuestOpen)}
+              onClick={() => requireAdmin(() => setIsAddGuestOpen(prev => !prev), 'Authorized Admin login required to check in make-up students.')}
               className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 bg-zinc-800 hover:bg-zinc-700 text-xs font-bold text-white border border-zinc-700 rounded-xl transition-all cursor-pointer shadow active:scale-95 shrink-0"
+              title={isAdmin ? 'Check in a make-up student' : 'Admin Login Required'}
             >
               <Plus className="w-3.5 h-3.5 text-amber-400" />
               <span>Check-in Make-up Student</span>
+              {!isAdmin && <Lock className="w-3 h-3 text-amber-400 shrink-0" />}
             </button>
           </div>
 
           {/* Quick Modal / Dropdown to pick students from other batches */}
-          {isAddGuestOpen && (
+          {isAdmin && isAddGuestOpen && (
             <div className="bg-zinc-900/95 border border-zinc-700 p-4 rounded-2xl shadow-2xl animate-fade-in space-y-3">
               <div className="flex items-center justify-between">
                 <h5 className="text-xs font-bold text-white flex items-center gap-1.5">
@@ -847,7 +918,9 @@ export const AttendanceView = () => {
             </div>
             <div className="bg-dojo-card border border-dojo-border rounded-xl p-3 text-center">
               <span className="text-[10px] uppercase font-bold text-zinc-400">Turnout %</span>
-              <p className="text-xl font-extrabold text-white">{sessionTurnoutRate}%</p>
+              <p className="text-xl font-extrabold text-white">
+                {isAdmin || isExistingSession ? `${sessionTurnoutRate}%` : '—'}
+              </p>
             </div>
           </div>
 
@@ -894,9 +967,11 @@ export const AttendanceView = () => {
                       <button
                         type="button"
                         onClick={() => handleAddGuestStudent(s.id)}
-                        className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shrink-0 shadow active:scale-95 cursor-pointer"
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shrink-0 shadow active:scale-95 cursor-pointer"
+                        title={isAdmin ? 'Check in make-up student' : 'Admin Login Required'}
                       >
-                        + Check-in
+                        <span>+ Check-in</span>
+                        {!isAdmin && <Lock className="w-3 h-3 text-amber-200" />}
                       </button>
                     </div>
                   );
@@ -922,7 +997,7 @@ export const AttendanceView = () => {
                 {/* Mobile Card Roll Call List */}
                 <div className="md:hidden divide-y divide-zinc-800/80">
                   {filteredSessionStudents.map((student) => {
-                    const currentStatus = attendanceRecords[student.id] || 'Present';
+                    const currentStatus = getDisplayAttendanceStatus(student.id);
                     const isGuest = guestStudentIds.includes(student.id) && student.batchId !== currentBatch?.id;
                     const regularBatch = batches.find(b => b.id === student.batchId);
 
@@ -990,9 +1065,11 @@ export const AttendanceView = () => {
                                     e.stopPropagation();
                                     handleRemoveGuestStudent(student.id);
                                   }}
-                                  className="text-[10px] text-red-400 hover:text-red-300 underline cursor-pointer"
+                                  className="text-[10px] text-red-400 hover:text-red-300 underline cursor-pointer inline-flex items-center gap-0.5"
+                                  title={isAdmin ? 'Remove make-up student' : 'Admin Login Required'}
                                 >
-                                  Remove
+                                  <span>Remove</span>
+                                  {!isAdmin && <Lock className="w-2.5 h-2.5 text-amber-400" />}
                                 </button>
                               )}
                             </div>
@@ -1000,6 +1077,12 @@ export const AttendanceView = () => {
                         </div>
 
                         <div className="flex items-center gap-1 shrink-0">
+                          {!isAdmin && (
+                            <Lock
+                              className="w-3 h-3 text-amber-400/80 shrink-0 mr-0.5"
+                              title="Admin Login Required — Mark Attendance"
+                            />
+                          )}
                           <button
                             type="button"
                             onClick={() => setStatus(student.id, 'Present')}
@@ -1008,7 +1091,7 @@ export const AttendanceView = () => {
                                 ? 'bg-emerald-600 text-white border-emerald-500 shadow-md shadow-emerald-950/40'
                                 : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-white'
                             }`}
-                            title="Mark Present"
+                            title={isAdmin ? 'Mark Present' : 'Admin Login Required — Mark Attendance'}
                           >
                             P
                           </button>
@@ -1021,7 +1104,7 @@ export const AttendanceView = () => {
                                 ? 'bg-red-600 text-white border-red-500 shadow-md shadow-red-950/40'
                                 : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-white'
                             }`}
-                            title="Mark Absent"
+                            title={isAdmin ? 'Mark Absent' : 'Admin Login Required — Mark Attendance'}
                           >
                             A
                           </button>
@@ -1034,7 +1117,7 @@ export const AttendanceView = () => {
                                 ? 'bg-amber-600 text-white border-amber-500 shadow-md shadow-amber-950/40'
                                 : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-white'
                             }`}
-                            title="Mark Late"
+                            title={isAdmin ? 'Mark Late' : 'Admin Login Required — Mark Attendance'}
                           >
                             L
                           </button>
@@ -1053,12 +1136,14 @@ export const AttendanceView = () => {
                         <th className="py-3 px-3">Student</th>
                         <th className="py-3 px-3">Belt Rank</th>
                         <th className="py-3 px-3 text-right">Avg Turnout</th>
-                        <th className="py-3 px-4 text-right">Attendance Mark</th>
+                        <th className="py-3 px-4 text-right">
+                          Attendance Mark {!isAdmin && <span className="text-amber-400 ml-1">🔒 (View-Only)</span>}
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-zinc-800/80 text-xs">
                       {filteredSessionStudents.map((student, idx) => {
-                        const currentStatus = attendanceRecords[student.id] || 'Present';
+                        const currentStatus = getDisplayAttendanceStatus(student.id);
                         const isGuest = guestStudentIds.includes(student.id) && student.batchId !== currentBatch?.id;
                         const regularBatch = batches.find(b => b.id === student.batchId);
 
@@ -1128,9 +1213,11 @@ export const AttendanceView = () => {
                                         e.stopPropagation();
                                         handleRemoveGuestStudent(student.id);
                                       }}
-                                      className="text-[10px] text-red-400 hover:text-red-300 underline cursor-pointer mt-0.5"
+                                      className="text-[10px] text-red-400 hover:text-red-300 underline cursor-pointer mt-0.5 inline-flex items-center gap-1"
+                                      title={isAdmin ? 'Remove make-up student' : 'Admin Login Required'}
                                     >
-                                      Remove make-up student
+                                      <span>Remove make-up student</span>
+                                      {!isAdmin && <Lock className="w-2.5 h-2.5 text-amber-400" />}
                                     </button>
                                   )}
                                 </div>
@@ -1157,6 +1244,7 @@ export const AttendanceView = () => {
                                       ? 'bg-emerald-600 text-white border-emerald-500 shadow-md shadow-emerald-950/40'
                                       : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-white'
                                   }`}
+                                  title={isAdmin ? 'Mark Present' : 'Admin Login Required — Mark Attendance'}
                                 >
                                   Present
                                 </button>
@@ -1168,6 +1256,7 @@ export const AttendanceView = () => {
                                       ? 'bg-red-600 text-white border-red-500 shadow-md shadow-red-950/40'
                                       : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-white'
                                   }`}
+                                  title={isAdmin ? 'Mark Absent' : 'Admin Login Required — Mark Attendance'}
                                 >
                                   Absent
                                 </button>
@@ -1179,6 +1268,7 @@ export const AttendanceView = () => {
                                       ? 'bg-amber-600 text-white border-amber-500 shadow-md shadow-amber-950/40'
                                       : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-white'
                                   }`}
+                                  title={isAdmin ? 'Mark Late' : 'Admin Login Required — Mark Attendance'}
                                 >
                                   Late
                                 </button>
@@ -1386,11 +1476,13 @@ export const AttendanceView = () => {
 
                   <button
                     type="button"
-                    onClick={() => setIsAddingMissedRecord(!isAddingMissedRecord)}
+                    onClick={() => requireAdmin(() => setIsAddingMissedRecord(prev => !prev), 'Authorized Admin login required to add attendance records.')}
                     className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow cursor-pointer transition-all active:scale-95"
+                    title={isAdmin ? 'Add missed attendance record' : 'Admin Login Required'}
                   >
                     <Plus className="w-3.5 h-3.5 shrink-0" />
-                    <span>{isAddingMissedRecord ? 'Close Form' : '+ Add Missed Record'}</span>
+                    <span>{isAdmin && isAddingMissedRecord ? 'Close Form' : '+ Add Missed Record'}</span>
+                    {!isAdmin && <Lock className="w-3 h-3 text-amber-200 shrink-0" />}
                   </button>
                 </div>
               </div>
@@ -1457,7 +1549,7 @@ export const AttendanceView = () => {
               </div>
 
               {/* Inline Form to Add Missed Record (Requirement 2) */}
-              {isAddingMissedRecord && (
+              {isAdmin && isAddingMissedRecord && (
                 <form
                   onSubmit={handleSaveMissedRecord}
                   className="bg-zinc-900 border border-emerald-500/40 p-4 rounded-2xl shadow-xl space-y-3 animate-fade-in"
@@ -1560,7 +1652,9 @@ export const AttendanceView = () => {
                     <span className="break-words">Attendance Records for {MONTH_NAMES[selectedMonth - 1]} {selectedYear} ({monthlyStats.records.length} sessions)</span>
                   </h4>
                   <span className="text-[11px] text-zinc-400">
-                    Tap P, A, or L to correct any mistake instantly
+                    {isAdmin
+                      ? 'Tap P, A, or L to correct any mistake instantly'
+                      : '🔒 View-Only — Admin login required to mark or correct attendance'}
                   </span>
                 </div>
 
@@ -1621,6 +1715,12 @@ export const AttendanceView = () => {
                           </div>
 
                           <div className="flex items-center gap-1 bg-zinc-950 p-1 rounded-xl border border-zinc-800 shrink-0">
+                            {!isAdmin && (
+                              <Lock
+                                className="w-3 h-3 text-amber-400/80 ml-1 shrink-0"
+                                title="Admin Login Required — Correct Attendance"
+                              />
+                            )}
                             <button
                               type="button"
                               onClick={() => handleQuickStatusCorrection(record, 'Present')}
@@ -1629,7 +1729,7 @@ export const AttendanceView = () => {
                                   ? 'bg-emerald-600 text-white shadow'
                                   : 'text-zinc-500 hover:text-white hover:bg-zinc-800'
                               }`}
-                              title="Set Present"
+                              title={isAdmin ? 'Set Present' : 'Admin Login Required — Correct Attendance'}
                             >
                               P
                             </button>
@@ -1641,7 +1741,7 @@ export const AttendanceView = () => {
                                   ? 'bg-red-600 text-white shadow'
                                   : 'text-zinc-500 hover:text-white hover:bg-zinc-800'
                               }`}
-                              title="Set Absent"
+                              title={isAdmin ? 'Set Absent' : 'Admin Login Required — Correct Attendance'}
                             >
                               A
                             </button>
@@ -1653,7 +1753,7 @@ export const AttendanceView = () => {
                                   ? 'bg-amber-600 text-white shadow'
                                   : 'text-zinc-500 hover:text-white hover:bg-zinc-800'
                               }`}
-                              title="Set Late"
+                              title={isAdmin ? 'Set Late' : 'Admin Login Required — Correct Attendance'}
                             >
                               L
                             </button>
@@ -1670,7 +1770,9 @@ export const AttendanceView = () => {
                             <th className="py-3 px-4">Date &amp; Day</th>
                             <th className="py-3 px-3">Batch &amp; Notes</th>
                             <th className="py-3 px-3">Recorded Status</th>
-                            <th className="py-3 px-4 text-right">Quick Correction</th>
+                            <th className="py-3 px-4 text-right">
+                              Quick Correction {!isAdmin && <span className="text-amber-400 ml-1">🔒</span>}
+                            </th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-zinc-800/80 text-xs">
@@ -1724,6 +1826,7 @@ export const AttendanceView = () => {
                                         ? 'bg-emerald-600 text-white shadow'
                                         : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
                                     }`}
+                                    title={isAdmin ? 'Set Present' : 'Admin Login Required — Correct Attendance'}
                                   >
                                     Present
                                   </button>
@@ -1735,6 +1838,7 @@ export const AttendanceView = () => {
                                         ? 'bg-red-600 text-white shadow'
                                         : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
                                     }`}
+                                    title={isAdmin ? 'Set Absent' : 'Admin Login Required — Correct Attendance'}
                                   >
                                     Absent
                                   </button>
@@ -1746,6 +1850,7 @@ export const AttendanceView = () => {
                                         ? 'bg-amber-600 text-white shadow'
                                         : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
                                     }`}
+                                    title={isAdmin ? 'Set Late' : 'Admin Login Required — Correct Attendance'}
                                   >
                                     Late
                                   </button>
@@ -1809,10 +1914,11 @@ export const AttendanceView = () => {
                   type="button"
                   onClick={handleClearAllAttendance}
                   className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3 py-2 sm:py-1.5 bg-red-500/10 hover:bg-red-600 text-red-400 hover:text-white border border-red-500/30 rounded-xl text-xs font-bold transition-all cursor-pointer shadow"
-                  title="Clear all recorded attendance logs (keeps students and fees safe)"
+                  title={isAdmin ? 'Clear all recorded attendance logs (keeps students and fees safe)' : 'Admin Login Required — Clear Attendance'}
                 >
                   <Trash2 className="w-3.5 h-3.5 shrink-0" />
                   <span>Clear All Attendance</span>
+                  {!isAdmin && <Lock className="w-3 h-3 text-amber-400 shrink-0" />}
                 </button>
               )}
             </div>
@@ -1859,17 +1965,20 @@ export const AttendanceView = () => {
                           type="button"
                           onClick={() => handleEditPastSession(session)}
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-600/20 hover:bg-amber-600 text-amber-300 hover:text-white border border-amber-500/40 rounded-xl text-xs font-bold transition-all cursor-pointer shadow"
+                          title={isAdmin ? 'Edit past session roll call' : 'Admin Login Required — Edit Session'}
                         >
                           <Edit className="w-3.5 h-3.5" />
                           <span>Edit</span>
+                          {!isAdmin && <Lock className="w-3 h-3 text-amber-300" />}
                         </button>
                         <button
                           type="button"
                           onClick={() => handleDeletePastSession(session)}
                           className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white border border-red-500/40 rounded-xl text-xs font-bold transition-all cursor-pointer shadow"
-                          title="Delete this session record"
+                          title={isAdmin ? 'Delete this session record' : 'Admin Login Required — Delete Session'}
                         >
                           <Trash2 className="w-3.5 h-3.5" />
+                          {!isAdmin && <Lock className="w-3 h-3 text-red-300" />}
                         </button>
                       </div>
                     </div>

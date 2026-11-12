@@ -5,7 +5,7 @@ import { X, CalendarDays, Clock, Users, Building, Award } from 'lucide-react';
 const DAYS_OF_WEEK = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 export const AddBatchModal = ({ isOpen, onClose, initialDay }) => {
-  const { dojos, addBatch } = useDojo();
+  const { dojos, addBatch, isAdmin, requireAdmin } = useDojo();
 
   const getInitialFormData = () => {
     const validInitialDay = initialDay && DAYS_OF_WEEK.includes(initialDay) ? initialDay : null;
@@ -37,7 +37,7 @@ export const AddBatchModal = ({ isOpen, onClose, initialDay }) => {
     onClose();
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || !isAdmin) return null;
 
   const toggleDay = (day) => {
     setFormData(prev => ({
@@ -62,12 +62,14 @@ export const AddBatchModal = ({ isOpen, onClose, initialDay }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!validate()) return;
-    addBatch({
-      ...formData,
-      maxCapacity: Number(formData.maxCapacity),
-      durationMinutes: Number(formData.durationMinutes)
-    });
-    handleClose();
+    requireAdmin(() => {
+      addBatch({
+        ...formData,
+        maxCapacity: Number(formData.maxCapacity),
+        durationMinutes: Number(formData.durationMinutes)
+      });
+      handleClose();
+    }, 'Authorized Admin login required to create a class batch.');
   };
 
   return (

@@ -6,7 +6,7 @@ import { showConfirmDialog, showSuccessAlert } from '../../utils/sweetAlert';
 const DAYS_OF_WEEK = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 export const EditBatchModal = ({ isOpen, onClose, batch }) => {
-  const { dojos, updateBatch, deleteBatch } = useDojo();
+  const { dojos, updateBatch, deleteBatch, isAdmin, requireAdmin } = useDojo();
 
   const [formData, setFormData] = useState({
     name: '',
@@ -39,7 +39,7 @@ export const EditBatchModal = ({ isOpen, onClose, batch }) => {
     }
   }, [batch, isOpen, dojos]);
 
-  if (!isOpen || !batch) return null;
+  if (!isOpen || !batch || !isAdmin) return null;
 
   const toggleDay = (day) => {
     setFormData(prev => ({
@@ -65,32 +65,36 @@ export const EditBatchModal = ({ isOpen, onClose, batch }) => {
     e.preventDefault();
     if (!validate()) return;
 
-    updateBatch(batch.id, {
-      ...formData,
-      maxCapacity: Number(formData.maxCapacity),
-      durationMinutes: Number(formData.durationMinutes)
-    });
-    onClose();
+    requireAdmin(() => {
+      updateBatch(batch.id, {
+        ...formData,
+        maxCapacity: Number(formData.maxCapacity),
+        durationMinutes: Number(formData.durationMinutes)
+      });
+      onClose();
+    }, 'Authorized Admin login required to edit class batches.');
   };
 
   const handleDelete = async () => {
-    const confirmed = await showConfirmDialog({
-      title: 'Delete Class Batch? 🗑️',
-      text: `Are you sure you want to permanently delete "${batch.name}"? This action cannot be undone.`,
-      confirmText: 'Yes, Delete Batch',
-      icon: 'warning'
-    });
+    requireAdmin(async () => {
+      const confirmed = await showConfirmDialog({
+        title: 'Delete Class Batch? 🗑️',
+        text: `Are you sure you want to permanently delete "${batch.name}"? This action cannot be undone.`,
+        confirmText: 'Yes, Delete Batch',
+        icon: 'warning'
+      });
 
-    if (confirmed) {
-      const deleted = await deleteBatch(batch.id);
-      if (deleted) {
-        onClose();
-        await showSuccessAlert(
-          'Batch Deleted! 🥋',
-          `"${batch.name}" has been removed from schedules.`
-        );
+      if (confirmed) {
+        const deleted = await deleteBatch(batch.id);
+        if (deleted) {
+          onClose();
+          await showSuccessAlert(
+            'Batch Deleted! 🥋',
+            `"${batch.name}" has been removed from schedules.`
+          );
+        }
       }
-    }
+    }, 'Authorized Admin login required to delete class batches.');
   };
 
   return (

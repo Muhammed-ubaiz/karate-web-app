@@ -10,7 +10,8 @@ import {
   Sparkles,
   ShieldAlert,
   Check,
-  Palette
+  Palette,
+  Lock
 } from 'lucide-react';
 
 const PRESET_COLORS = [
@@ -34,6 +35,7 @@ export const ManageBeltRanksModal = ({ isOpen, onClose }) => {
     deleteAllBeltRanks,
     resetBeltRanksToDefault,
     students,
+    isAdmin,
     requireAdmin
   } = useDojo();
 
@@ -43,14 +45,16 @@ export const ManageBeltRanksModal = ({ isOpen, onClose }) => {
   const [isAdding, setIsAdding] = useState(false);
   const [error, setError] = useState('');
 
-  // Automatically expand add form when modal opens if roster has 0 belts
+  // Automatically expand add form when modal opens if Admin and roster has 0 belts
   useEffect(() => {
     if (isOpen) {
-      if (beltRanks.length === 0) {
+      if (isAdmin && beltRanks.length === 0) {
         setIsAdding(true);
+      } else if (!isAdmin) {
+        setIsAdding(false);
       }
     }
-  }, [isOpen, beltRanks.length]);
+  }, [isOpen, isAdmin, beltRanks.length]);
 
   if (!isOpen) return null;
 
@@ -61,75 +65,83 @@ export const ManageBeltRanksModal = ({ isOpen, onClose }) => {
     onClose();
   };
 
-  const handleCreateBelt = async (e) => {
+  const handleCreateBelt = (e) => {
     e.preventDefault();
     if (!newBeltName.trim()) {
       setError('Please enter a belt rank name');
       return;
     }
 
-    await addBeltRank({
-      name: newBeltName.trim(),
-      badgeBg: selectedColor.bg,
-      textColor: selectedColor.text,
-      level: Number(levelNumber) || 1,
-      colorClass: `belt-${newBeltName.toLowerCase().replace(/[^a-z0-9]/g, '-')}`
-    });
+    requireAdmin(async () => {
+      await addBeltRank({
+        name: newBeltName.trim(),
+        badgeBg: selectedColor.bg,
+        textColor: selectedColor.text,
+        level: Number(levelNumber) || 1,
+        colorClass: `belt-${newBeltName.toLowerCase().replace(/[^a-z0-9]/g, '-')}`
+      });
 
-    setNewBeltName('');
-    setError('');
-    setIsAdding(false);
-    await showSuccessAlert(
-      'Belt Rank Created! 🥋',
-      `"${newBeltName.trim()}" has been added to your academy belt hierarchy.`
-    );
+      setNewBeltName('');
+      setError('');
+      setIsAdding(false);
+      await showSuccessAlert(
+        'Belt Rank Created! 🥋',
+        `"${newBeltName.trim()}" has been added to your academy belt hierarchy.`
+      );
+    }, 'Authorized Admin login required to create belt ranks.');
   };
 
-  const handleDeleteOne = async (belt) => {
-    const assignedCount = students.filter(s => s.beltRank?.toLowerCase() === belt.name?.toLowerCase()).length;
-    const warningText = assignedCount > 0
-      ? `Warning: ${assignedCount} active students currently hold this belt rank. Are you sure you want to remove "${belt.name}"?`
-      : `Are you sure you want to delete "${belt.name}" from the academy records?`;
+  const handleDeleteOne = (belt) => {
+    requireAdmin(async () => {
+      const assignedCount = students.filter(s => s.beltRank?.toLowerCase() === belt.name?.toLowerCase()).length;
+      const warningText = assignedCount > 0
+        ? `Warning: ${assignedCount} active students currently hold this belt rank. Are you sure you want to remove "${belt.name}"?`
+        : `Are you sure you want to delete "${belt.name}" from the academy records?`;
 
-    const confirmed = await showConfirmDialog({
-      title: `Delete "${belt.name}"? 🗑️`,
-      text: warningText,
-      confirmText: 'Yes, Delete Belt',
-      icon: 'warning'
-    });
+      const confirmed = await showConfirmDialog({
+        title: `Delete "${belt.name}"? 🗑️`,
+        text: warningText,
+        confirmText: 'Yes, Delete Belt',
+        icon: 'warning'
+      });
 
-    if (confirmed) {
-      await deleteBeltRank(belt.id || belt.name);
-      await showSuccessAlert('Belt Deleted! 🥋', `"${belt.name}" has been removed.`);
-    }
+      if (confirmed) {
+        await deleteBeltRank(belt.id || belt.name);
+        await showSuccessAlert('Belt Deleted! 🥋', `"${belt.name}" has been removed.`);
+      }
+    }, 'Authorized Admin login required to delete belt ranks.');
   };
 
-  const handleDeleteAll = async () => {
-    const confirmed = await showConfirmDialog({
-      title: 'Delete ALL Belt Ranks? ⚠️',
-      text: 'This will remove all current belt ranks so you can build your custom belt order from scratch. Continue?',
-      confirmText: 'Yes, Delete All Belts',
-      icon: 'warning'
-    });
+  const handleDeleteAll = () => {
+    requireAdmin(async () => {
+      const confirmed = await showConfirmDialog({
+        title: 'Delete ALL Belt Ranks? ⚠️',
+        text: 'This will remove all current belt ranks so you can build your custom belt order from scratch. Continue?',
+        confirmText: 'Yes, Delete All Belts',
+        icon: 'warning'
+      });
 
-    if (confirmed) {
-      await deleteAllBeltRanks();
-      await showSuccessAlert('Clean Slate Ready! 🥋', 'All belts cleared. You can now add your custom ranks.');
-    }
+      if (confirmed) {
+        await deleteAllBeltRanks();
+        await showSuccessAlert('Clean Slate Ready! 🥋', 'All belts cleared. You can now add your custom ranks.');
+      }
+    }, 'Authorized Admin login required to clear all belt ranks.');
   };
 
-  const handleResetDefaults = async () => {
-    const confirmed = await showConfirmDialog({
-      title: 'Reset to Standard Belts? 🥋',
-      text: 'This will restore the standard 8 Karate belt ranks (White to Black Belt 1st Dan).',
-      confirmText: 'Yes, Reset Belts',
-      icon: 'info'
-    });
+  const handleResetDefaults = () => {
+    requireAdmin(async () => {
+      const confirmed = await showConfirmDialog({
+        title: 'Reset to Standard Belts? 🥋',
+        text: 'This will restore the standard 8 Karate belt ranks (White to Black Belt 1st Dan).',
+        confirmText: 'Yes, Reset Belts',
+        icon: 'info'
+      });
 
-    if (confirmed) {
-      await resetBeltRanksToDefault();
-      await showSuccessAlert('Belts Restored! 🥋', 'Standard martial arts belts have been reloaded.');
-    }
+      if (confirmed) {
+        await resetBeltRanksToDefault();
+        await showSuccessAlert('Belts Restored! 🥋', 'Standard martial arts belts have been reloaded.');
+      }
+    }, 'Authorized Admin login required to reset belt ranks.');
   };
 
   return (
@@ -167,6 +179,24 @@ export const ManageBeltRanksModal = ({ isOpen, onClose }) => {
 
         {/* Modal Body */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5">
+          {!isAdmin && (
+            <div className="p-3 bg-amber-950/30 border border-amber-500/30 rounded-2xl flex items-center justify-between gap-2.5">
+              <div className="flex items-center gap-2 min-w-0">
+                <Lock className="w-4 h-4 text-amber-400 shrink-0" />
+                <p className="text-[11px] text-zinc-300">
+                  <strong className="text-white">View-Only Mode:</strong> Login as Admin to add, remove, or reset academy belt ranks.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => requireAdmin()}
+                className="px-2.5 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 rounded-lg text-[11px] font-bold cursor-pointer shrink-0"
+              >
+                Admin Login 🔑
+              </button>
+            </div>
+          )}
+
           {/* Top Controls / Action Bar */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
             <div className="flex items-center gap-2 flex-wrap">
@@ -178,11 +208,18 @@ export const ManageBeltRanksModal = ({ isOpen, onClose }) => {
             <div className="flex items-center gap-2 flex-wrap">
               <button
                 type="button"
-                onClick={() => setIsAdding(!isAdding)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-500 active:scale-95 text-white rounded-xl text-xs font-bold transition-all shadow cursor-pointer"
+                onClick={() => requireAdmin(
+                  () => setIsAdding(!isAdding),
+                  'Authorized Admin login required to create new belt ranks.'
+                )}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 active:scale-95 rounded-xl text-xs font-bold transition-all shadow cursor-pointer ${
+                  isAdmin
+                    ? 'bg-red-600 hover:bg-red-500 text-white'
+                    : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700'
+                }`}
               >
                 <Plus className="w-3.5 h-3.5" />
-                <span>{isAdding ? 'Close Form' : '+ Add New Belt'}</span>
+                <span>{isAdding ? 'Close Form' : isAdmin ? '+ Add New Belt' : '+ Add New Belt 🔒'}</span>
               </button>
 
               {beltRanks.length > 0 && (
@@ -190,10 +227,10 @@ export const ManageBeltRanksModal = ({ isOpen, onClose }) => {
                   type="button"
                   onClick={handleDeleteAll}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-950 hover:bg-red-600 text-red-300 hover:text-white border border-red-500/50 rounded-xl text-xs font-bold transition-all cursor-pointer shadow"
-                  title="Remove all belts completely"
+                  title={isAdmin ? 'Remove all belts completely' : 'Admin Login Required — Remove All Belts'}
                 >
                   <Trash2 className="w-3.5 h-3.5" />
-                  <span>Remove All ({beltRanks.length})</span>
+                  <span>Remove All ({beltRanks.length}){!isAdmin ? ' 🔒' : ''}</span>
                 </button>
               )}
 
@@ -201,17 +238,17 @@ export const ManageBeltRanksModal = ({ isOpen, onClose }) => {
                 type="button"
                 onClick={handleResetDefaults}
                 className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white rounded-xl text-xs font-semibold border border-zinc-700 transition-all cursor-pointer"
-                title="Reset to default Karate ranks"
+                title={isAdmin ? 'Reset to default Karate ranks' : 'Admin Login Required — Reset Belts'}
               >
                 <RotateCcw className="w-3 h-3 text-amber-400" />
-                <span className="sm:hidden">Reset</span>
-                <span className="hidden sm:inline">Reset Standard (8)</span>
+                <span className="sm:hidden">Reset{!isAdmin ? ' 🔒' : ''}</span>
+                <span className="hidden sm:inline">Reset Standard (8){!isAdmin ? ' 🔒' : ''}</span>
               </button>
             </div>
           </div>
 
           {/* Add New Belt Collapsible Form */}
-          {isAdding && (
+          {isAdmin && isAdding && (
             <form onSubmit={handleCreateBelt} className="p-4 bg-zinc-900 rounded-2xl border border-red-500/30 space-y-4 animate-fade-in shadow-lg">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-red-400 uppercase tracking-wider flex items-center gap-1.5">
@@ -340,17 +377,21 @@ export const ManageBeltRanksModal = ({ isOpen, onClose }) => {
                 <div className="pt-2 flex flex-wrap items-center justify-center gap-2">
                   <button
                     type="button"
-                    onClick={() => setIsAdding(true)}
-                    className="px-3.5 py-1.5 bg-red-600 text-white rounded-xl text-xs font-bold shadow cursor-pointer"
+                    onClick={() => requireAdmin(() => setIsAdding(true), 'Authorized Admin login required to create belt ranks.')}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-red-600 text-white rounded-xl text-xs font-bold shadow cursor-pointer"
+                    title={isAdmin ? 'Create your first custom belt' : 'Admin Login Required'}
                   >
-                    + Create First Belt
+                    <span>+ Create First Belt</span>
+                    {!isAdmin && <Lock className="w-3 h-3 text-amber-200" />}
                   </button>
                   <button
                     type="button"
                     onClick={handleResetDefaults}
-                    className="px-3.5 py-1.5 bg-zinc-800 text-zinc-300 rounded-xl text-xs font-bold border border-zinc-700 cursor-pointer"
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-zinc-800 text-zinc-300 rounded-xl text-xs font-bold border border-zinc-700 cursor-pointer"
+                    title={isAdmin ? 'Restore standard belts' : 'Admin Login Required'}
                   >
-                    Restore Standard Belts
+                    <span>Restore Standard Belts</span>
+                    {!isAdmin && <Lock className="w-3 h-3 text-amber-400" />}
                   </button>
                 </div>
               </div>
@@ -392,10 +433,11 @@ export const ManageBeltRanksModal = ({ isOpen, onClose }) => {
                         <button
                           type="button"
                           onClick={() => handleDeleteOne(belt)}
-                          className="p-1.5 rounded-lg text-zinc-500 hover:text-red-400 hover:bg-red-950/40 border border-transparent hover:border-red-500/30 transition-colors cursor-pointer"
-                          title={`Delete ${belt.name}`}
+                          className="inline-flex items-center gap-1 p-1.5 rounded-lg text-zinc-500 hover:text-red-400 hover:bg-red-950/40 border border-transparent hover:border-red-500/30 transition-colors cursor-pointer"
+                          title={isAdmin ? `Delete ${belt.name}` : 'Admin Login Required — Delete Belt'}
                         >
                           <Trash2 className="w-4 h-4" />
+                          {!isAdmin && <Lock className="w-3 h-3 text-amber-400" />}
                         </button>
                       </div>
                     </div>

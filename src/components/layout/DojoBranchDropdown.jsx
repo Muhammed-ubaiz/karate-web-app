@@ -16,6 +16,8 @@ export const DojoBranchDropdown = () => {
     selectedDojoId,
     setSelectedDojoId,
     setModalState,
+    isAdmin,
+    requireAdmin,
     showToast
   } = useDojo();
 
@@ -186,12 +188,15 @@ export const DojoBranchDropdown = () => {
               type="button"
               onClick={() => {
                 setIsOpen(false);
-                setModalState(prev => ({ ...prev, addDojo: true }));
+                requireAdmin(
+                  () => setModalState(prev => ({ ...prev, addDojo: true })),
+                  'Authorized Admin login required to add a new dojo branch.'
+                );
               }}
               className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-xs font-semibold text-zinc-200 hover:text-white transition-colors border border-zinc-700 cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5 text-red-500" />
-              <span>Add New Dojo Branch</span>
+              <span>{isAdmin ? 'Add New Dojo Branch' : 'Add New Dojo Branch 🔒'}</span>
             </button>
           </div>
         </div>

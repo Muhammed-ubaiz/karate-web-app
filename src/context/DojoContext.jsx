@@ -496,8 +496,8 @@ export const DojoProvider = ({ children, initialFeesSubTab = 'plans' }) => {
     // Primary Required Master Credentials:
     // Username: admin@gmail.com
     // Password: 2Akjhy@555##d
-    const isMasterUser = cleanUser === 'admin@gmail.com' || cleanUser === 'admin';
-    const isMasterPass = cleanPass === '2Akjhy@555##d' || cleanPass === 'admin';
+    const isMasterUser = cleanUser === 'admin@gmail.com';
+    const isMasterPass = cleanPass === '2Akjhy@555##d';
 
     const customPass = localStorage.getItem('sensei_custom_admin_pass');
     const isCustomPass = customPass && cleanPass === customPass.trim();
@@ -506,7 +506,7 @@ export const DojoProvider = ({ children, initialFeesSubTab = 'plans' }) => {
       isAdminRef.current = true;
       setIsAdmin(true);
       setCurrentRole('Admin');
-      const staffLabel = cleanUser === 'admin@gmail.com' ? 'Admin (Master)' : 'Admin';
+      const staffLabel = 'Admin (Master)';
       setAuthorizedStaffName(staffLabel);
       localStorage.setItem('sensei_is_admin', 'true');
       localStorage.setItem('sensei_staff_name', staffLabel);
@@ -515,24 +515,18 @@ export const DojoProvider = ({ children, initialFeesSubTab = 'plans' }) => {
     return false;
   };
 
-  const loginWithPin = (pin) => {
-    const cleanPin = (pin || '').trim();
-    const customPin = localStorage.getItem('sensei_custom_admin_pin') || '1234';
-    const validPins = [customPin, '1234', '0000', '1111', 'admin'];
-
-    if (validPins.includes(cleanPin)) {
-      isAdminRef.current = true;
-      setIsAdmin(true);
-      setCurrentRole('Admin');
-      setAuthorizedStaffName('Authorized Staff');
-      localStorage.setItem('sensei_is_admin', 'true');
-      localStorage.setItem('sensei_staff_name', 'Authorized Staff');
-      return true;
-    }
+  const loginWithPin = () => {
+    // PIN bypass disabled — full administrator email and password login is required
+    setAdminPromptMessage('Administrator email and password login required.');
+    setIsAdminLoginOpen(true);
     return false;
   };
 
   const changeAdminPassword = (newPass) => {
+    if (!isAdminRef.current) {
+      showErrorAlert('Authorization Required 🔒', 'Only authenticated administrators can update the admin password.');
+      return false;
+    }
     if (!newPass || newPass.trim().length < 3) {
       showToast('Password must be at least 3 characters', 'error');
       return false;
@@ -543,13 +537,8 @@ export const DojoProvider = ({ children, initialFeesSubTab = 'plans' }) => {
   };
 
   const quickAdminLogin = () => {
-    isAdminRef.current = true;
-    setIsAdmin(true);
-    setCurrentRole('Admin');
-    setAuthorizedStaffName('Admin');
-    localStorage.setItem('sensei_is_admin', 'true');
-    localStorage.setItem('sensei_staff_name', 'Admin');
-    showToast('Logged in as Administrator (Full Access)! 👑', 'success');
+    // Direct unauthenticated switch disabled — prompt full credentials
+    requireAdmin(null, 'Sign in with administrator username and password.');
   };
 
   const logoutAdmin = () => {
@@ -557,6 +546,14 @@ export const DojoProvider = ({ children, initialFeesSubTab = 'plans' }) => {
     setIsAdmin(false);
     setCurrentRole('Sensei');
     localStorage.removeItem('sensei_is_admin');
+    setModalState(prev => ({
+      ...prev,
+      addDojo: false,
+      addBatch: false,
+      addFeePlan: false,
+      addStudent: false,
+      recordPayment: false
+    }));
     showToast('Switched to View-Only (Guest) mode. 🔒', 'info');
   };
 
@@ -617,9 +614,19 @@ export const DojoProvider = ({ children, initialFeesSubTab = 'plans' }) => {
     }
   }, []);
 
+  const ensureAdminAccess = (actionLabel = 'make changes') => {
+    if (isAdminRef.current) return true;
+    showErrorAlert(
+      'Authorization Required 🔒',
+      `Guest mode is strictly view-only. Please log in with Administrator credentials to ${actionLabel}.`
+    );
+    setAdminPromptMessage(`Administrator login required to ${actionLabel}.`);
+    setIsAdminLoginOpen(true);
+    return false;
+  };
+
   const clearActivities = () => {
-    if (!isAdminRef.current) {
-      showErrorAlert('Authorization Required 🔒', 'Only authorized staff / administrators can clear the dashboard activity feed.');
+    if (!ensureAdminAccess('clear the dashboard activity feed')) {
       return false;
     }
     const clearedAt = new Date().toISOString();
@@ -631,6 +638,7 @@ export const DojoProvider = ({ children, initialFeesSubTab = 'plans' }) => {
   };
 
   const resetAllDataToCleanSlate = () => {
+    if (!ensureAdminAccess('reset academy data')) return false;
     localStorage.clear();
     localStorage.setItem('sensei_clean_v12', 'true');
     setDojos(INITIAL_DOJOS);
@@ -936,6 +944,7 @@ export const DojoProvider = ({ children, initialFeesSubTab = 'plans' }) => {
 
   // Add Dojo
   const addDojo = async (dojoData) => {
+    if (!ensureAdminAccess('create a dojo branch')) return false;
     const newDojo = {
       ...dojoData,
       id: `dojo-${Date.now()}`,
@@ -954,16 +963,19 @@ export const DojoProvider = ({ children, initialFeesSubTab = 'plans' }) => {
 
   // Update Dojo
   const updateDojo = async (id, updatedData) => {
+    if (!ensureAdminAccess('update a dojo branch')) return false;
     setDojos(prev => prev.map(d => d.id === id ? { ...d, ...updatedData } : d));
     showToast('Dojo branch updated successfully!');
 
     if (isFirebaseConfigured) {
       await updateDojoInFirestore(id, updatedData).catch(console.error);
     }
+    return true;
   };
 
   // Delete Dojo
   const deleteDojo = async (id) => {
+    if (!ensureAdminAccess('delete a dojo branch')) return false;
     const target = dojos.find(d => d.id === id);
     setDojos(prev => prev.filter(d => d.id !== id));
     showToast(`Dojo "${target?.name || ''}" removed.`, 'info');
@@ -971,10 +983,12 @@ export const DojoProvider = ({ children, initialFeesSubTab = 'plans' }) => {
     if (isFirebaseConfigured) {
       await deleteDojoFromFirestore(id).catch(console.error);
     }
+    return true;
   };
 
   // Add Batch
   const addBatch = async (batchData) => {
+    if (!ensureAdminAccess('create a class batch')) return false;
     const newBatch = {
       ...batchData,
       id: `batch-${Date.now()}`,
@@ -988,10 +1002,12 @@ export const DojoProvider = ({ children, initialFeesSubTab = 'plans' }) => {
     if (isFirebaseConfigured) {
       await saveBatchToFirestore(newBatch).catch(console.error);
     }
+    return true;
   };
 
   // Update Batch
   const updateBatch = async (batchId, updatedData) => {
+    if (!ensureAdminAccess('update a class batch')) return false;
     const existing = batches.find(b => b.id === batchId);
     if (!existing) return false;
 
@@ -1022,6 +1038,7 @@ export const DojoProvider = ({ children, initialFeesSubTab = 'plans' }) => {
 
   // Delete Batch
   const deleteBatch = async (batchId) => {
+    if (!ensureAdminAccess('delete a class batch')) return false;
     const batch = batches.find(b => b.id === batchId);
     if (!batch) return false;
 
@@ -1063,6 +1080,7 @@ export const DojoProvider = ({ children, initialFeesSubTab = 'plans' }) => {
 
   // Add Fee Plan
   const addFeePlan = async (planData) => {
+    if (!ensureAdminAccess('create a fee plan')) return false;
     const newPlan = {
       ...planData,
       id: `plan-${Date.now()}`
@@ -1078,10 +1096,12 @@ export const DojoProvider = ({ children, initialFeesSubTab = 'plans' }) => {
     if (isFirebaseConfigured) {
       await saveFeePlanToFirestore(newPlan).catch(console.error);
     }
+    return true;
   };
 
   // Update Fee Plan
   const updateFeePlan = async (planId, updatedData) => {
+    if (!ensureAdminAccess('update a fee plan')) return false;
     setFeePlans(prev => {
       return prev.map(p => {
         if (p.id === planId) {
@@ -1100,10 +1120,12 @@ export const DojoProvider = ({ children, initialFeesSubTab = 'plans' }) => {
     if (isFirebaseConfigured) {
       await updateFeePlanInFirestore(planId, updatedData).catch(console.error);
     }
+    return true;
   };
 
   // Delete Fee Plan
   const deleteFeePlan = async (planId) => {
+    if (!ensureAdminAccess('delete a fee plan')) return false;
     const plan = feePlans.find(p => p.id === planId);
     if (!plan) return false;
 
@@ -1186,6 +1208,7 @@ export const DojoProvider = ({ children, initialFeesSubTab = 'plans' }) => {
 
   // Add Student
   const addStudent = async (studentData) => {
+    if (!ensureAdminAccess('enroll a new student')) return null;
     const selectedPlan = feePlans.find(p => p.id === studentData.tuitionPlanId) || feePlans[0];
     const enrollmentBreakdown = calculateEnrollmentBreakdown(selectedPlan, {
       includeRegistrationFee: Boolean(studentData.hasRegistrationFee),
@@ -1310,6 +1333,7 @@ export const DojoProvider = ({ children, initialFeesSubTab = 'plans' }) => {
 
   // Update Student Status (Supports Active, Inactive, Stopped, Blocked, Frozen)
   const updateStudentStatus = async (studentId, status) => {
+    if (!ensureAdminAccess('update student status')) return false;
     const student = students.find(s => s.id === studentId);
     setStudents(prev => prev.map(s => s.id === studentId ? { ...s, status } : s));
 
@@ -1326,12 +1350,14 @@ export const DojoProvider = ({ children, initialFeesSubTab = 'plans' }) => {
     if (isFirebaseConfigured) {
       await updateStudentInFirestore(studentId, { status }).catch(console.error);
     }
+    return true;
   };
 
   // Reactivate student account without losing any previous attendance records or payment history
   const reactivateStudent = async (studentId) => {
+    if (!ensureAdminAccess('reactivate a student')) return false;
     const student = students.find(s => s.id === studentId);
-    if (!student) return;
+    if (!student) return false;
 
     setStudents(prev => prev.map(s => s.id === studentId ? { ...s, status: 'Active' } : s));
     addActivity(`Reactivated student: ${student.fullName} restored to Active enrollment 🥋`, 'student', 'UserCheck');
@@ -1340,10 +1366,12 @@ export const DojoProvider = ({ children, initialFeesSubTab = 'plans' }) => {
     if (isFirebaseConfigured) {
       await updateStudentInFirestore(studentId, { status: 'Active' }).catch(console.error);
     }
+    return true;
   };
 
   // Freeze / Pause Student Subscription & Extend Due Date (Rule: Min 1 month, Max 1 per calendar year)
   const freezeStudentSubscription = async ({ studentId, startDate, endDate, durationMonths, reason }) => {
+    if (!ensureAdminAccess('freeze a student subscription')) return false;
     const student = students.find(s => s.id === studentId);
     if (!student) return false;
 
@@ -1415,6 +1443,7 @@ export const DojoProvider = ({ children, initialFeesSubTab = 'plans' }) => {
 
   // Resume / Unfreeze Student Subscription
   const unfreezeStudentSubscription = async (studentId) => {
+    if (!ensureAdminAccess('resume a frozen subscription')) return false;
     const student = students.find(s => s.id === studentId);
     if (!student) return false;
 
@@ -1458,18 +1487,21 @@ export const DojoProvider = ({ children, initialFeesSubTab = 'plans' }) => {
 
   // Update Student Photo
   const updateStudentPhoto = async (studentId, photoUrl) => {
+    if (!ensureAdminAccess('update student photo')) return false;
     setStudents(prev => prev.map(s => s.id === studentId ? { ...s, photoUrl } : s));
     showToast('Student photo updated from gallery! 📸', 'success');
 
     if (isFirebaseConfigured) {
       await updateStudentInFirestore(studentId, { photoUrl }).catch(console.error);
     }
+    return true;
   };
 
   // Full Student Details Update
   const updateStudent = async (studentId, updatedData) => {
+    if (!ensureAdminAccess('update student details')) return false;
     const prevStudent = students.find(s => s.id === studentId);
-    if (!prevStudent) return;
+    if (!prevStudent) return false;
 
     // Handle batch change enrolled count
     if (updatedData.batchId && updatedData.batchId !== prevStudent.batchId) {
@@ -1501,6 +1533,7 @@ export const DojoProvider = ({ children, initialFeesSubTab = 'plans' }) => {
 
   // Add Custom Belt Rank
   const addBeltRank = async (beltData) => {
+    if (!ensureAdminAccess('add a belt rank')) return null;
     const newBelt = {
       ...beltData,
       id: `belt-${Date.now()}`,
@@ -1522,6 +1555,7 @@ export const DojoProvider = ({ children, initialFeesSubTab = 'plans' }) => {
 
   // Update Belt Rank
   const updateBeltRank = async (beltId, data) => {
+    if (!ensureAdminAccess('update a belt rank')) return false;
     setBeltRanks(prev => prev.map(b => b.id === beltId ? { ...b, ...data } : b));
     showToast('Belt Rank updated!', 'success');
 
@@ -1531,10 +1565,12 @@ export const DojoProvider = ({ children, initialFeesSubTab = 'plans' }) => {
         await saveBeltRankToFirestore({ ...target, ...data }).catch(console.error);
       }
     }
+    return true;
   };
 
   // Delete Individual Belt Rank
   const deleteBeltRank = async (beltIdentifier) => {
+    if (!ensureAdminAccess('delete a belt rank')) return false;
     const belt = beltRanks.find(b => b.id === beltIdentifier || b.name === beltIdentifier);
     const targetId = belt?.id || beltIdentifier;
     const targetName = belt?.name || beltIdentifier;
@@ -1556,6 +1592,7 @@ export const DojoProvider = ({ children, initialFeesSubTab = 'plans' }) => {
 
   // Delete All Belt Ranks (Clean Slate for fresh custom academy creation)
   const deleteAllBeltRanks = async () => {
+    if (!ensureAdminAccess('delete all belt ranks')) return false;
     const toDelete = [...beltRanks];
     setBeltRanks([]);
     localStorage.setItem('sensei_belt_ranks', JSON.stringify([]));
@@ -1577,10 +1614,12 @@ export const DojoProvider = ({ children, initialFeesSubTab = 'plans' }) => {
         console.warn('Error clearing Firestore belts:', err);
       }
     }
+    return true;
   };
 
   // Reset to standard karate belt hierarchy (8 classic belts)
   const resetBeltRanksToDefault = async () => {
+    if (!ensureAdminAccess('reset belt ranks to default')) return false;
     const STANDARD_BELTS = [
       { id: 'belt-1', name: 'White Belt', colorClass: 'belt-white', badgeBg: '#ffffff', textColor: '#18181b', level: 10 },
       { id: 'belt-2', name: 'Yellow Belt', colorClass: 'belt-yellow', badgeBg: '#eab308', textColor: '#ffffff', level: 9 },
@@ -1600,12 +1639,14 @@ export const DojoProvider = ({ children, initialFeesSubTab = 'plans' }) => {
         await saveBeltRankToFirestore(b).catch(() => {});
       }
     }
+    return true;
   };
 
   // Delete Student Profile
   const deleteStudent = async (studentId) => {
+    if (!ensureAdminAccess('delete a student profile')) return false;
     const student = students.find(s => s.id === studentId);
-    if (!student) return;
+    if (!student) return false;
 
     setStudents(prev => {
       const remaining = prev.filter(s => s.id !== studentId);
@@ -1627,6 +1668,7 @@ export const DojoProvider = ({ children, initialFeesSubTab = 'plans' }) => {
     if (isFirebaseConfigured) {
       await deleteStudentFromFirestore(studentId).catch(console.error);
     }
+    return true;
   };
 
   // Helper: Revert student billing state when a payment is reset or deleted
@@ -2213,6 +2255,7 @@ export const DojoProvider = ({ children, initialFeesSubTab = 'plans' }) => {
 
   // Mark or Edit Attendance batch (Supports current date, past missed dates, and editing previously recorded sessions)
   const markAttendanceBatch = async (batchId, date, records, guestStudentIds = []) => {
+    if (!ensureAdminAccess('mark or update attendance')) return false;
     const batch = batches.find(b => b.id === batchId);
     const presentCount = Object.values(records).filter(status => status === 'Present' || status === 'Late').length;
     const totalCount = Object.keys(records).length;
@@ -2264,12 +2307,14 @@ export const DojoProvider = ({ children, initialFeesSubTab = 'plans' }) => {
     if (isFirebaseConfigured) {
       await recordBatchAttendanceToFirestore(batchId, date, records, guestStudentIds).catch(console.error);
     }
+    return true;
   };
 
   // Correct or add individual attendance record for any date (Supports correcting mistakes and adding missed dates)
   const updateSingleAttendanceRecord = async ({ studentId, date, batchId, status, notes }) => {
+    if (!ensureAdminAccess('modify individual attendance records')) return false;
     const student = students.find(s => s.id === studentId);
-    if (!student) return;
+    if (!student) return false;
     const targetBatch = batches.find(b => b.id === (batchId || student.batchId)) || batches[0];
     const targetBatchId = targetBatch?.id || 'manual';
 
@@ -2330,15 +2375,18 @@ export const DojoProvider = ({ children, initialFeesSubTab = 'plans' }) => {
         attendanceRate: updatedStats.attendanceRate
       }).catch(console.error);
     }
+    return true;
   };
 
   // Alias for backward compatibility
   const recordStudentAttendanceIndividual = async (params) => {
+    if (!ensureAdminAccess('log individual student attendance')) return false;
     return updateSingleAttendanceRecord(params);
   };
 
   // Delete / Remove an accidental individual attendance entry
   const deleteSingleAttendanceRecord = async ({ studentId, date, batchId }) => {
+    if (!ensureAdminAccess('delete an attendance record')) return false;
     const student = students.find(s => s.id === studentId);
     let nextHistory;
     setAttendanceHistory(prev => {
@@ -2369,10 +2417,12 @@ export const DojoProvider = ({ children, initialFeesSubTab = 'plans' }) => {
         }
       }
     }
+    return true;
   };
 
   // Delete an entire attendance session
   const deleteAttendanceSession = async (batchId, date) => {
+    if (!ensureAdminAccess('delete an attendance session')) return false;
     const session = attendanceHistory.find(s => s.batchId === batchId && s.date === date);
     const nextHistory = attendanceHistory.filter(s => !(s.batchId === batchId && s.date === date));
     setAttendanceHistory(nextHistory);
@@ -2394,10 +2444,12 @@ export const DojoProvider = ({ children, initialFeesSubTab = 'plans' }) => {
 
     addActivity(`Deleted attendance session for ${session?.batchName || 'Batch'} on ${date}`, 'attendance', 'Trash2');
     showToast(`Attendance session for ${date} deleted.`, 'info');
+    return true;
   };
 
   // Clear all attendance records while preserving students, fees, and class schedules
   const clearAllAttendanceRecords = async () => {
+    if (!ensureAdminAccess('clear all attendance records')) return false;
     setAttendanceHistory([]);
     localStorage.setItem('sensei_attendance_history', JSON.stringify([]));
 
@@ -2414,6 +2466,7 @@ export const DojoProvider = ({ children, initialFeesSubTab = 'plans' }) => {
 
     addActivity('All attendance records cleared', 'attendance', 'RotateCcw');
     showToast('All attendance records cleared successfully!', 'success');
+    return true;
   };
 
   // Get student attendance history list

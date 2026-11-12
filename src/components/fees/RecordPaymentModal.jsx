@@ -45,7 +45,9 @@ export const RecordPaymentModal = ({
     recordPayment,
     setModalState,
     getNextBillNumber,
-    isBillNumberUnique
+    isBillNumberUnique,
+    isAdmin,
+    requireAdmin
   } = useDojo();
 
   const [selectedStudentId, setSelectedStudentId] = useState(() => (defaultStudentId || students[0]?.id || ''));
@@ -135,7 +137,7 @@ export const RecordPaymentModal = ({
     }
   }, [isOpen, defaultStudentId, defaultRenewalType, defaultPlanId]);
 
-  if (!isOpen) return null;
+  if (!isOpen || !isAdmin) return null;
 
   const handleStudentChange = (id) => {
     setSelectedStudentId(id);
@@ -250,7 +252,7 @@ export const RecordPaymentModal = ({
     }
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     const finalTotal = liveBreakdown.totalWithVat;
     if (!selectedStudentId || !finalTotal || finalTotal <= 0) return;
@@ -264,60 +266,62 @@ export const RecordPaymentModal = ({
       }
     }
 
-    const dojo = dojos.find(d => d.id === currentStudent?.dojoId);
-    const remainingDue = roundCurrency(Math.max(0, (Number(currentStudent?.dueAmount) || 0) - finalTotal));
+    requireAdmin(async () => {
+      const dojo = dojos.find(d => d.id === currentStudent?.dojoId);
+      const remainingDue = roundCurrency(Math.max(0, (Number(currentStudent?.dueAmount) || 0) - finalTotal));
 
-    const result = await recordPayment({
-      studentId: selectedStudentId,
-      amount: finalTotal,
-      baseAmount: liveBreakdown.baseAmount,
-      vatAmount: liveBreakdown.vatAmount,
-      vatRate: liveBreakdown.vatRate,
-      paymentMethod,
-      paymentDate,
-      subscriptionStartDate,
-      nextDueDate,
-      renewalType,
-      planId: selectedPlanId,
-      notes: notes || (renewalType === 'restart' ? 'Resumed classes after break' : 'Training subscription renewal'),
-      billNumber: cleanBill,
-      receiptNumber: cleanBill
-    });
+      const result = await recordPayment({
+        studentId: selectedStudentId,
+        amount: finalTotal,
+        baseAmount: liveBreakdown.baseAmount,
+        vatAmount: liveBreakdown.vatAmount,
+        vatRate: liveBreakdown.vatRate,
+        paymentMethod,
+        paymentDate,
+        subscriptionStartDate,
+        nextDueDate,
+        renewalType,
+        planId: selectedPlanId,
+        notes: notes || (renewalType === 'restart' ? 'Resumed classes after break' : 'Training subscription renewal'),
+        billNumber: cleanBill,
+        receiptNumber: cleanBill
+      });
 
-    if (!result) return;
+      if (!result) return;
 
-    const receipt = {
-      billNumber: cleanBill,
-      receiptNumber: cleanBill,
-      date: formatDisplayDate(paymentDate),
-      studentName: currentStudent?.fullName || 'Student',
-      parentName: currentStudent?.parentName,
-      phone: currentStudent?.whatsapp || currentStudent?.phone,
-      beltRank: currentStudent?.beltRank,
-      dojoName: dojo?.name || 'Al Muharib Karate Center',
-      amount: finalTotal,
-      baseAmount: liveBreakdown.baseAmount,
-      vatAmount: liveBreakdown.vatAmount,
-      vatRate: liveBreakdown.vatRate,
-      planName: currentPlan?.name || '',
-      paymentMethod,
-      subscriptionStartDate: formatDisplayDate(subscriptionStartDate),
-      nextDueDate: formatDisplayDate(nextDueDate),
-      renewalType,
-      notes: notes || (renewalType === 'restart' ? 'Resumed training subscription' : 'Karate training renewal'),
-      remainingDue
-    };
+      const receipt = {
+        billNumber: cleanBill,
+        receiptNumber: cleanBill,
+        date: formatDisplayDate(paymentDate),
+        studentName: currentStudent?.fullName || 'Student',
+        parentName: currentStudent?.parentName,
+        phone: currentStudent?.whatsapp || currentStudent?.phone,
+        beltRank: currentStudent?.beltRank,
+        dojoName: dojo?.name || 'Al Muharib Karate Center',
+        amount: finalTotal,
+        baseAmount: liveBreakdown.baseAmount,
+        vatAmount: liveBreakdown.vatAmount,
+        vatRate: liveBreakdown.vatRate,
+        planName: currentPlan?.name || '',
+        paymentMethod,
+        subscriptionStartDate: formatDisplayDate(subscriptionStartDate),
+        nextDueDate: formatDisplayDate(nextDueDate),
+        renewalType,
+        notes: notes || (renewalType === 'restart' ? 'Resumed training subscription' : 'Karate training renewal'),
+        remainingDue
+      };
 
-    if (sendWhatsAppReceipt) {
-      setActiveReceipt(receipt);
-    } else {
-      handleClose();
-    }
+      if (sendWhatsAppReceipt) {
+        setActiveReceipt(receipt);
+      } else {
+        handleClose();
+      }
 
-    showSuccessAlert(
-      'Payment Recorded! 💳',
-      `Bill No: ${cleanBill} — Received ${formatCurrencyAmount(finalTotal)} Dhs (incl. ${liveBreakdown.vatRate}% VAT) from ${currentStudent?.fullName || 'Student'}. Covered ${formatDisplayDate(subscriptionStartDate)} to ${formatDisplayDate(nextDueDate)}.`
-    );
+      showSuccessAlert(
+        'Payment Recorded! 💳',
+        `Bill No: ${cleanBill} — Received ${formatCurrencyAmount(finalTotal)} Dhs (incl. ${liveBreakdown.vatRate}% VAT) from ${currentStudent?.fullName || 'Student'}. Covered ${formatDisplayDate(subscriptionStartDate)} to ${formatDisplayDate(nextDueDate)}.`
+      );
+    }, 'Authorized Admin login required to record fee payments.');
   };
 
   const currentStudentEffectiveDue = currentStudent ? getStudentDueAmount(currentStudent, feePlans) : 0;
@@ -363,8 +367,10 @@ export const RecordPaymentModal = ({
             <button
               type="button"
               onClick={() => {
-                onClose();
-                setModalState(prev => ({ ...prev, addStudent: true }));
+                requireAdmin(() => {
+                  onClose();
+                  setModalState(prev => ({ ...prev, addStudent: true }));
+                }, 'Authorized Admin login required to register new students.');
               }}
               className="inline-flex items-center gap-1.5 px-4 py-2 bg-dojo-red hover:bg-dojo-redHover text-white text-xs font-bold rounded-xl shadow-lg shadow-red-600/30 cursor-pointer"
             >

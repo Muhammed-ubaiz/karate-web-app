@@ -31,12 +31,9 @@ export const Navbar = () => {
     selectedDojoId,
     setSelectedDojoId,
     setModalState,
-    students,
     isAdmin,
     logoutAdmin,
-    quickAdminLogin,
     requireAdmin,
-    resetAllDataToCleanSlate,
     theme,
     toggleTheme
   } = useDojo();
@@ -135,9 +132,11 @@ export const Navbar = () => {
             <button
               onClick={() => requireAdmin(() => setModalState(prev => ({ ...prev, addStudent: true })))}
               className="inline-flex items-center gap-1.5 bg-dojo-red hover:bg-dojo-redHover active:scale-95 text-white text-xs font-semibold px-2.5 lg:px-3 py-2 rounded-xl shadow-lg shadow-red-600/25 transition-all shrink-0 cursor-pointer whitespace-nowrap"
+              title={isAdmin ? 'Enroll a new student' : 'Admin Login Required — Enroll Student'}
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Enroll</span>
+              {!isAdmin && <Lock className="w-3 h-3 text-amber-200" />}
             </button>
 
             {/* Sensei Avatar (Desktop lg+) */}

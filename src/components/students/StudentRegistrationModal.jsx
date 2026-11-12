@@ -40,7 +40,7 @@ const PRESET_AVATARS = [
 ];
 
 export const StudentRegistrationModal = ({ isOpen, onClose }) => {
-  const { dojos, batches, feePlans, beltRanks, addStudent, showToast, getNextBillNumber, isBillNumberUnique } = useDojo();
+  const { dojos, batches, feePlans, beltRanks, addStudent, showToast, getNextBillNumber, isBillNumberUnique, isAdmin, requireAdmin } = useDojo();
   const fileInputRef = useRef(null);
   const [showAvatarGallery, setShowAvatarGallery] = useState(false);
   const [isManageBeltsOpen, setIsManageBeltsOpen] = useState(false);
@@ -103,7 +103,7 @@ export const StudentRegistrationModal = ({ isOpen, onClose }) => {
     onClose();
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || !isAdmin) return null;
 
   // Handle image upload from device gallery
   const handleImageUpload = (e) => {
@@ -209,16 +209,19 @@ export const StudentRegistrationModal = ({ isOpen, onClose }) => {
     const savedPaid = formData.paidAtRegistration;
     const savedBill = String(formData.billNumber || '').trim();
 
-    addStudent({
-      ...formData,
-      billNumber: savedPaid ? savedBill : '',
-      initialDueAmount: savedPaid ? 0 : currentGrandTotal
-    });
-    handleClose();
-    showSuccessAlert(
-      'Student Registered! 🥋',
-      `Welcome ${savedName} to the dojo! Starting Rank: ${savedBelt}. ${savedPaid ? `Payment recorded as Paid (Bill No: ${savedBill}).` : `Initial invoice: ${formatCurrencyAmount(currentGrandTotal)} Dhs.`}`
-    );
+    requireAdmin(async () => {
+      const created = await addStudent({
+        ...formData,
+        billNumber: savedPaid ? savedBill : '',
+        initialDueAmount: savedPaid ? 0 : currentGrandTotal
+      });
+      if (created === null) return;
+      handleClose();
+      showSuccessAlert(
+        'Student Registered! 🥋',
+        `Welcome ${savedName} to the dojo! Starting Rank: ${savedBelt}. ${savedPaid ? `Payment recorded as Paid (Bill No: ${savedBill}).` : `Initial invoice: ${formatCurrencyAmount(currentGrandTotal)} Dhs.`}`
+      );
+    }, 'Authorized Admin login required to enroll new students.');
   };
 
   return (
@@ -541,7 +544,10 @@ export const StudentRegistrationModal = ({ isOpen, onClose }) => {
                   </label>
                   <button
                     type="button"
-                    onClick={() => setIsManageBeltsOpen(true)}
+                    onClick={() => requireAdmin(
+                      () => setIsManageBeltsOpen(true),
+                      'Authorized Admin login required to manage belt ranks.'
+                    )}
                     className="text-[10px] font-bold text-red-400 hover:text-red-300 underline cursor-pointer shrink-0"
                   >
                     ⚙️ Manage / Add Belts
@@ -568,7 +574,10 @@ export const StudentRegistrationModal = ({ isOpen, onClose }) => {
                     />
                     <button
                       type="button"
-                      onClick={() => setIsManageBeltsOpen(true)}
+                      onClick={() => requireAdmin(
+                        () => setIsManageBeltsOpen(true),
+                        'Authorized Admin login required to manage belt ranks.'
+                      )}
                       className="px-2.5 py-2 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold shrink-0 cursor-pointer"
                     >
                       + Add Belts
@@ -929,7 +938,7 @@ export const StudentRegistrationModal = ({ isOpen, onClose }) => {
 
       {/* Manage Belt Ranks Modal */}
       <ManageBeltRanksModal
-        isOpen={isManageBeltsOpen}
+        isOpen={isAdmin && isManageBeltsOpen}
         onClose={() => setIsManageBeltsOpen(false)}
       />
     </div>
